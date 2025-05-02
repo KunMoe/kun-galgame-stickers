@@ -1,7 +1,10 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
   import { t } from '~/lib/language'
-  const stickerPacks = [1, 2, 3, 4, 5, 6]
+  import { randomNum } from '~/utils/random'
+
+  const stickerPacks = [1, 2, 3, 4, 5, 6, 7]
+  const randomNumber = randomNum(1, 7)
 </script>
 
 <section>
@@ -13,7 +16,7 @@
     >
       <span>{$t('home.sticker')} [{sticker}]</span>
       <img
-        src={`stickers/icon/s${sticker}.webp`}
+        src={`stickers/KUNgal${sticker}/${randomNumber}.webp`}
         alt="KUN Visual Novel Stickers | 鲲 Galgame 表情包"
       />
       <a
@@ -37,24 +40,20 @@
     position: relative;
     margin-bottom: 30px;
     overflow: hidden;
-    border-radius: 10px;
     border: 1px solid var(--kungalgame-trans-blue-1);
     box-shadow: var(--kungalgame-shadow-0);
     transition: all 0.2s;
 
     img {
       position: absolute;
-      width: 77px;
-      height: 77px;
-      border-radius: 50%;
-      transform: translateX(-10px);
+      width: 63px;
+      height: 63px;
     }
 
     span {
       padding: 20px 50px;
       margin-left: 30px;
       color: var(--kungalgame-blue-5);
-      font-weight: bold;
     }
 
     a {
@@ -62,12 +61,6 @@
       display: flex;
       color: var(--kungalgame-blue-5);
       font-size: 25px;
-      border-radius: 5px;
-      border: 1px solid var(--kungalgame-trans-white-9);
-
-      &:hover {
-        border: 1px solid var(--kungalgame-blue-5);
-      }
     }
 
     &:hover {

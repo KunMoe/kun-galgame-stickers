@@ -107,7 +107,6 @@
     width: 130px;
     background-color: var(--kungalgame-white);
     border: 1px solid var(--kungalgame-blue-1);
-    border-radius: 5px;
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -121,7 +120,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 5px;
     background-color: var(--kungalgame-trans-white-9);
     border: none;
     font-size: 17px;

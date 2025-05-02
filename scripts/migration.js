@@ -47,7 +47,7 @@ async function migrateData() {
   const gameFolderPathZh = path.join(__dirname, 'zh/game')
   const lassFolderPathZh = path.join(__dirname, 'zh/lass')
 
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 1; i <= 7; i++) {
     const gameDataEn = await readAndParseJSON(path.join(gameFolderPathEn, `game${i}.json`))
     const lassDataEn = await readAndParseJSON(path.join(lassFolderPathEn, `lass${i}.json`))
     const gameDataZh = await readAndParseJSON(path.join(gameFolderPathZh, `game${i}.json`))

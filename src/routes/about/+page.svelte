@@ -68,6 +68,7 @@
         <li><a href="https://t.me/addstickers/KUNgal4">Kun Galgame Sticker Pack [4]</a></li>
         <li><a href="https://t.me/addstickers/KUNgal5">Kun Galgame Sticker Pack [5]</a></li>
         <li><a href="https://t.me/addstickers/KUNgal6">Kun Galgame Sticker Pack [6]</a></li>
+        <li><a href="https://t.me/addstickers/KUNgal7">Kun Galgame Sticker Pack [7]</a></li>
       </ul>
 
       <p>
@@ -208,6 +209,7 @@
         <li><a href="https://t.me/addstickers/KUNgal4">鲲 Galgame 表情包 [4]</a></li>
         <li><a href="https://t.me/addstickers/KUNgal5">鲲 Galgame 表情包 [5]</a></li>
         <li><a href="https://t.me/addstickers/KUNgal6">鲲 Galgame 表情包 [6]</a></li>
+        <li><a href="https://t.me/addstickers/KUNgal7">鲲 Galgame 表情包 [7]</a></li>
       </ul>
 
       <p>

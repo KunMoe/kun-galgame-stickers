@@ -129,7 +129,6 @@
       display: flex;
       justify-content: center;
       background-color: var(--kungalgame-trans-white-9);
-      border-radius: 5px;
       color: var(--kungalgame-blue-5);
       cursor: pointer;
 
@@ -146,10 +145,6 @@
       &:nth-child(2) {
         border: 1px solid var(--kungalgame-trans-white-9);
         font-size: 23px;
-
-        &:hover {
-          border: 1px solid var(--kungalgame-blue-5);
-        }
       }
     }
   }

@@ -130,7 +130,6 @@
     border: 1px solid var(--kungalgame-blue-4);
     height: 50px;
     width: 50px;
-    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;

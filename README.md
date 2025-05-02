@@ -31,6 +31,8 @@ In the future, some SD_CG and CG screenshots from games may be updated as sticke
 
 [Kun Galgame Sticker Pack [6]](https://t.me/addstickers/KUNgal6)
 
+[Kun Galgame Sticker Pack [7]](https://t.me/addstickers/KUNgal7)
+
 The stickers in the repository are clearer than those in the Telegram collection because the quality was compressed when making the Telegram sticker collection.
 
 You can click the link below to download these stickers
