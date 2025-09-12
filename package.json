@@ -11,7 +11,11 @@
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
     "prisma:push": "pnpx prisma db push",
-    "prisma:generate": "pnpx prisma generate"
+    "prisma:generate": "pnpx prisma generate",
+    "start": "cross-env HOST=127.0.0.1 PORT=9420 pm2 start ecosystem.config.cjs",
+    "stop": "pm2 delete kun-visual-novel-sticker",
+    "deploy:install": "esno scripts/deployInstall.ts",
+    "deploy:build": "esno scripts/deployBuild.ts"
   },
   "devDependencies": {
     "@fontsource/fira-mono": "^5.1.0",
@@ -21,6 +25,7 @@
     "@sveltejs/kit": "^2.7.1",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "@types/node": "^22.7.5",
+    "cross-env": "^10.0.0",
     "prettier": "^3.3.3",
     "prettier-plugin-svelte": "^3.2.7",
     "sass": "^1.79.5",
@@ -34,6 +39,8 @@
   "type": "module",
   "dependencies": {
     "@prisma/client": "^6.16.1",
+    "@sveltejs/adapter-node": "^5.3.2",
+    "dotenv": "^17.2.2",
     "mongodb": "^6.9.0",
     "mongoose": "^8.7.1",
     "prisma": "^6.16.1",
