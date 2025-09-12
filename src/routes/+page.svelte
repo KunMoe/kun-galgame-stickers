@@ -9,12 +9,13 @@
 
 <section>
   {#each stickerPacks ?? [] as sticker}
-    <a
-      aria-label="KUN Visual Novel Sticker Package | 鲲 Galgame 表情包"
-      class="link"
-      href={`/sticker/${sticker}`}
-    >
-      <span>{$t('home.sticker')} [{sticker}]</span>
+    <div class="link">
+      <a
+        aria-label="KUN Visual Novel Sticker Package | 鲲 Galgame 表情包"
+        href={`/sticker/${sticker}`}
+      >
+        {$t('home.sticker')} [{sticker}]
+      </a>
       <img
         src={`stickers/KUNgal${sticker}/${randomNumber}.webp`}
         alt="KUN Visual Novel Stickers | 鲲 Galgame 表情包"
@@ -28,7 +29,7 @@
       >
         <Icon icon="line-md:download-outline" />
       </a>
-    </a>
+    </div>
   {/each}
 </section>
 
@@ -50,17 +51,19 @@
       height: 63px;
     }
 
-    span {
-      padding: 20px 50px;
-      margin-left: 30px;
-      color: var(--kungalgame-blue-5);
-    }
-
     a {
-      padding: 10px;
-      display: flex;
-      color: var(--kungalgame-blue-5);
-      font-size: 25px;
+      &:first-child {
+        padding: 20px 50px;
+        margin-left: 30px;
+        color: var(--kungalgame-blue-5);
+      }
+
+      &:last-child {
+        padding: 10px;
+        display: flex;
+        color: var(--kungalgame-blue-5);
+        font-size: 25px;
+      }
     }
 
     &:hover {
@@ -70,8 +73,10 @@
 
   @media (max-width: 700px) {
     .link {
-      span {
-        padding-right: 10px;
+      a {
+        &:first-child {
+          padding-right: 10px;
+        }
       }
     }
   }
