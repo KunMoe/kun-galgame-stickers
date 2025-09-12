@@ -1,6 +1,6 @@
 {
   "name": "kun-galgame-sticker-sveltekit",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -9,7 +9,9 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "vitest",
     "lint": "prettier --check . && eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prisma:push": "pnpx prisma db push",
+    "prisma:generate": "pnpx prisma generate"
   },
   "devDependencies": {
     "@fontsource/fira-mono": "^5.1.0",
@@ -31,8 +33,10 @@
   },
   "type": "module",
   "dependencies": {
+    "@prisma/client": "^6.16.1",
     "mongodb": "^6.9.0",
     "mongoose": "^8.7.1",
+    "prisma": "^6.16.1",
     "sveltekit-i18n": "^2.4.2"
   }
 }

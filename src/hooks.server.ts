@@ -1,16 +1,7 @@
 import { PUBLIC_KUN_STICKER_THEME, PUBLIC_KUN_LANGUAGE } from '$env/static/public'
-import { connectMongodb } from '~/lib/server/db'
-import { error } from '@sveltejs/kit'
 import type { Handle } from '@sveltejs/kit'
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const connection = await connectMongodb()
-  if (!connection) {
-    throw error(500, 'Database connection failed')
-  } else {
-    console.log('MongoDB connection successful!')
-  }
-
   const { locals, cookies, request } = event
 
   const lang = request.headers.get('accept-language') || 'en-us'
