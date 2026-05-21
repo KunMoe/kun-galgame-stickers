@@ -1,14 +1,16 @@
-import { findOneStickerData } from '~/lib/findStickersData'
-export const load = async ({ params, depends }) => {
-  const { sid, pid } = params
-  depends('kun:details')
+import { error } from '@sveltejs/kit'
+import { findOneSticker } from '$lib/server/stickers'
+import type { PageServerLoad } from './$types'
 
-  const stickerData = await findOneStickerData(parseInt(sid), parseInt(pid))
-
-  return {
-    sid,
-    pid,
-    game: JSON.stringify(stickerData?.game),
-    loli: JSON.stringify(stickerData?.loli)
+export const load: PageServerLoad = async ({ params }) => {
+  const sid = Number(params.sid)
+  const pid = Number(params.pid)
+  if (!Number.isInteger(sid) || !Number.isInteger(pid) || sid <= 0 || pid <= 0) {
+    error(404, 'Invalid sticker id')
   }
+
+  const sticker = await findOneSticker(sid, pid)
+  if (!sticker) error(404, 'Sticker not found')
+
+  return { sticker }
 }

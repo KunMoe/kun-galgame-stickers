@@ -1,46 +1,31 @@
 <script lang="ts">
-  import { t } from '~/lib/language'
-  import { getLanguageContext } from '~/lib/contexts/language'
-  import { getPreferredLanguageText } from '~/utils/getPreferredLanguageText'
+  import { m, resolveMultilingual } from '$lib/i18n'
+  import { locale } from '$lib/locale.svelte'
+  import type { PageData } from './$types'
 
-  export let data
-  const languageStore = getLanguageContext()
+  interface Props {
+    data: PageData
+  }
+  const { data }: Props = $props()
 
-  const { sid, pid } = data
-
-  $: game = getPreferredLanguageText(JSON.parse(data.game), $languageStore)
-  $: loli = getPreferredLanguageText(JSON.parse(data.loli), $languageStore)
+  const game = $derived(resolveMultilingual(data.sticker.game, locale.current))
+  const lass = $derived(resolveMultilingual(data.sticker.loli, locale.current))
 </script>
 
 <svelte:head>
-  <title>{`${game} | ${loli}`}</title>
-  <meta name="description" content={`${game} | ${loli}`} />
+  <title>{game} | {lass}</title>
+  <meta name="description" content="{game} | {lass}" />
 </svelte:head>
 
-<div class="root">
-  <img src={`/kun-galgame-stickers/telegram/KUNgal${sid}/${pid}.png`} alt="" />
+<div class="grid place-items-center gap-4">
+  <img
+    src="/kun-galgame-stickers/telegram/KUNgal{data.sticker.sid}/{data.sticker.pid}.png"
+    alt="{game} {lass}"
+    class="max-w-full rounded"
+  />
 
-  <section>
-    <p>{$t('sticker.game')}: {game}</p>
-    <p>{$t('sticker.lass')}: {loli}</p>
+  <section class="flex flex-col items-center gap-1 text-sm">
+    <p>{m().sticker.game}: {game}</p>
+    <p>{m().sticker.lass}: {lass}</p>
   </section>
 </div>
-
-<style lang="scss">
-  .root {
-    display: grid;
-    place-items: center;
-  }
-
-  img {
-    max-width: 100%;
-  }
-
-  section {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-</style>

@@ -1,162 +1,71 @@
 <script lang="ts">
-  import Header from '~/lib/components/Header.svelte'
-  import ProgressBar from '~/lib/components/ProgressBar.svelte'
-  import Icon from '@iconify/svelte'
-  import '~/styles/index.scss'
-  import { onMount, beforeUpdate } from 'svelte'
-  import { setColorSchemeContext } from '~/lib/contexts/theme'
-  import { setLanguageContext } from '~/lib/contexts/language'
-  import { t, locale } from '~/lib/language'
+  import '../app.css'
+  import Header from '$lib/components/Header.svelte'
+  import ProgressBar from '$lib/components/ProgressBar.svelte'
+  import BackToTop from '$lib/components/BackToTop.svelte'
+  import { page } from '$app/state'
+  import { m, detectLocaleFromPath, localizedPath } from '$lib/i18n'
+  import { LOCALES } from '$lib/i18n/types'
+  import { SITE_URL } from '$lib/config'
+  import { locale } from '$lib/locale.svelte'
+  import { theme } from '$lib/theme.svelte'
+  import type { LayoutData } from './$types'
 
-  export let data
-  let showButton = false
-
-  setColorSchemeContext(data.theme)
-  setLanguageContext(data.language)
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })
+  interface Props {
+    data: LayoutData
+    children: import('svelte').Snippet
   }
+  const { data, children }: Props = $props()
 
-  const checkRoute = () => {
-    if (window.location.pathname === '/') {
-      showButton = false
-      return
-    }
-    checkHeight()
-  }
-
-  const checkHeight = () => {
-    if (document.body.scrollHeight > window.innerHeight) {
-      showButton = true
-    }
-  }
-
-  onMount(() => checkHeight())
-
-  beforeUpdate(() => {
-    checkRoute()
+  $effect.pre(() => {
+    locale.init(data.lang)
+    theme.init(data.theme)
   })
+
+  const basePath = $derived(detectLocaleFromPath(page.url.pathname).pathname)
 </script>
 
 <svelte:head>
-  <title>{$t('seo.title')}</title>
-  <link rel="icon" href="/favicon.webp" type="image/webp" />
-  <meta name="description" content={$t('seo.description')} />
-
-  <meta property="og:title" content={$t('seo.og')} />
+  <title>{m().meta.title}</title>
+  <meta name="description" content={m().meta.description} />
+  <meta property="og:title" content={m().meta.og} />
   <meta property="og:type" content="website" />
-
-  <meta property="og:description" content={$t('seo.og-desc')} />
-  <meta property="og:image" content="/title.webp" />
+  <meta property="og:description" content={m().meta.ogDescription} />
+  <meta property="og:image" content="{SITE_URL}/title.webp" />
+  <link rel="canonical" href="{SITE_URL}{page.url.pathname}" />
+  {#each LOCALES as alt (alt)}
+    <link rel="alternate" hreflang={alt} href="{SITE_URL}{localizedPath(alt, basePath)}" />
+  {/each}
+  <link rel="alternate" hreflang="x-default" href="{SITE_URL}{basePath}" />
 </svelte:head>
 
 <ProgressBar />
 
-<div class="app">
+<div class="flex min-h-dvh flex-col bg-bg text-fg">
   <Header />
 
-  <main>
-    <slot />
-
-    {#if showButton}
-      <button aria-label="Back to Top | 返回顶部" class="top" on:click={scrollToTop}>
-        <Icon icon="line-md:arrow-close-up" />
-      </button>
-    {/if}
+  <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 pt-24 pb-4 sm:px-20">
+    {@render children()}
+    <BackToTop />
   </main>
 
-  <footer>
-    <p>{$t('home.kun')}</p>
+  <footer class="flex flex-col items-center gap-1 px-4 py-3 text-sm text-muted">
+    <p>{m().home.kun}</p>
     <p>
-      {$t('home.open')}
+      {m().home.open}
       <a
-        aria-label="KUN Visual Novel Open Source GitHub Repository | 鲲 Galgame 开源 GitHub 仓库"
         href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit"
+        class="text-primary underline underline-offset-4"
       >
         GitHub
       </a>
     </p>
-    {#if $locale === 'zh-cn'}
-      <p>
-        由
-        <a aria-label="KUN Visual Novel Forum | 鲲 Galgame 论坛" href="https://www.kungal.com">
-          鲲 Galgame 论坛
-        </a>
-        提供支持
-      </p>
-    {/if}
-
-    {#if $locale === 'en-us'}
-      <p>
-        Powered by
-        <a aria-label="KUN Visual Novel Forum | 鲲 Galgame 论坛" href="https://www.kungal.com">
-          KUN Visual Novel Forum
-        </a>
-      </p>
-    {/if}
+    <p>
+      {m().footer.poweredBy}
+      <a href="https://www.kungal.com" class="text-primary underline underline-offset-4">
+        {m().footer.forumName}
+      </a>
+      {m().footer.forumSuffix}
+    </p>
   </footer>
 </div>
-
-<style lang="scss">
-  .app {
-    display: flex;
-    flex-direction: column;
-    min-height: 100dvh;
-    color: var(--kungalgame-font-color-3);
-    background-color: var(--kungalgame-trans-blue-0);
-  }
-
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 5rem;
-    padding-bottom: 1rem;
-    width: 100%;
-    max-width: 64rem;
-    margin: 0 auto;
-    box-sizing: border-box;
-  }
-
-  .top {
-    position: fixed;
-    bottom: 2rem;
-    right: 1rem;
-    background: none;
-    border: 1px solid var(--kungalgame-blue-4);
-    height: 50px;
-    width: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 22px;
-    color: var(--kungalgame-blue-4);
-    background-color: var(--kungalgame-trans-white-5);
-    backdrop-filter: blur(5px);
-  }
-
-  footer {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 12px;
-
-    a {
-      color: var(--kungalgame-blue-5);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-  }
-
-  @media (max-width: 700px) {
-    main {
-      padding: 5rem 1rem;
-      padding-bottom: 1rem;
-    }
-  }
-</style>

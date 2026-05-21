@@ -1,17 +1,15 @@
-// See https://kit.svelte.dev/docs/types#app
-// for information about these interfaces
+import type { Locale, Theme } from '$lib/i18n/types'
+
 declare global {
   namespace App {
-    declare type KunTheme = 'light' | 'dark' | 'system'
-
-    // interface Error {}
     interface Locals {
-      theme: KunTheme
-      language: Language
+      lang: Locale
+      theme: Theme
     }
-    // interface PageData {}
-    // interface PageState {}
-    // interface Platform {}
+    interface PageData {
+      lang: Locale
+      theme: Theme
+    }
   }
 }
 

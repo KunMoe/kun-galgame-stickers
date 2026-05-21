@@ -1,5 +1,6 @@
 import type { LayoutServerLoad } from './$types'
 
-export const load: LayoutServerLoad = async ({ locals }) => {
-  return { theme: locals.theme, language: locals.language }
-}
+export const load: LayoutServerLoad = ({ locals }) => ({
+  lang: locals.lang,
+  theme: locals.theme
+})

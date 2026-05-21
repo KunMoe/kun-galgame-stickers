@@ -1,9 +1,10 @@
-# Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
 
-# static files
-./static
-
-prisma/generated
+build/
+.svelte-kit/
+kun-love-ren/
+node_modules/
+prisma/generated/
+static/

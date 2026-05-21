@@ -1,122 +1,44 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { getLanguageContext } from '~/lib/contexts/language'
-  import { isShowLanguageMenu } from '../store/menuStore'
-  import { t } from '../language'
-  import type { LanguageItem } from '~/types/menu'
+  import { locale } from '$lib/locale.svelte'
+  import { LOCALES, LOCALE_NATIVE_NAMES } from '$lib/i18n/types'
 
-  let menuContainer: HTMLElement
-  const languageStore = getLanguageContext()
-
-  let kunLangName: LanguageItem[] = [
-    {
-      name: 'en-us',
-      selected: false
-    },
-    {
-      name: 'zh-cn',
-      selected: false
-    }
-  ]
-
-  kunLangName = kunLangName.map((item) => ({
-    ...item,
-    selected: item.name === $languageStore
-  }))
-
-  const handleChangeLanguage = (language: Language) => {
-    menuContainer.focus()
-    languageStore.change(language)
-
-    kunLangName = kunLangName.map((item) => ({
-      ...item,
-      selected: item.name === language
-    }))
+  interface Props {
+    onclose: () => void
   }
+  const { onclose }: Props = $props()
 
-  onMount(() => menuContainer.focus())
+  let container: HTMLDivElement
+  $effect(() => container.focus())
 
-  const handleMenuBlur = () => {
+  const handleBlur = () => {
     requestAnimationFrame(() => {
-      if (!menuContainer.contains(document.activeElement)) {
-        isShowLanguageMenu.set(false)
-      }
+      if (!container.contains(document.activeElement)) onclose()
     })
   }
 </script>
 
-<button bind:this={menuContainer} class="container" on:blur={handleMenuBlur}>
-  <span class="triangle1" />
-  <span class="triangle2" />
-  <div class="kungalgamer">
-    {#each kunLangName ?? [] as item}
-      <button
-        class={`item ${item.selected ? 'selected' : ''}`}
-        on:click={() => handleChangeLanguage(item.name)}
-      >
-        {$t(`header.${item.name}`)}
-      </button>
-    {/each}
-  </div>
-</button>
-
-<style lang="scss">
-  .container {
-    position: absolute;
-    top: 30px;
-    right: 20px;
-    opacity: 0.9;
-    border: none;
-    background-color: var(--kungalgame-blue-4);
-  }
-
-  .triangle1 {
-    position: absolute;
-    top: 1px;
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-bottom: 17px solid var(--kungalgame-white);
-    z-index: 1;
-  }
-
-  .triangle2 {
-    position: absolute;
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-bottom: 17px solid var(--kungalgame-blue-1);
-  }
-
-  .kungalgamer {
-    padding: 10px;
-    top: 16px;
-    transform: translateX(-43%);
-    width: 130px;
-    background-color: var(--kungalgame-white);
-    border: 1px solid var(--kungalgame-blue-1);
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow);
-  }
-
-  .item {
-    cursor: pointer;
-    color: var(--kungalgame-blue-5);
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--kungalgame-trans-white-9);
-    border: none;
-    font-size: 17px;
-  }
-
-  .selected {
-    background-color: var(--kungalgame-blue-4);
-    color: var(--kungalgame-white);
-  }
-</style>
+<div
+  bind:this={container}
+  tabindex="-1"
+  role="menu"
+  onfocusout={handleBlur}
+  class="absolute top-12 right-0 z-50 flex w-32 flex-col gap-1 rounded-md border border-border bg-surface p-2 shadow-glow-sm focus:outline-none"
+>
+  {#each LOCALES as code (code)}
+    {@const selected = locale.current === code}
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={selected}
+      onclick={async () => {
+        await locale.switchTo(code)
+        onclose()
+      }}
+      class="rounded px-3 py-1.5 text-left text-sm transition {selected
+        ? 'bg-primary text-surface'
+        : 'text-fg hover:bg-accent'}"
+    >
+      {LOCALE_NATIVE_NAMES[code]}
+    </button>
+  {/each}
+</div>

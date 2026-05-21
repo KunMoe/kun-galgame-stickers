@@ -1,130 +1,49 @@
 <script lang="ts">
-  import { afterNavigate, beforeNavigate } from '$app/navigation'
+  import { navigating } from '$app/state'
 
-  const getIncrement = (n: number) => {
-    if (n >= 0 && n < 0.2) return 0.1
-    else if (n >= 0.2 && n < 0.5) return 0.04
-    else if (n >= 0.5 && n < 0.8) return 0.02
-    else if (n >= 0.8 && n < 0.99) return 0.005
-    return 0
-  }
+  let visible = $state(false)
+  let progress = $state(0)
+  let timer: ReturnType<typeof setInterval> | null = null
+  let hideTimer: ReturnType<typeof setTimeout> | null = null
 
-  let running: boolean = false
-  let updater: ReturnType<typeof setInterval> | null = null
-  let completed = false
-  let width: number = 0
-
-  export let displayThreshold = 107
-  export let disableNavigation = false
-
-  export let busy: boolean = false
-  $: running = busy
-
-  export let intervalTime = 700
-  export let stepSizes = [0, 0.005, 0.01, 0.02]
-
-  export const start = () => {
-    running = true
-    if (updater) {
-      clearInterval(updater)
-    }
-    running = true
-    updater = setInterval(() => {
-      const randomStep = stepSizes[Math.floor(Math.random() * stepSizes.length)] ?? 0
-      const step = getIncrement(width) + randomStep
-      if (width < 0.99) {
-        width = width + step
+  const start = () => {
+    if (timer) clearInterval(timer)
+    if (hideTimer) clearTimeout(hideTimer)
+    visible = true
+    progress = 0.08
+    timer = setInterval(() => {
+      const remaining = 0.99 - progress
+      progress += Math.min(remaining * 0.08, 0.04)
+      if (progress >= 0.99) {
+        progress = 0.99
+        if (timer) clearInterval(timer)
       }
-      if (width > 0.99) {
-        width = 0.99
-        stop()
-      }
-    }, intervalTime)
+    }, 200)
   }
 
-  export const stop = () => {
-    if (updater) {
-      clearInterval(updater)
-    }
+  const finish = () => {
+    if (timer) clearInterval(timer)
+    progress = 1
+    hideTimer = setTimeout(() => {
+      visible = false
+      progress = 0
+    }, 350)
   }
 
-  export const complete = () => {
-    if (updater) clearInterval(updater)
-    if (!running) return
-    width = 1
-    running = false
-    setTimeout(() => {
-      completed = true
-      setTimeout(() => {
-        0
-        completed = false
-        width = 0
-      }, 777)
-    }, 777)
-  }
-
-  export const setWidthRatio = (widthRatio: typeof width) => {
-    stop()
-    width = widthRatio
-    completed = false
-    running = true
-  }
-
-  let barStyle: string
-  $: barStyle = width && width * 100 ? `width: ${width * 100}%;` : ''
-
-  let progressBarStartTimeout: ReturnType<typeof setTimeout> | null = null
-  beforeNavigate((nav) => {
-    if (progressBarStartTimeout) {
-      clearTimeout(progressBarStartTimeout)
-      progressBarStartTimeout = null
-    }
-    if (disableNavigation) return
-
-    if (nav.to?.route.id) {
-      if (displayThreshold > 0) {
-        progressBarStartTimeout = setTimeout(() => !disableNavigation && start(), displayThreshold)
-      } else {
-        start()
-      }
-    }
-  })
-
-  afterNavigate(() => {
-    if (progressBarStartTimeout) {
-      clearTimeout(progressBarStartTimeout)
-      progressBarStartTimeout = null
-    }
-    complete()
+  $effect(() => {
+    if (navigating.to) start()
+    else if (visible) finish()
   })
 </script>
 
-{#if running || width > 0}
+{#if visible}
   <output
     role="progressbar"
-    aria-valuenow={width}
-    aria-valuemin={0}
-    aria-valuemax={1}
-    class="kun-progress-bar"
-    class:running
-    class:kun-hiding={completed}
-    style={barStyle}
-  />
+    aria-valuenow={Math.round(progress * 100)}
+    aria-valuemin="0"
+    aria-valuemax="100"
+    class="fixed inset-x-0 top-0 z-[9999] h-[3px] origin-left bg-primary transition-[transform,opacity] duration-200 ease-out"
+    style:transform="scaleX({progress})"
+    style:opacity={progress === 1 ? 0 : 1}
+  ></output>
 {/if}
-
-<style lang="scss">
-  .kun-progress-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    transition: width 0.21s ease-in-out;
-    background-color: var(--kungalgame-blue-4);
-    z-index: 9999;
-  }
-
-  .kun-hiding {
-    transition: top 0.8s ease;
-    top: -8px;
-  }
-</style>

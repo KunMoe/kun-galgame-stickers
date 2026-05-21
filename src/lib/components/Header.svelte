@@ -1,172 +1,86 @@
 <script lang="ts">
+  import Icon from '@iconify/svelte'
+  import { page } from '$app/state'
+  import { m, localizedPath } from '$lib/i18n'
+  import { locale } from '$lib/locale.svelte'
+  import { detectLocaleFromPath } from '$lib/i18n'
   import ThemeMenu from './ThemeMenu.svelte'
   import LanguageMenu from './LanguageMenu.svelte'
-  import { page } from '$app/stores'
-  import Icon from '@iconify/svelte'
-  import { isShowThemeMenu, isShowLanguageMenu } from '../store/menuStore'
-  import { t } from '../language'
+
+  let themeOpen = $state(false)
+  let langOpen = $state(false)
+
+  const basePath = $derived(detectLocaleFromPath(page.url.pathname).pathname)
+  const home = $derived(localizedPath(locale.current, '/'))
+  const about = $derived(localizedPath(locale.current, '/about'))
 </script>
 
-<header>
-  <span>
-    <img src="/favicon.webp" alt="KUN Visual Novel | Stickers" />
-  </span>
-
-  <a aria-label="KUN Visual Novel Stickers | 鲲 Galgame 表情包" class="kungalgame" href="/">
-    <span>{$t('header.title')}</span>
+<header
+  class="fixed inset-x-0 top-0 z-[1007] flex h-14 items-center gap-4 border-b border-border bg-surface-translucent px-4 backdrop-blur-md sm:px-12"
+>
+  <a href={home} aria-label={m().header.title} class="flex items-center gap-3">
+    <img src="/favicon.webp" alt="" class="h-10 w-10" />
+    <span class="hidden text-lg text-fg sm:block">{m().header.title}</span>
   </a>
 
-  <nav>
-    <span aria-current={$page.url.pathname === '/' ? 'page' : undefined}>
-      <a href="/">{$t('header.home')}</a>
-    </span>
-    <span aria-current={$page.url.pathname === '/about' ? 'page' : undefined}>
-      <a href="/about">{$t('header.about')}</a>
-    </span>
+  <nav class="flex flex-1 items-center justify-center gap-6 text-base">
+    <a
+      href={home}
+      aria-current={basePath === '/' ? 'page' : undefined}
+      class="text-primary underline decoration-1 underline-offset-4 hover:text-primary-hover"
+    >
+      {m().header.home}
+    </a>
+    <a
+      href={about}
+      aria-current={basePath === '/about' ? 'page' : undefined}
+      class="text-primary underline decoration-1 underline-offset-4 hover:text-primary-hover"
+    >
+      {m().header.about}
+    </a>
   </nav>
 
-  <div class="function">
-    <button
-      aria-label="KUN Visual Novel Light / Dark Mode Switch | 鲲 Galgame 白天 / 黑夜模式切换"
-      class="mode"
-      on:click={() => isShowThemeMenu.set(true)}
-    >
-      <Icon icon="line-md:light-dark-loop" />
-      {#if $isShowThemeMenu}
-        <ThemeMenu />
+  <div class="flex items-center gap-4 text-xl text-primary">
+    <div class="relative">
+      <button
+        type="button"
+        aria-label="Theme switch"
+        aria-haspopup="menu"
+        aria-expanded={themeOpen}
+        onclick={() => (themeOpen = !themeOpen)}
+        class="flex h-9 w-9 items-center justify-center rounded transition hover:bg-accent"
+      >
+        <Icon icon="line-md:light-dark-loop" />
+      </button>
+      {#if themeOpen}
+        <ThemeMenu onclose={() => (themeOpen = false)} />
       {/if}
-    </button>
+    </div>
 
-    <button
-      aria-label="KUN Visual Novel Language Switch | 鲲 Galgame 语言切换"
-      class="language"
-      on:click={() => isShowLanguageMenu.set(true)}
-    >
-      <Icon icon="material-symbols:language" />
-      {#if $isShowLanguageMenu}
-        <LanguageMenu />
+    <div class="relative">
+      <button
+        type="button"
+        aria-label="Language switch"
+        aria-haspopup="menu"
+        aria-expanded={langOpen}
+        onclick={() => (langOpen = !langOpen)}
+        class="flex h-9 w-9 items-center justify-center rounded transition hover:bg-accent"
+      >
+        <Icon icon="material-symbols:language" />
+      </button>
+      {#if langOpen}
+        <LanguageMenu onclose={() => (langOpen = false)} />
       {/if}
-    </button>
-  </div>
+    </div>
 
-  <div class="github">
     <a
-      aria-label="KUN Visual Novel Open Source GitHub Repository | 鲲 Galgame 开源 GitHub 仓库"
       href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit"
       target="_blank"
+      rel="noopener noreferrer"
+      aria-label="GitHub repository"
+      class="flex h-9 w-9 items-center justify-center rounded transition hover:bg-accent"
     >
       <Icon icon="line-md:github-loop" />
     </a>
   </div>
 </header>
-
-<style lang="scss">
-  img {
-    position: relative;
-    height: 50px;
-    width: 50px;
-  }
-
-  header {
-    width: 100%;
-    position: fixed;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 58px;
-    box-shadow: 0 2px 4px 0 var(--kungalgame-trans-blue-1);
-    background-color: var(--kungalgame-trans-white-5);
-    backdrop-filter: blur(5px);
-    padding: 0 50px;
-    z-index: 1007;
-  }
-
-  .kungalgame {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: none;
-    border: none;
-    cursor: pointer;
-
-    span {
-      white-space: nowrap;
-      margin-left: 20px;
-      font-size: 20px;
-      color: var(--kungalgame-font-color-3);
-    }
-  }
-
-  nav {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    font-size: 17px;
-
-    span {
-      width: 77px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      a {
-        color: var(--kungalgame-blue-5);
-        text-decoration: underline;
-        text-underline-offset: 3px;
-      }
-    }
-  }
-
-  .function {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    button {
-      background: none;
-      border: none;
-      font-size: 23px;
-      color: var(--kungalgame-blue-5);
-      display: flex;
-      cursor: pointer;
-      position: relative;
-
-      &:last-child {
-        margin-left: 20px;
-      }
-    }
-  }
-
-  .github {
-    font-size: 23px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-left: 20px;
-
-    a {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: var(--kungalgame-blue-5);
-    }
-  }
-
-  @media (max-width: 700px) {
-    header {
-      padding: 0 20px;
-    }
-
-    .kungalgame {
-      span {
-        &:first-child {
-          margin-left: 0;
-        }
-
-        &:last-child {
-          display: none;
-        }
-      }
-    }
-  }
-</style>

@@ -1,151 +1,78 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
-  import { goto } from '$app/navigation'
-  import { t } from '~/lib/language'
-  import { getLanguageContext } from '~/lib/contexts/language'
-  import { getPreferredLanguageText } from '~/utils/getPreferredLanguageText'
+  import { m, resolveMultilingual, localizedPath } from '$lib/i18n'
+  import { locale } from '$lib/locale.svelte'
+  import type { PageData } from './$types'
 
-  export let data
-  const languageStore = getLanguageContext()
+  interface Props {
+    data: PageData
+  }
+  const { data }: Props = $props()
 
   const downloadImage = async (imagePath: string) => {
     const response = await fetch(imagePath)
     const blob = await response.blob()
     const url = URL.createObjectURL(blob)
-
     const a = document.createElement('a')
     a.href = url
-    a.download = imagePath.split('/').pop() || ''
-
+    a.download = imagePath.split('/').pop() ?? 'sticker.png'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 </script>
 
 <svelte:head>
-  <title>{$t('sticker.title')}</title>
-  <meta name="description" content={$t('sticker.description')} />
+  <title>{m().sticker.title} [{data.sid}]</title>
+  <meta name="description" content={m().sticker.description} />
 </svelte:head>
 
-<div class="root">
-  <div class="container">
-    {#each data.stickersData as sticker}
-      <div class="sticker">
-        <div class="image-container">
-          <img src={`/stickers/KUNgal${data.sid}/${sticker.pid}.webp`} alt="" />
-        </div>
-        <span class="sequence">{`${data.sid}-${sticker.pid}`}</span>
-
-        <div class="info">
-          <p>{$t('sticker.game')}: {getPreferredLanguageText(sticker.game, $languageStore)}</p>
-          <p>{$t('sticker.lass')}: {getPreferredLanguageText(sticker.loli, $languageStore)}</p>
-        </div>
-
-        <div class="btn">
-          <button class="original" on:click={() => goto(`/sticker/${data.sid}-${sticker.pid}`)}>
-            {$t('sticker.original')}
-          </button>
-
-          <button
-            aria-label={$t('sticker.download')}
-            class="download"
-            on:click={() => {
-              downloadImage(`/kun-galgame-stickers/telegram/KUNgal${data.sid}/${sticker.pid}.png`)
-            }}
-          >
-            <Icon icon="line-md:download-outline" />
-          </button>
-        </div>
+<div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-5">
+  {#each data.stickers as sticker (sticker.pid)}
+    <article
+      class="group relative flex flex-col gap-2 overflow-hidden rounded-md border border-border bg-surface p-3 shadow-glow-sm transition hover:shadow-glow"
+    >
+      <div class="aspect-square w-full overflow-hidden">
+        <img
+          src="/stickers/KUNgal{data.sid}/{sticker.pid}.webp"
+          alt=""
+          width="320"
+          height="320"
+          loading="lazy"
+          class="h-full w-full object-cover"
+        />
       </div>
-    {/each}
-  </div>
+
+      <span
+        aria-hidden="true"
+        class="pointer-events-none absolute right-3 bottom-12 -z-10 font-serif text-6xl italic text-primary-soft"
+      >
+        {data.sid}-{sticker.pid}
+      </span>
+
+      <div class="text-xs text-muted">
+        <p>{m().sticker.game}: {resolveMultilingual(sticker.game, locale.current)}</p>
+        <p>{m().sticker.lass}: {resolveMultilingual(sticker.loli, locale.current)}</p>
+      </div>
+
+      <div class="mt-1 flex items-center justify-between">
+        <a
+          href={localizedPath(locale.current, `/sticker/${data.sid}-${sticker.pid}`)}
+          class="rounded border border-primary px-3 py-1 text-sm text-primary transition hover:bg-primary hover:text-surface"
+        >
+          {m().sticker.original}
+        </a>
+        <button
+          type="button"
+          aria-label={m().sticker.download}
+          onclick={() =>
+            downloadImage(`/kun-galgame-stickers/telegram/KUNgal${data.sid}/${sticker.pid}.png`)}
+          class="flex h-9 w-9 items-center justify-center rounded text-xl text-primary transition hover:bg-accent"
+        >
+          <Icon icon="line-md:download-outline" />
+        </button>
+      </div>
+    </article>
+  {/each}
 </div>
-
-<style lang="scss">
-  .container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
-  }
-
-  .sticker {
-    padding: 10px;
-    box-shadow: var(--kungalgame-shadow-0);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    transition: all 0.2s;
-
-    .image-container {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-    }
-
-    &:hover {
-      box-shadow: var(--kungalgame-shadow-1);
-    }
-  }
-
-  .info {
-    font-size: 13px;
-
-    p {
-      &:first-child {
-        margin: 5px 0;
-      }
-    }
-  }
-
-  .sequence {
-    user-select: none;
-    position: absolute;
-    bottom: 0;
-    color: var(--kungalgame-trans-blue-2);
-    text-shadow: 2px 2px 3px var(--kungalgame-trans-blue-1);
-    font-size: 60px;
-    font-style: italic;
-    font-family: serif;
-    cursor: pointer;
-    z-index: -1;
-  }
-
-  .btn {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-
-    button {
-      display: flex;
-      justify-content: center;
-      background-color: var(--kungalgame-trans-white-9);
-      color: var(--kungalgame-blue-5);
-      cursor: pointer;
-
-      &:nth-child(1) {
-        border: 1px solid var(--kungalgame-blue-5);
-        padding: 3px 10px;
-
-        &:hover {
-          background-color: var(--kungalgame-blue-5);
-          color: var(--kungalgame-white);
-        }
-      }
-
-      &:nth-child(2) {
-        border: 1px solid var(--kungalgame-trans-white-9);
-        font-size: 23px;
-      }
-    }
-  }
-</style>

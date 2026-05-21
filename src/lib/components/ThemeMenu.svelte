@@ -1,142 +1,53 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
-  import { onMount } from 'svelte'
-  import { getColorSchemeContext } from '$lib/contexts/theme'
-  import { isShowThemeMenu } from '../store/menuStore'
-  import { t } from '../language'
-  import type { ThemeItem } from '~/types/menu'
+  import { m } from '$lib/i18n'
+  import { theme } from '$lib/theme.svelte'
+  import type { Theme } from '$lib/i18n/types'
 
-  let menuContainer: HTMLElement
-  const colorSchemeStore = getColorSchemeContext()
+  interface Props {
+    onclose: () => void
+  }
+  const { onclose }: Props = $props()
 
-  let kunThemeName: ThemeItem[] = [
-    {
-      icon: 'line-md:moon-filled-alt-to-sunny-filled-loop-transition',
-      name: 'light',
-      selected: false
-    },
-    {
-      icon: 'line-md:sunny-outline-to-moon-loop-transition',
-      name: 'dark',
-      selected: false
-    },
-    {
-      icon: 'line-md:computer',
-      name: 'system',
-      selected: false
-    }
+  const items: { icon: string; value: Theme }[] = [
+    { icon: 'line-md:moon-filled-alt-to-sunny-filled-loop-transition', value: 'light' },
+    { icon: 'line-md:sunny-outline-to-moon-loop-transition', value: 'dark' },
+    { icon: 'line-md:computer', value: 'system' }
   ]
 
-  kunThemeName = kunThemeName.map((item) => ({
-    ...item,
-    selected: item.name === $colorSchemeStore
-  }))
+  let container: HTMLDivElement
+  $effect(() => container.focus())
 
-  const handleChangeTheme = (theme: App.KunTheme) => {
-    menuContainer.focus()
-    colorSchemeStore.change(theme)
-    kunThemeName = kunThemeName.map((item) => ({
-      ...item,
-      selected: item.name === $colorSchemeStore
-    }))
-  }
-
-  onMount(() => menuContainer.focus())
-
-  const handleMenuBlur = () => {
+  const handleBlur = () => {
     requestAnimationFrame(() => {
-      if (!menuContainer.contains(document.activeElement)) {
-        isShowThemeMenu.set(false)
-      }
+      if (!container.contains(document.activeElement)) onclose()
     })
   }
 </script>
 
-<button bind:this={menuContainer} class="container" on:blur={handleMenuBlur}>
-  <span class="triangle1"></span>
-  <span class="triangle2"></span>
-  <div class="kungalgamer">
-    {#each kunThemeName ?? [] as item}
-      <button
-        class={`item ${item.selected ? 'selected' : ''}`}
-        on:click={() => handleChangeTheme(item.name)}
-      >
-        {#if item.icon}
-          <Icon icon={item.icon} />
-        {/if}
-        <span>{$t(`header.${item.name}`)}</span>
-      </button>
-    {/each}
-  </div>
-</button>
-
-<style lang="scss">
-  .container {
-    position: absolute;
-    top: 30px;
-    right: 20px;
-    opacity: 0.9;
-    border: none;
-    background-color: var(--kungalgame-blue-4);
-  }
-
-  .triangle1 {
-    position: absolute;
-    top: 1px;
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-bottom: 17px solid var(--kungalgame-white);
-    z-index: 1;
-  }
-
-  .triangle2 {
-    position: absolute;
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-bottom: 17px solid var(--kungalgame-blue-1);
-  }
-
-  .kungalgamer {
-    padding: 10px;
-    top: 16px;
-    transform: translateX(-43%);
-    width: 130px;
-    background-color: var(--kungalgame-white);
-    border: 1px solid var(--kungalgame-blue-1);
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow);
-  }
-
-  .item {
-    cursor: pointer;
-    color: var(--kungalgame-blue-5);
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--kungalgame-trans-white-9);
-    border: none;
-    font-size: 17px;
-
-    span {
-      margin-left: 10px;
-    }
-
-    &:hover {
-      &:not(.selected) {
-        background-color: var(--kungalgame-trans-blue-1);
-      }
-    }
-  }
-
-  .selected {
-    background-color: var(--kungalgame-blue-4);
-    color: var(--kungalgame-white);
-  }
-</style>
+<div
+  bind:this={container}
+  tabindex="-1"
+  role="menu"
+  onfocusout={handleBlur}
+  class="absolute top-12 right-0 z-50 flex w-36 flex-col gap-1 rounded-md border border-border bg-surface p-2 shadow-glow-sm focus:outline-none"
+>
+  {#each items as item (item.value)}
+    {@const selected = theme.current === item.value}
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={selected}
+      onclick={() => {
+        theme.set(item.value)
+        onclose()
+      }}
+      class="flex items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition {selected
+        ? 'bg-primary text-surface'
+        : 'text-fg hover:bg-accent'}"
+    >
+      <Icon icon={item.icon} class="text-lg" />
+      <span>{m().header[item.value]}</span>
+    </button>
+  {/each}
+</div>
