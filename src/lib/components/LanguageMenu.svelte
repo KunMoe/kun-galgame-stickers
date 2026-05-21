@@ -7,12 +7,12 @@
   }
   const { onclose }: Props = $props()
 
-  let container: HTMLDivElement
-  $effect(() => container.focus())
+  let container: HTMLDivElement | undefined = $state()
+  $effect(() => container?.focus())
 
   const handleBlur = () => {
     requestAnimationFrame(() => {
-      if (!container.contains(document.activeElement)) onclose()
+      if (container && !container.contains(document.activeElement)) onclose()
     })
   }
 </script>
@@ -22,7 +22,7 @@
   tabindex="-1"
   role="menu"
   onfocusout={handleBlur}
-  class="absolute top-12 right-0 z-50 flex w-32 flex-col gap-1 rounded-md border border-border bg-surface p-2 shadow-glow-sm focus:outline-none"
+  class="absolute top-12 right-0 z-50 flex w-32 flex-col gap-1 border bg-content1 p-2 shadow-lg"
 >
   {#each LOCALES as code (code)}
     {@const selected = locale.current === code}
@@ -34,9 +34,9 @@
         await locale.switchTo(code)
         onclose()
       }}
-      class="rounded px-3 py-1.5 text-left text-sm transition {selected
-        ? 'bg-primary text-surface'
-        : 'text-fg hover:bg-accent'}"
+      class="px-3 py-1.5 text-left text-sm transition {selected
+        ? 'bg-primary text-white'
+        : 'hover:bg-content2'}"
     >
       {LOCALE_NATIVE_NAMES[code]}
     </button>

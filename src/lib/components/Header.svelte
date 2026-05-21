@@ -1,9 +1,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte'
   import { page } from '$app/state'
-  import { m, localizedPath } from '$lib/i18n'
+  import { m, localizedPath, detectLocaleFromPath } from '$lib/i18n'
   import { locale } from '$lib/locale.svelte'
-  import { detectLocaleFromPath } from '$lib/i18n'
   import ThemeMenu from './ThemeMenu.svelte'
   import LanguageMenu from './LanguageMenu.svelte'
 
@@ -16,31 +15,31 @@
 </script>
 
 <header
-  class="fixed inset-x-0 top-0 z-[1007] flex h-14 items-center gap-4 border-b border-border bg-surface-translucent px-4 backdrop-blur-md sm:px-12"
+  class="fixed inset-x-0 top-0 z-[1007] flex h-14 items-center gap-4 border-b bg-content1/80 px-4 backdrop-blur-md sm:px-12"
 >
   <a href={home} aria-label={m().header.title} class="flex items-center gap-3">
     <img src="/favicon.webp" alt="" class="h-10 w-10" />
-    <span class="hidden text-lg text-fg sm:block">{m().header.title}</span>
+    <span class="hidden text-lg sm:block">{m().header.title}</span>
   </a>
 
   <nav class="flex flex-1 items-center justify-center gap-6 text-base">
     <a
       href={home}
       aria-current={basePath === '/' ? 'page' : undefined}
-      class="text-primary underline decoration-1 underline-offset-4 hover:text-primary-hover"
+      class="text-primary underline decoration-1 underline-offset-4 hover:text-primary-600 aria-[current=page]:font-bold"
     >
       {m().header.home}
     </a>
     <a
       href={about}
       aria-current={basePath === '/about' ? 'page' : undefined}
-      class="text-primary underline decoration-1 underline-offset-4 hover:text-primary-hover"
+      class="text-primary underline decoration-1 underline-offset-4 hover:text-primary-600 aria-[current=page]:font-bold"
     >
       {m().header.about}
     </a>
   </nav>
 
-  <div class="flex items-center gap-4 text-xl text-primary">
+  <div class="flex items-center gap-2 text-xl text-primary">
     <div class="relative">
       <button
         type="button"
@@ -48,7 +47,7 @@
         aria-haspopup="menu"
         aria-expanded={themeOpen}
         onclick={() => (themeOpen = !themeOpen)}
-        class="flex h-9 w-9 items-center justify-center rounded transition hover:bg-accent"
+        class="flex h-9 w-9 items-center justify-center transition hover:bg-content2"
       >
         <Icon icon="line-md:light-dark-loop" />
       </button>
@@ -64,7 +63,7 @@
         aria-haspopup="menu"
         aria-expanded={langOpen}
         onclick={() => (langOpen = !langOpen)}
-        class="flex h-9 w-9 items-center justify-center rounded transition hover:bg-accent"
+        class="flex h-9 w-9 items-center justify-center transition hover:bg-content2"
       >
         <Icon icon="material-symbols:language" />
       </button>
@@ -78,7 +77,7 @@
       target="_blank"
       rel="noopener noreferrer"
       aria-label="GitHub repository"
-      class="flex h-9 w-9 items-center justify-center rounded transition hover:bg-accent"
+      class="flex h-9 w-9 items-center justify-center transition hover:bg-content2"
     >
       <Icon icon="line-md:github-loop" />
     </a>

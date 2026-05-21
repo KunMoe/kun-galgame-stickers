@@ -12,10 +12,13 @@ export const handle: Handle = async ({ event, resolve }) => {
   const cookieTheme = event.cookies.get(PUBLIC_KUN_STICKER_THEME)
   event.locals.theme = cookieTheme && isTheme(cookieTheme) ? cookieTheme : 'system'
 
+  // Server can't read prefers-color-scheme, so only commit to 'kun-dark-mode'
+  // when the user has explicitly chosen dark. The inline script in app.html
+  // resolves 'system' before paint to avoid FOUC.
+  const htmlClass = event.locals.theme === 'dark' ? 'kun-dark-mode' : ''
+
   return resolve(event, {
     transformPageChunk: ({ html }) =>
-      html
-        .replace('%kun.lang%', event.locals.lang)
-        .replace('%kun.theme%', event.locals.theme)
+      html.replace('%kun.lang%', event.locals.lang).replace('%kun.htmlClass%', htmlClass)
   })
 }

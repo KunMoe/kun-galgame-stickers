@@ -15,19 +15,22 @@
       href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-primary underline underline-offset-4"
+      class="text-primary underline underline-offset-4 hover:text-primary-600"
     >
       {m().about.repo}
     </a>
   </h1>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-2xl font-semibold"><span class="text-primary">#</span> {m().about.introduction.heading}</h2>
+    <h2 class="text-2xl font-semibold">
+      <span class="text-primary">#</span>
+      {m().about.introduction.heading}
+    </h2>
     {#each m().about.introduction.lines as line}
       <p>{line}</p>
     {/each}
 
-    <video poster="/title.webp" controls loop playsinline class="w-full rounded-md">
+    <video poster="/title.webp" controls loop playsinline class="w-full border">
       <source src="/introduction.mp4" type="video/mp4" />
     </video>
 
@@ -36,7 +39,7 @@
       Bilibili:
       <a
         href="https://www.bilibili.com/video/BV19u4m1c7ZN"
-        class="text-primary underline underline-offset-4"
+        class="text-primary underline underline-offset-4 hover:text-primary-600"
       >
         {m().about.introduction.bilibiliLink}
       </a>
@@ -53,7 +56,10 @@
   </section>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-2xl font-semibold"><span class="text-primary">#</span> {m().about.telegram.heading}</h2>
+    <h2 class="text-2xl font-semibold">
+      <span class="text-primary">#</span>
+      {m().about.telegram.heading}
+    </h2>
     <p>{m().about.telegram.intro}</p>
     <ul class="list-disc pl-6">
       {#each packIds as id}
@@ -62,7 +68,7 @@
             href="https://t.me/addstickers/KUNgal{id}"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-primary underline underline-offset-4"
+            class="text-primary underline underline-offset-4 hover:text-primary-600"
           >
             {m().about.telegram.packLabel} [{id}]
           </a>
@@ -75,14 +81,17 @@
       href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-primary underline underline-offset-4"
+      class="text-primary underline underline-offset-4 hover:text-primary-600"
     >
       {m().about.telegram.downloadLink}
     </a>
   </section>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-2xl font-semibold"><span class="text-primary">#</span> {m().about.rules.heading}</h2>
+    <h2 class="text-2xl font-semibold">
+      <span class="text-primary">#</span>
+      {m().about.rules.heading}
+    </h2>
     <p>{m().about.rules.intro}</p>
     <ul class="list-disc pl-6">
       {#each m().about.rules.items as item}
@@ -93,7 +102,10 @@
   </section>
 
   <section class="flex flex-col gap-3">
-    <h2 class="text-2xl font-semibold"><span class="text-primary">#</span> {m().about.games.heading}</h2>
+    <h2 class="text-2xl font-semibold">
+      <span class="text-primary">#</span>
+      {m().about.games.heading}
+    </h2>
     {#each m().about.games.lines as line}
       <p>{line}</p>
     {/each}
@@ -101,14 +113,17 @@
       href="https://github.com/KUN1007/kungalgame-stickers/blob/main/introduction/game.md"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-primary underline underline-offset-4"
+      class="text-primary underline underline-offset-4 hover:text-primary-600"
     >
       {m().about.games.linkLabel}
     </a>
   </section>
 
   <section class="flex flex-col gap-4">
-    <h2 class="text-2xl font-semibold"><span class="text-primary">#</span> {m().about.faq.heading}</h2>
+    <h2 class="text-2xl font-semibold">
+      <span class="text-primary">#</span>
+      {m().about.faq.heading}
+    </h2>
     {#each m().about.faq.items as item}
       <div class="flex flex-col gap-1">
         <p class="font-bold text-primary">Q: {item.q}</p>
@@ -118,10 +133,13 @@
   </section>
 
   <section class="flex flex-col gap-2">
-    <h2 class="text-2xl font-semibold"><span class="text-primary">#</span> {m().about.tips.heading}</h2>
+    <h2 class="text-2xl font-semibold">
+      <span class="text-primary">#</span>
+      {m().about.tips.heading}
+    </h2>
     {#each m().about.tips.lines as line}
       <p>{line}</p>
     {/each}
-    <p class="text-muted">{m().about.tips.note}</p>
+    <p class="text-default-500">{m().about.tips.note}</p>
   </section>
 </article>

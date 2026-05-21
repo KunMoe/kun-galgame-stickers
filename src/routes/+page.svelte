@@ -13,7 +13,7 @@
 <section class="flex flex-col gap-6">
   {#each data.packs as pack (pack.sid)}
     <article
-      class="group relative flex h-20 items-center overflow-hidden rounded-md border border-border bg-surface px-6 shadow-glow-sm transition hover:shadow-glow"
+      class="relative flex h-20 items-center overflow-hidden border bg-content1 px-6 shadow-sm transition hover:border-primary hover:shadow-md"
     >
       <img
         src="/stickers/KUNgal{pack.sid}/{pack.previewPid}.webp"
@@ -27,7 +27,7 @@
       <a
         href={localizedPath(locale.current, `/sticker/${pack.sid}`)}
         aria-label="{m().home.sticker} [{pack.sid}]"
-        class="absolute inset-0 flex items-center pl-24 text-base text-primary focus:outline-2 focus:outline-primary"
+        class="absolute inset-0 flex items-center pl-24 text-base text-primary hover:text-primary-600 focus-visible:outline-2 focus-visible:outline-primary"
       >
         <span>{m().home.sticker} [{pack.sid}]</span>
       </a>
@@ -37,7 +37,7 @@
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Download sticker pack {pack.sid}"
-        class="relative z-10 ml-auto flex h-10 w-10 items-center justify-center rounded text-2xl text-primary transition hover:bg-accent"
+        class="relative z-10 ml-auto flex h-10 w-10 items-center justify-center text-2xl text-primary transition hover:bg-content2 hover:text-primary-600"
       >
         <Icon icon="line-md:download-outline" />
       </a>
