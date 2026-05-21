@@ -2,5 +2,6 @@ import type { LayoutServerLoad } from './$types'
 
 export const load: LayoutServerLoad = ({ locals }) => ({
   lang: locals.lang,
-  theme: locals.theme
+  theme: locals.theme,
+  user: locals.user
 })

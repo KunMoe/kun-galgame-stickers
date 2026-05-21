@@ -34,6 +34,13 @@ export interface Messages {
     forumName: string
     forumSuffix: string
   }
+  auth: {
+    login: string
+    logout: string
+    account: string
+    profile: string
+    anonymous: string
+  }
   about: {
     title: string
     description: string

@@ -5,6 +5,7 @@
   import { locale } from '$lib/locale.svelte'
   import ThemeMenu from './ThemeMenu.svelte'
   import LanguageMenu from './LanguageMenu.svelte'
+  import UserMenu from './UserMenu.svelte'
 
   let themeOpen = $state(false)
   let langOpen = $state(false)
@@ -81,5 +82,7 @@
     >
       <Icon icon="line-md:github-loop" />
     </a>
+
+    <UserMenu />
   </div>
 </header>

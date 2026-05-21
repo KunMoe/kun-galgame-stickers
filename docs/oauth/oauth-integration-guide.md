@@ -1,0 +1,724 @@
+# KUN OAuth 接入指南
+
+本文档面向需要接入 KUN OAuth 系统的第三方网站（如 kungal-nuxt、moyu-moe 等），提供完整的 OAuth 2.0 Authorization Code + PKCE 对接流程。
+
+---
+
+## 1. 前置条件
+
+### 1.1 注册 OAuth 客户端
+
+在 KUN OAuth 管理后台创建 OAuth 客户端，必须正确配置以下字段（**任何一项错配都会导致 refresh 后用户被踢回登录页**）：
+
+| 字段 | 说明 | 错配的后果 |
+|------|------|----------|
+| `client_id` | 系统生成的 32 字符 hex 标识符 | — |
+| `client_secret` | 系统生成的 64 字符 hex 密钥；**只在创建时显示一次** | 见 §1.2 决策表 |
+| `redirect_uris` | 允许的回调地址列表，必须**完全匹配**实际回调 URL | `invalid_redirect_uri`（15002）登录失败 |
+| `grants` | 允许的 grant type 列表；**必须同时勾选 `authorization_code` 和 `refresh_token`** | 没勾 refresh_token → 15 分钟后 refresh 失败 → 用户被踢 |
+| `is_public` | 是否公共客户端；SSR 后端 → false，浏览器 SPA → true | 见 §1.2 决策表 |
+| `allowed_scopes` | scope 白名单；空值默认允许 OIDC 三件套（`openid profile email`） | 请求未授权 scope → 15006 |
+| `refresh_token_ttl_seconds` | refresh_token 有效期；默认 90 天 | TTL 过短 → 用户被周期性踢出 |
+
+### 1.2 confidential 还是 public？
+
+**这个决策直接影响 token 流程，错了 refresh 直接挂。**
+
+| 你的部署形态 | client 类型 | client_secret 用法 |
+|------|------|------|
+| Nuxt SSR / Go 后端代理 token（kungal、moyu 走这套）| **confidential（`is_public=false`）**| 服务端持有；每次 `/oauth/token` 必须带 |
+| 纯浏览器 SPA / 手机 App（galgame wiki 的 admin UI）| **public（`is_public=true`）**| **没有 secret**；改用 PKCE |
+
+**判别一句话**：浏览器看得到 token 流转 → public；只在服务端流转 → confidential。kungal / moyu 是 SSR 后端代理用户 token，**应该是 confidential**。
+
+### 1.3 OAuth Server 地址
+
+### 1.3 OAuth Server 地址
+
+| 环境 | Base URL |
+|------|----------|
+| 开发 | `http://127.0.0.1:9277/api/v1` |
+| 生产 | `https://oauth.kungal.com/api/v1` |
+
+### 1.4 端点列表
+
+| 端点 | 方法 | 认证 | 用途 |
+|------|------|------|------|
+| `/oauth/authorize` | GET | 需要登录 | 获取授权码 |
+| `/oauth/token` | POST | 不需要 | 用授权码/刷新令牌换取 access token |
+| `/oauth/userinfo` | GET | Bearer Token | 获取用户信息 |
+| `/oauth/revoke` | POST | 不需要 | 吊销令牌 |
+| `/auth/me` | GET | Bearer Token | 获取当前用户完整资料（与 userinfo 互补：无 scope 过滤、字段更全） |
+| `/auth/me` | PATCH | Bearer Token | 修改 name / avatar / avatar_image_hash / bio |
+| `/auth/password` | PUT | Bearer Token | 修改密码（需旧密码） |
+| `/auth/email/send-code` + `/auth/email` | POST + PUT | Bearer Token | 修改邮箱（带验证码两步） |
+
+---
+
+## 2. 完整对接流程
+
+### 流程概览
+
+```
+用户点击「使用 KUN 账号登录」
+  ↓
+客户端生成 PKCE code_verifier + code_challenge
+  ↓
+重定向到 OAuth Server 的 /oauth/authorize
+  ↓
+用户在 OAuth Server 登录（如果未登录）
+  ↓
+OAuth Server 重定向回 redirect_uri，带上 code 和 state
+  ↓
+客户端服务端用 code 换取 access_token + refresh_token
+  ↓
+客户端用 access_token 请求 /oauth/userinfo 获取用户信息
+  ↓
+完成登录
+```
+
+---
+
+## 3. 详细步骤
+
+### 步骤 1：生成 PKCE 参数和 state
+
+```typescript
+// 生成 code_verifier（43-128 字符的随机字符串）
+const generateCodeVerifier = (): string => {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
+
+// 根据 verifier 生成 code_challenge (S256)
+const generateCodeChallenge = async (verifier: string): Promise<string> => {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(verifier)
+  const digest = await crypto.subtle.digest('SHA-256', data)
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
+
+// 生成 state（防 CSRF）
+const generateState = (): string => {
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+```
+
+### 步骤 2：重定向到授权端点
+
+```typescript
+const codeVerifier = generateCodeVerifier()
+const codeChallenge = await generateCodeChallenge(codeVerifier)
+const state = generateState()
+
+// 保存到 session（回调时需要验证）
+sessionStorage.setItem('oauth_code_verifier', codeVerifier)
+sessionStorage.setItem('oauth_state', state)
+
+// 构建授权 URL
+const params = new URLSearchParams({
+  client_id: 'your-client-id',
+  redirect_uri: 'https://www.kungal.com/auth/callback',
+  response_type: 'code',
+  scope: 'openid profile',
+  state,
+  code_challenge: codeChallenge,
+  code_challenge_method: 'S256',
+})
+
+// 重定向
+window.location.href = `https://oauth.kungal.com/api/v1/oauth/authorize?${params}`
+```
+
+**注意**：用户在此时会被重定向到 OAuth Server。如果用户未登录，OAuth Server 会先要求用户登录，登录成功后自动重定向回你的 `redirect_uri`。
+
+### 步骤 3：处理回调
+
+用户授权后，浏览器会被重定向到：
+
+```
+https://www.kungal.com/auth/callback?code=abc123...&state=xyz789...
+```
+
+在回调页面：
+
+```typescript
+// 1. 验证 state
+const urlParams = new URLSearchParams(window.location.search)
+const code = urlParams.get('code')
+const returnedState = urlParams.get('state')
+const savedState = sessionStorage.getItem('oauth_state')
+
+if (returnedState !== savedState) {
+  throw new Error('State mismatch — possible CSRF attack')
+}
+
+// 2. 取出 code_verifier
+const codeVerifier = sessionStorage.getItem('oauth_code_verifier')
+
+// 3. 清理
+sessionStorage.removeItem('oauth_state')
+sessionStorage.removeItem('oauth_code_verifier')
+```
+
+### 步骤 4：用授权码换取令牌（服务端执行）
+
+**重要**：这一步应该在服务端完成，不要在浏览器中暴露 client_secret。
+
+```typescript
+// Nuxt 3/4 server route: /server/api/auth/callback.post.ts
+export default defineEventHandler(async (event) => {
+  const { code, code_verifier } = await readBody(event)
+
+  const response = await $fetch('https://oauth.kungal.com/api/v1/oauth/token', {
+    method: 'POST',
+    body: {
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: 'https://www.kungal.com/auth/callback',
+      client_id: process.env.OAUTH_CLIENT_ID,
+      client_secret: process.env.OAUTH_CLIENT_SECRET,
+      code_verifier,
+    },
+  })
+
+  // response 结构：
+  // {
+  //   "code": 0,
+  //   "message": "成功",
+  //   "data": {
+  //     "access_token": "eyJhbGc...",
+  //     "token_type": "Bearer",
+  //     "expires_in": 900,
+  //     "refresh_token": "eyJhbGc...",
+  //     "scope": "openid profile"
+  //   }
+  // }
+
+  return response.data
+})
+```
+
+### 步骤 5：获取用户信息
+
+```typescript
+const userInfo = await $fetch('https://oauth.kungal.com/api/v1/oauth/userinfo', {
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+})
+
+// 返回：
+// {
+//   "code": 0,
+//   "message": "成功",
+//   "data": {
+//     "sub": "550e8400-e29b-41d4-a716-446655440000",  // 用户 UUID（唯一标识）
+//     "name": "KUN",
+//     "email": "kun@kungal.com",
+//     "picture": "https://...",
+//     "updated_at": 1234567890
+//   }
+// }
+```
+
+### 步骤 6：在本站创建/关联用户
+
+```typescript
+// 伪代码：在你的数据库中查找或创建用户
+let localUser = await db.user.findByOAuthId('kun-oauth', userInfo.sub)
+
+if (!localUser) {
+  // 首次登录 — 创建本站用户
+  localUser = await db.user.create({
+    oauthProvider: 'kun-oauth',
+    oauthId: userInfo.sub,    // 用 sub (UUID) 作为唯一标识
+    name: userInfo.name,
+    email: userInfo.email,
+    avatar: userInfo.picture,
+  })
+} else {
+  // 已有用户 — 可选更新信息
+  await db.user.update(localUser.id, {
+    name: userInfo.name,
+    avatar: userInfo.picture,
+  })
+}
+
+// 创建本站 session，设置 cookie 等
+```
+
+---
+
+## 4. 令牌刷新
+
+Access token 有效期 15 分钟。过期后用 refresh token 获取新的：
+
+```typescript
+const response = await $fetch('https://oauth.kungal.com/api/v1/oauth/token', {
+  method: 'POST',
+  body: {
+    grant_type: 'refresh_token',
+    refresh_token: storedRefreshToken,
+    client_id: process.env.OAUTH_CLIENT_ID,
+    client_secret: process.env.OAUTH_CLIENT_SECRET,
+  },
+})
+
+// 返回 { code: 0, data: { access_token, refresh_token, ... } }
+// 必须用新的 refresh_token 替换旧的（令牌轮换）
+```
+
+**注意**：每次刷新都会返回新的 refresh_token，旧的会立即失效（token rotation）。
+
+### 4.1 refresh 必满足的 5 个条件
+
+OAuth 服务端 2026 升级之后对 refresh 加了多道校验。**任何一条不通过都会拒签**，前端表现是用户登录后过一会儿（access_token 15 分钟过期触发 refresh 时）被踢回登录页。
+
+| 条件 | 不通过返回 | 排查 |
+|------|----------|------|
+| 1. client 的 `grants` 必须包含 `refresh_token` | 400 / 15005 `ErrOAuthInvalidGrant` | 管理后台 client 编辑页，"授权类型"两个都勾上 |
+| 2. confidential client（`is_public=false`）必须传 `client_secret` | 400 / 15008 `ErrOAuthInvalidClientSecret` | 后端代码 body 里 `client_secret` 字段必填 |
+| 3. public client（`is_public=true`）**不能** 传 `client_secret`（不报错但 secret 必须为空） | — | SPA 不要泄漏 secret |
+| 4. 请求里的 `client_id` 必须等于**当初签发 refresh_token 时的同一个 client_id** | 401 / 10002 `ErrAuthInvalidToken` | 检查 `client_id` env 在多环境间没乱用 |
+| 5. refresh_token 没过期（默认 90 天，按 client 配置） | 401 / 10003 `ErrAuthTokenExpired` | 用户重新登录 |
+
+外加两种情况：
+
+- **存量 session（升级前创建的）`client_id` 列为空**，跟条件 4 永远比不上。**这批 session 一次性必须重新登录**，登录后新 session 带正确 client_id，refresh 才正常。可以用一条 SQL 把存量清掉提前触发：
+  ```sql
+  DELETE FROM sessions WHERE client_id = '';
+  ```
+
+- **限流把整站打爆（2026-05 修复前的典型现象）**。`/oauth/token` 曾经挂了一个
+  `10 次/分钟、按 IP+path` 的限流器，外加一个全局 `100 次/分钟、按纯 IP` 的限流器。
+  confidential SSR 客户端（kungal/moyu）在服务端代理**全站所有用户**的 token
+  交换 + refresh，全部来自**同一个后端 IP** —— 于是 `/oauth/token` 被限死
+  10 次/分钟/整站。活跃用户稍多就 `429`，下游把它当 refresh 失败 → 踢用户重登
+  → 重登又是一次 `/oauth/token` → 雪崩。**症状**：用户登录后约 15 分钟（access_token
+  TTL）被踢，间歇性、与活跃度相关、`sessions` 表同一用户堆大量未过期 session。
+
+  **此问题已在 2026-05 修复**：`/oauth/token` 改为按 `client_id` 限流且额度放宽
+  （6000/min/client，纯防失控客户端死循环，不是反爆破）；全局限流器对带
+  `Authorization` 头的已认证请求放行（per-IP 限流只留给匿名流量）。
+  接入方**无需改代码**；如果你在旧版本上遇到此现象，升级 OAuth 服务端即可。
+  自查 SQL：
+
+  ```sql
+  -- 同一用户是否堆了大量未过期 session（refresh 一直失败的指纹）
+  SELECT user_id, client_id, count(*) AS n,
+         count(*) FILTER (WHERE expires_at > now()) AS still_valid
+  FROM sessions
+  GROUP BY user_id, client_id
+  HAVING count(*) > 3
+  ORDER BY n DESC;
+  ```
+
+### 4.2 调试 refresh 401 的最小 SQL
+
+```sql
+-- 查你的 client 配置（替换 your_client_id）
+SELECT id, name, is_public, grants, allowed_scopes, refresh_token_ttl_seconds
+FROM oauth_clients
+WHERE id = 'your_client_id';
+```
+
+期望值：
+- `is_public`：confidential 后端 `false`、SPA `true`
+- `grants` 包含 `refresh_token`
+- `allowed_scopes` 含 `openid profile email`（按需）
+- `refresh_token_ttl_seconds` ≥ 86400（1 天，太短会被周期性踢）
+
+如果 `grants = '["authorization_code"]'` 是常见的升级遗留 bug，一条 SQL 修：
+
+```sql
+UPDATE oauth_clients
+SET grants = '["authorization_code","refresh_token"]'::jsonb
+WHERE id = 'your_client_id';
+```
+
+或者重跑 OAuth 端的 `go run ./cmd/migrate` —— 它包含自动 backfill。
+
+### 4.3 多站本地共用 Redis / 同域导致跨站 session 串台
+
+> **2026-05 实战定位的真实事故。** 现象与"refresh 失败被踢"完全一样，但
+> 根因不在 OAuth 端 —— OAuth 的拒绝是**正确**的。接入方（尤其本地 dev
+> 同时跑两个站点）必看。
+
+**现象**：用户登录后过一会被踢回登录页，间歇性，且**在一个站点的操作会把
+另一个站点也登出**。OAuth 端日志可见：
+
+```
+WARN oauth refresh reject stage=client_id_mismatch
+  request_client_id=<站点 A 的 client>
+  session_client_id=<站点 B 的 client>
+```
+
+**根因**：两个下游站点（如 kungal + moyu）满足以下**全部**条件时，
+session 在它们之间串台：
+
+| 维度 | 串台条件 |
+|------|---------|
+| Host | 都在 `127.0.0.1`（本地 dev）。**Cookie 按域名隔离，不区分端口** —— `127.0.0.1:2333` 设的 cookie 会发给 `127.0.0.1:5214` |
+| Cookie 名 | 两站都用同一个名字（如 `kun_session`） |
+| Redis | 共用同一实例 + 同一 DB |
+| Redis key 前缀 | 两站都用同一前缀（如 `session:`） |
+
+链路：站点 B 登录 → 浏览器存 `kun_session=X`（host=127.0.0.1，全端口共享）
+→ 用户访问站点 A → 浏览器把同一个 cookie 发给 A → A 读共享 Redis 的
+`session:X`（实际是 B 的 session，refresh_token 由 B 的 client 签发）
+→ A 用**自己的 client_id** 去刷 **B 签发的 refresh_token**
+→ OAuth 正确拒绝 `client_id_mismatch`(10002)
+→ A 判定 token 死亡，从**共享 Redis 删掉** `session:X`（连带把 B 也登出）
+→ 用户被踢。
+
+> 生产环境 `kungal.com` 与 `moyu.moe` 是不同注册域，cookie 不串；但
+> **共用 Redis + 同 key 前缀**在生产若共用 Redis 仍是隐患。
+
+**自查**：在共享 Redis 上看是否多站的 session 落在同一 keyspace：
+
+```bash
+redis-cli --scan --pattern 'session:*' | head        # 同前缀 = 危险信号
+```
+
+确认 OAuth 端 `sessions` 表里同一用户是否堆了大量未过期 session
+（refresh 一直失败的指纹）：
+
+```sql
+SELECT user_id, client_id, count(*) AS n
+FROM sessions
+GROUP BY user_id, client_id
+HAVING count(*) > 3
+ORDER BY n DESC;
+```
+
+**修复（在下游站点，不在 OAuth）—— 让两站 session 命名空间互不相交**：
+
+1. **Cookie 名按站点唯一**（必须，根治）：`kungal_session` / `moyu_session`
+2. **Redis key 前缀按站点唯一**（建议，纵深防御）：`kungal:session:` /
+   `moyu:session:`；或用不同 `REDIS_DB`
+
+把 cookie 名 / key 前缀收敛成常量后集中改值，避免漏掉硬编码调用点。改完
+重启下游服务；存量用户需**重新登录一次**（旧 cookie 不再被读取），旧
+`session:*` 孤儿 key 按 TTL 自然过期。
+
+### 4.4 SSR 并发刷新：锁失败者必须"等赢家"，不能当失败踢人
+
+> **2026-05 实战定位。** 现象同样是"登录后过一会被踢"，但根因既不在
+> OAuth 端、也不是 §4.3 的串台 —— 是下游自己的刷新单飞锁实现，把
+> "锁竞争"误判成"刷新失败"。
+
+**现象**：站点 A（如 kungal）正常，结构几乎相同的站点 B（如 moyu）一直被
+踢；且**间歇、与活跃度相关**，访问越频繁越容易中。OAuth 端日志**干净**
+（refresh 都 200），下游日志大量 `refresh failed; rejecting request`。
+
+**根因**：下游用 `SETNX lock:refresh:<sid>` 做"同一 session 同一时刻只刷
+一次"的单飞锁。SSR 站点一个页面会扇出 N 个并发 API 请求，access_token
+在第 15 分钟硬过期那一刻，N 个请求同时进 auth 中间件、同时判定需要刷新：
+
+```
+N 个并发请求
+  ├─ 1 个 SETNX 抢到锁 → 调 /oauth/token 刷新成功 → 写回 session
+  └─ N-1 个 SETNX 失败（锁被占）
+        ↓ 错误实现：把"锁竞争"当成刷新失败
+        → clearSessionCookie + 返回 205/401
+        → 浏览器收到 N-1 个删 cookie 响应 → cookie 没了 → 重新登录
+```
+
+赢家其实刷成功了，但用户的浏览器已经被 N-1 个响应清掉了 session cookie。
+
+**正确做法（锁失败者要"等赢家"，对齐另一个能用的站点）**：
+
+1. 刷新函数对**锁竞争**返回一个**可识别的 sentinel error**（别和真失败
+   混在一个匿名 error 里）。
+2. 调用方拿到该 sentinel → **不要清 cookie / 不要踢**，转而**轮询 Redis**
+   （上限 ~3s、间隔 ~100ms）等赢家把新 session 写回（用
+   `OAuthExpiresAt` 是否前进判断），刷好就拿新 token 正常放行。
+3. 等待超时或赢家把 session 删了（= OAuth 永久拒绝）才失败：
+   - **永久**（Redis session key 已被删）→ 清 cookie + 让用户重登
+   - **瞬时 / 等待超时**（key 还在）→ **保留 cookie**，返回可重试错误，
+     下次请求自动重试（赢家几乎都 sub-second 完成）
+
+> 反模式自查：搜下游 auth 中间件，凡是 `SETNX` / `SetNX` 失败分支后面
+> 直接 `clearCookie` + `return 401/205` 的，就是这个 bug。对照那个"正常
+> 的站点"的锁失败者分支——它应该是个 poll-wait 循环，不是立即失败。
+
+> 这也顺带消除"OAuth 网络抖动/5xx 也把人踢了"的次级问题：只在
+> **确知永久失败**（Redis session 已不存在）时才清 cookie，其余一律保留
+> 留给下次重试。
+
+---
+
+## 5. 令牌吊销（登出）
+
+用户在你的网站登出时，应该吊销 OAuth 令牌：
+
+```typescript
+await $fetch('https://oauth.kungal.com/api/v1/oauth/revoke', {
+  method: 'POST',
+  body: {
+    token: storedRefreshToken,
+  },
+})
+
+// 遵循 RFC 7009，无论令牌是否有效，始终返回 200 OK
+```
+
+---
+
+## 6. JWT Access Token 结构
+
+如果你需要在不调用 userinfo 端点的情况下解析用户信息，可以直接解码 JWT：
+
+```json
+{
+  "sub": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "kun@kungal.com",
+  "name": "KUN",
+  "roles": ["user", "admin"],
+  "exp": 1700000000,
+  "iat": 1699999100,
+  "nbf": 1699999100
+}
+```
+
+- **签名算法**：HS256
+- **有效期**：15 分钟
+- **重要**：不要在客户端验证签名（你没有 JWT secret），仅用于读取 claims。需要验证时请调用 `/oauth/userinfo`。
+
+---
+
+## 7. 错误处理
+
+所有 API 响应格式：
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": { ... }
+}
+```
+
+`code = 0` 表示成功，非零表示错误。
+
+### OAuth 相关错误码
+
+| code | HTTP | 含义 | 触发场景 / 处理方式 |
+|------|------|------|-------------------|
+| 10001 | 401 | 未授权 | 缺 Bearer Token；前端跳登录 |
+| 10002 | 401 | 无效的令牌 | refresh_token 不存在、或与 session.client_id 不匹配（详见 §4.1 条件 4）；前端走完整登录 |
+| 10003 | 401 | 令牌已过期 | refresh_token 已过期；前端走完整登录 |
+| **10014** | **403** | **账号已封禁** | **用户被 admin 封号；前端应跳错误页而非登录页（再登也无用）** |
+| 15001 | 400 | 无效的客户端 | client_id 不存在 |
+| 15002 | 400 | 无效的回调地址 | redirect_uri 未注册 |
+| 15003 | 400 | 无效的授权码 | code 已过期 / 已用 / 并发兑换时输的那次；让用户重新登录 |
+| 15004 | 400 | 无效的代码验证器 | PKCE code_verifier 不匹配 |
+| 15005 | 400 | 无效的授权类型 | client 的 `grants` 不允许这个 grant_type（**最常见：refresh_token 没勾**），见 §4.1 条件 1 |
+| 15006 | 400 | 无效的 scope | 请求的 scope 不在 client 的 `allowed_scopes` 内 |
+| 15008 | 400 | 无效的 client secret | confidential client 漏传或填错 secret，见 §4.1 条件 2 |
+| 15009 | 400 | 需要 PKCE | public client 没传 code_verifier |
+
+---
+
+## 8. Nuxt 3/4 完整接入示例
+
+### 8.1 环境变量
+
+```env
+# .env
+OAUTH_SERVER_URL=https://oauth.kungal.com/api/v1
+OAUTH_CLIENT_ID=your-client-id
+OAUTH_CLIENT_SECRET=your-client-secret
+OAUTH_REDIRECT_URI=https://www.kungal.com/auth/callback
+```
+
+### 8.2 登录按钮组件
+
+```vue
+<!-- components/OAuthLoginButton.vue -->
+<script setup lang="ts">
+const config = useRuntimeConfig()
+
+const handleLogin = async () => {
+  const codeVerifier = generateCodeVerifier()
+  const codeChallenge = await generateCodeChallenge(codeVerifier)
+  const state = generateState()
+
+  // 保存到 session
+  sessionStorage.setItem('oauth_code_verifier', codeVerifier)
+  sessionStorage.setItem('oauth_state', state)
+
+  const params = new URLSearchParams({
+    client_id: config.public.oauthClientId,
+    redirect_uri: config.public.oauthRedirectUri,
+    response_type: 'code',
+    scope: 'openid profile',
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+  })
+
+  window.location.href = `${config.public.oauthServerUrl}/oauth/authorize?${params}`
+}
+</script>
+
+<template>
+  <button @click="handleLogin">使用 KUN 账号登录</button>
+</template>
+```
+
+### 8.3 回调页面
+
+```vue
+<!-- pages/auth/callback.vue -->
+<script setup lang="ts">
+const route = useRoute()
+const router = useRouter()
+
+onMounted(async () => {
+  const code = route.query.code as string
+  const state = route.query.state as string
+  const savedState = sessionStorage.getItem('oauth_state')
+  const codeVerifier = sessionStorage.getItem('oauth_code_verifier')
+
+  // 清理
+  sessionStorage.removeItem('oauth_state')
+  sessionStorage.removeItem('oauth_code_verifier')
+
+  if (!code || state !== savedState) {
+    router.push('/auth/login?error=invalid_state')
+    return
+  }
+
+  try {
+    // 调用自己的服务端 API 来换取 token
+    const result = await $fetch('/api/auth/oauth-callback', {
+      method: 'POST',
+      body: { code, code_verifier: codeVerifier },
+    })
+
+    // 服务端已设置了 session cookie，跳转到首页
+    router.push('/')
+  } catch {
+    router.push('/auth/login?error=oauth_failed')
+  }
+})
+</script>
+
+<template>
+  <div>正在登录...</div>
+</template>
+```
+
+### 8.4 服务端回调处理
+
+```typescript
+// server/api/auth/oauth-callback.post.ts
+export default defineEventHandler(async (event) => {
+  const { code, code_verifier } = await readBody(event)
+  const config = useRuntimeConfig()
+
+  // 1. 用授权码换取 token
+  const tokenResponse = await $fetch(`${config.oauthServerUrl}/oauth/token`, {
+    method: 'POST',
+    body: {
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: config.public.oauthRedirectUri,
+      client_id: config.public.oauthClientId,
+      client_secret: config.oauthClientSecret,
+      code_verifier,
+    },
+  })
+
+  // 2. 获取用户信息
+  const userInfoResp = await $fetch(`${config.oauthServerUrl}/oauth/userinfo`, {
+    headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` },
+  })
+  const userInfo = userInfoResp.data
+
+  // 3. 在本站创建/查找用户（根据你的数据库逻辑）
+  // ...
+
+  // 4. 创建本站 session
+  // ...
+
+  // 5. 保存 OAuth refresh_token 以便后续刷新
+  // ...
+
+  return { success: true }
+})
+```
+
+---
+
+## 9. 安全注意事项
+
+1. **client_secret 只能在服务端使用**，绝不能暴露到前端代码
+2. **始终使用 PKCE**（S256 方法），即使你有 client_secret
+3. **始终验证 state 参数**，防止 CSRF 攻击
+4. **存储 refresh_token** 时使用 httpOnly cookie 或加密存储
+5. **令牌轮换**：每次刷新后用新的 refresh_token 替换旧的
+6. **CORS**：生产环境已配置 `kungal.com` 和 `moyu.moe`，其他域名需要在 OAuth Server 管理后台添加
+
+---
+
+## 10. 后端跨服务用户回拉（kungal / moyu / galgame_wiki）
+
+OAuth 是单一用户身份源（single source of truth）。kungal / moyu / galgame_wiki 等业务库
+**不再缓存** `users.name` / `users.avatar` 等字段，只保留 `user_id` 外键。
+渲染列表时按需从 OAuth 批量拉取。
+
+### 10.1 端点
+
+| 端点 | 用途 |
+|------|------|
+| `GET /users/batch?ids=1,2,3` | 按 ID 批量回拉用户 brief，渲染列表/评论用 |
+| `GET /users/search?q=kun&limit=10` | 按用户名搜索（精确 > 前缀 > 子串），@提及/搜索框用 |
+
+详见 [api-reference.md](./api-reference.md)。两个端点共用 OAuth Client Basic Auth，响应都不含 email / moemoepoint 等隐私字段。
+
+- `/users/batch`：单次最多 100 个 ID
+- `/users/search`：q 长度 1..50，limit 默认 20、封顶 50
+- 通过 migrate-users 后，kungal / moyu 中的 `*_user_id` 已与 OAuth `users.id` 对齐
+
+### 10.2 客户端实现
+
+OAuth 这边**不发布 SDK 代码** —— API 是契约，每个 consumer 自己实现一个薄客户端。原因和实现指南详见：
+
+> [docs/migration/user/08-downstream-integration.md §4 客户端实现指南](../../migration/user/08-downstream-integration.md#4-客户端实现指南)
+
+文档里有：
+
+- **L1 最小实现**（30-50 行 Go 代码，可直接复用）—— 适合脚本、低 QPS 后台
+- **L2 加 TTL 缓存**（+30 行）—— 中频后端服务
+- **L3 加 singleflight + 负缓存 + 分片**（+50 行）—— 高并发 HTTP 服务
+- 各级对应的工作负载特征 + 升级时机判断
+
+### 10.3 渲染管线建议
+
+1. **DB 查询**：业务表只 `SELECT ..., user_id FROM ...`，不 JOIN 用户表
+2. **收集 ID**：把列表里所有 `user_id` 收成 `[]uint`（去重）
+3. **批量回拉**：客户端的 `Users(ctx, ids)` 一次调用拿齐
+4. **拼装**：在 service / handler 层把 user brief 注入到响应 DTO
+
+**N+1 防护**：永远批量拉。不要在循环里调单个 user 接口 —— 即使有缓存命中，miss 时仍然是 N 次 HTTP 请求。
+
+### 10.4 失效策略
+
+OAuth 端用户改名 / 换头像 / 被封禁时，下游服务的缓存最多滞后客户端配置的 TTL 时间。
+对一致性要求严格的场景：
+
+- 短 TTL（30s–2min），靠时间到期被动刷新
+- 或在 OAuth 侧广播 `user.updated` 事件，下游订阅后失效本地缓存（**当前未规划**，需要时再加）
+- 鉴权决策（roles）直接解 JWT claim，不走 OAuth RPC —— 永远即时

@@ -38,6 +38,13 @@ const messages: Messages = {
     forumName: 'KUN Visual Novel Forum',
     forumSuffix: ''
   },
+  auth: {
+    login: 'Sign in with KUN',
+    logout: 'Sign out',
+    account: 'Account',
+    profile: 'Profile',
+    anonymous: 'Not signed in'
+  },
   about: {
     title: 'About - KUN Visual Novel Stickers',
     description:

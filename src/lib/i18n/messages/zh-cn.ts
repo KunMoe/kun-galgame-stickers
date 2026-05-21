@@ -37,6 +37,13 @@ const messages: Messages = {
     forumName: '鲲 Galgame 论坛',
     forumSuffix: '提供支持'
   },
+  auth: {
+    login: '使用鲲账号登录',
+    logout: '登出',
+    account: '账号',
+    profile: '个人资料',
+    anonymous: '未登录'
+  },
   about: {
     title: '关于 - 鲲 Galgame 表情包',
     description: 'Galgame 表情包网站, 鲲 Galgame, Galgame 表情包下载',

@@ -10,6 +10,4 @@ const PACK_PREVIEWS: { sid: number; previewPid: number }[] = [
   { sid: 7, previewPid: 12 }
 ]
 
-export const prerender = true
-
 export const load: PageLoad = () => ({ packs: PACK_PREVIEWS })
