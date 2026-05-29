@@ -36,6 +36,7 @@ export interface Messages {
   }
   auth: {
     login: string
+    register: string
     logout: string
     account: string
     profile: string

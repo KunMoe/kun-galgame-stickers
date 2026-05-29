@@ -11,8 +11,12 @@
   const initials = $derived(
     (user?.name ?? user?.email ?? '?').trim().slice(0, 1).toUpperCase()
   )
-  const loginHref = $derived(`/auth/login?return_to=${encodeURIComponent(page.url.pathname + page.url.search)}`)
   const returnTo = $derived(page.url.pathname + page.url.search)
+  const loginHref = $derived(`/auth/login?return_to=${encodeURIComponent(returnTo)}`)
+  const registerHref = $derived(`/auth/register?return_to=${encodeURIComponent(returnTo)}`)
+  const profileHref = $derived(
+    `https://oauth.kungal.com/profile?return=${encodeURIComponent(page.url.href)}`
+  )
 
   const handleBlur = () => {
     requestAnimationFrame(() => {
@@ -22,14 +26,23 @@
 </script>
 
 {#if !user}
-  <a
-    href={loginHref}
-    class="flex h-9 items-center gap-2 px-3 text-sm text-primary transition hover:bg-content2"
-    data-sveltekit-preload-data="off"
-  >
-    <Icon icon="line-md:log-in" class="text-xl" />
-    <span class="hidden sm:inline">{m().auth.login}</span>
-  </a>
+  <div class="flex items-center gap-1">
+    <a
+      href={registerHref}
+      class="hidden h-9 items-center px-3 text-sm text-primary transition hover:bg-content2 sm:flex"
+      data-sveltekit-preload-data="off"
+    >
+      {m().auth.register}
+    </a>
+    <a
+      href={loginHref}
+      class="flex h-9 items-center gap-2 px-3 text-sm text-primary transition hover:bg-content2"
+      data-sveltekit-preload-data="off"
+    >
+      <Icon icon="line-md:log-in" class="text-xl" />
+      <span class="hidden sm:inline">{m().auth.login}</span>
+    </a>
+  </div>
 {:else}
   <div bind:this={container} class="relative" onfocusout={handleBlur}>
     <button
@@ -72,7 +85,7 @@
         </div>
 
         <a
-          href="https://oauth.kungal.com/profile"
+          href={profileHref}
           target="_blank"
           rel="noopener noreferrer"
           role="menuitem"

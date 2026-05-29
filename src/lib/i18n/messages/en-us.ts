@@ -40,6 +40,7 @@ const messages: Messages = {
   },
   auth: {
     login: 'Sign in with KUN',
+    register: 'Create a KUN account',
     logout: 'Sign out',
     account: 'Account',
     profile: 'Profile',

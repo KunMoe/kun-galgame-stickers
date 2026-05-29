@@ -39,6 +39,7 @@ const messages: Messages = {
   },
   auth: {
     login: '使用鲲账号登录',
+    register: '注册鲲账号',
     logout: '登出',
     account: '账号',
     profile: '个人资料',

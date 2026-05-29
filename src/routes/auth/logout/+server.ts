@@ -1,10 +1,7 @@
 import { redirect } from '@sveltejs/kit'
 import type { RequestHandler } from './$types'
-import { COOKIES, clearSession } from '$lib/server/auth'
+import { COOKIES, clearSession, isSafeReturnTo } from '$lib/server/auth'
 import { revokeOAuthToken } from '$lib/server/oauth'
-
-const isSafeReturnTo = (value: string): boolean =>
-  value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\')
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
   const refreshToken = cookies.get(COOKIES.refresh)

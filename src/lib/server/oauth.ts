@@ -2,7 +2,8 @@ import {
   KUN_OAUTH_CLIENT_ID,
   KUN_OAUTH_CLIENT_SECRET,
   KUN_OAUTH_REDIRECT_URI,
-  KUN_OAUTH_SERVER_URL
+  KUN_OAUTH_SERVER_URL,
+  KUN_OAUTH_WEB_URL
 } from '$env/static/private'
 
 export interface OAuthTokens {
@@ -99,6 +100,19 @@ export const buildAuthorizeUrl = (
     code_challenge_method: 'S256'
   })
   return `${KUN_OAUTH_SERVER_URL}/oauth/authorize?${params.toString()}`
+}
+
+/**
+ * Build the unified-registration URL. Per the OAuth spec, downstream sites
+ * don't host their own register form: they send the user to the OAuth web
+ * frontend's `/auth/register`, passing the fully-built `/oauth/authorize`
+ * URL as `redirect`. After the user registers (register === login), OAuth
+ * forwards to that authorize URL, which — because this client is first-party
+ * (auto_consent) — issues a code straight back to our `/auth/callback`.
+ */
+export const buildRegisterUrl = (authorizeUrl: string): string => {
+  const base = KUN_OAUTH_WEB_URL.replace(/\/$/, '')
+  return `${base}/auth/register?redirect=${encodeURIComponent(authorizeUrl)}`
 }
 
 export const OAUTH_REDIRECT_URI = KUN_OAUTH_REDIRECT_URI

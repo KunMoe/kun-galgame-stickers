@@ -14,7 +14,11 @@ export const COOKIES = {
   pkce: 'kun_oauth_pkce'
 } as const
 
-const REFRESH_TTL_SEC = 60 * 60 * 24 * 30 // 30 days
+/** Guard open-redirect: only allow same-origin absolute paths as return targets. */
+export const isSafeReturnTo = (value: string): boolean =>
+  value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\')
+
+const REFRESH_TTL_SEC = 60 * 60 * 24 * 7 // 7 days — matches OAuth refresh_token TTL
 const PKCE_TTL_SEC = 60 * 10 // 10 minutes — covers the OAuth round-trip
 const ACCESS_SAFETY_WINDOW_SEC = 30
 
