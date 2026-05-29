@@ -1,0 +1,121 @@
+# 跨服务批量查询
+
+返回 [README](./README.md)
+
+服务到服务（kungal / moyu / galgame_wiki 等）批量拉用户公开资料的端点。这些下游服务**不在本地缓存** `users.name` / `users.avatar`，渲染时按 `user_id` 列表回拉。
+
+**鉴权**：OAuth Client Basic Auth（`Authorization: Basic base64(client_id:client_secret)`），**不是**终端用户 JWT。任何已注册的 OAuth Client 都可以调用。
+
+| 端点 | 方法 | 用途 |
+|------|------|------|
+| `/users/batch` | GET | 按 ID 列表批量拉公开资料 |
+| `/users/search` | GET | 按用户名子串搜索（@提及补全 / 检索框） |
+
+---
+
+## GET /users/batch
+
+跨服务批量获取用户公开资料。
+
+**查询参数**：
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| ids | 是 | 1..100 个用户 ID（OAuth 用户表主键），逗号分隔，如 `?ids=1,2,3` |
+
+**成功响应**：
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "users": [
+      {
+        "id": 1,
+        "uuid": "9e00220a-8079-4e81-8e98-49e26ce23edc",
+        "name": "kun",
+        "avatar": "https://image.kungal.com/avatar/user_1/avatar.webp",
+        "avatar_image_hash": "abc123...",
+        "bio": "KUN IS THE CUTEST!",
+        "status": 0,
+        "roles": ["admin"]
+      }
+    ],
+    "not_found": [9999]
+  }
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| users[].id | 用户 ID（与 kungal/moyu 中 `*_user_id` 外键对齐） |
+| users[].uuid | 用户 UUID |
+| users[].name | 用户名 |
+| users[].avatar | 头像 URL（可能为空字符串） |
+| users[].avatar_image_hash | 头像 image_service 哈希（可空） |
+| users[].bio | 个人简介 |
+| users[].status | 0=正常；非 0 时调用方应隐藏或脱敏渲染 |
+| users[].roles | 角色名称数组，如 `["admin"]` |
+| not_found | 请求中存在但 OAuth 库里查不到的 ID 列表 |
+
+**错误响应**：
+
+| HTTP | code | 触发条件 |
+|------|------|----------|
+| 400  | 9    | `ids` 为空或包含非数字 |
+| 400  | 9    | `ids` 个数超过 100 |
+| 401  | 10001/15001/15009 | Basic Auth 缺失/格式错/client_id 不存在/secret 错误 |
+
+**注意**：响应中**不包含** `email`、`moemoepoint`、`created_at` 等隐私字段。
+若调用方需要邮箱（如发邮件通知），应该走专门的 RPC 而不是渲染管线。
+
+**客户端实现**：OAuth 这边**不发布 SDK 代码**。每个 consumer 自己实现一个薄客户端（30 行起步，按工作负载需要加 TTL 缓存 / singleflight / 分片）。完整的实现指南、可直接复用的 Go 参考代码、以及决定层级的判断标准，见 [docs/migration/user/08-downstream-integration.md §4](../../migration/user/08-downstream-integration.md#4-客户端实现指南)。
+
+---
+
+## GET /users/search
+
+按用户名搜索用户，case-insensitive 子串匹配。结果按相关度排序：精确匹配 > 前缀匹配 > 子串匹配，每一档内按字母升序。
+
+适用场景：@提及自动补全、用户搜索框、管理后台用户检索。
+
+**鉴权**：与 `/users/batch` 相同（OAuth Client Basic Auth）。
+
+**查询参数**：
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| q | 是 | 搜索关键词，trim 后 1..50 字符。`%` `_` `\` 等 LIKE 通配符按字面匹配（已转义） |
+| limit | 否 | 返回条数，默认 20，封顶 50 |
+
+**成功响应**：
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "users": [
+      { "id": 2, "uuid": "...", "name": "鲲", "avatar": "...", "bio": "...", "status": 0, "roles": ["admin"] },
+      { "id": 79063, "uuid": "...", "name": "鲲1", ... },
+      { "id": 38359, "uuid": "...", "name": "鲲114514", ... }
+    ]
+  }
+}
+```
+
+**错误响应**：
+
+| HTTP | code | 触发条件 |
+|------|------|----------|
+| 400  | 9    | `q` 为空或缺失 |
+| 400  | 9    | `q` 超过 50 字符 |
+| 400  | 9    | `limit` 不是正整数 |
+| 401  | 10001/15001/15009 | Basic Auth 缺失/格式错/凭证错 |
+
+> **注意**：搜索结果**不应缓存**（query 空间无界、结果随注册/改名漂移，缓存命中率低还容易出脏数据）。前端要做实时自动补全，调用方在前端 debounce（推荐 200–300ms）即可。
+
+---
+
+完整错误码表见 [04-tokens-and-errors.md](./04-tokens-and-errors.md#错误码速查)。

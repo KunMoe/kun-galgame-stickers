@@ -1,13 +1,13 @@
-# KUN OAuth 接入 — Nuxt 项目实施提示词
+# 鲲 Galgame OAuth 接入 — Nuxt 项目实施提示词
 
-> 本文档是给 AI 编码助手（如 Claude）的提示词，用于在 Nuxt 3/4 项目中实现 KUN OAuth 登录功能。
+> 本文档是给 AI 编码助手（如 Claude）的提示词，用于在 Nuxt 3/4 项目中实现 鲲 Galgame OAuth 登录功能。
 > 将本文件内容作为 context 提供给 AI，它就能正确编写对接代码。
 
 ---
 
 ## 任务
 
-在当前 Nuxt 项目中接入 KUN OAuth 2.0 登录系统，实现「使用 KUN 账号登录」功能。
+在当前 Nuxt 项目中接入 鲲 Galgame OAuth 2.0 登录系统，实现「使用 KUN 账号登录」功能。
 
 ## OAuth Server 信息
 

@@ -1,6 +1,6 @@
-# KUN OAuth 接入指南
+# 鲲 Galgame OAuth 接入指南
 
-本文档面向需要接入 KUN OAuth 系统的第三方网站（如 kungal-nuxt、moyu-moe 等），提供完整的 OAuth 2.0 Authorization Code + PKCE 对接流程。
+本文档面向需要接入 鲲 Galgame OAuth 系统的第三方网站（如 kungal-nuxt、moyu-moe 等），提供完整的 OAuth 2.0 Authorization Code + PKCE 对接流程。
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 1.1 注册 OAuth 客户端
 
-在 KUN OAuth 管理后台创建 OAuth 客户端，必须正确配置以下字段（**任何一项错配都会导致 refresh 后用户被踢回登录页**）：
+在 鲲 Galgame OAuth 管理后台创建 OAuth 客户端，必须正确配置以下字段（**任何一项错配都会导致 refresh 后用户被踢回登录页**）：
 
 | 字段 | 说明 | 错配的后果 |
 |------|------|----------|
@@ -76,6 +76,8 @@ OAuth Server 重定向回 redirect_uri，带上 code 和 state
   ↓
 完成登录
 ```
+
+> 📝 **注册流程是登录流程的超集**：用户点"注册"按钮时，跳转目标从 `/oauth/authorize?<params>` 换成 `/auth/register?redirect=<encoded(/oauth/authorize?<params>)>`。OAuth web 注册成功后会自动把用户串到 `/oauth/authorize`，第一方 client（`auto_consent=true`）跳过同意页直接发 code，剩下的流程和登录完全相同。详见 [05-registration.md](./05-registration.md)。下游可以把"登录"和"注册"两个按钮共用同一段 PKCE 生成代码，只把跳转 URL 拼接方式区分开。
 
 ---
 
