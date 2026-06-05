@@ -1,13 +1,17 @@
-# kun-galgame-sticker — PRODUCTION compose (Dokploy + Traefik).
+# kun-galgame-sticker — PRODUCTION compose (Dokploy + GHCR prebuilt image).
 #
-# This is a standalone single-service app: it joins the shared `dokploy-network`
-# and consumes the hub's `postgres` and `oauth` BY SERVICE NAME. It owns no
-# backing services of its own. Deploy it as a 4th Dokploy "Compose" application,
-# AFTER the infra app's postgres/oauth are healthy.
+# Standalone single-service app: joins the shared `dokploy-network` and consumes
+# the hub's `postgres` and `oauth` BY SERVICE NAME. Owns no backing services.
+# Deploy as the 4th Dokploy "Compose" application, AFTER infra postgres/oauth.
+#
+# Image flow (like infra/forum/patch): CI builds + pushes ghcr.io/kunmoe/sticker-web
+# on push to svelte-kit, then triggers the Dokploy webhook → Dokploy pulls :latest.
+# See .github/workflows/build.yml and docs/deploy/README.md.
 #
 # Secrets / deploy-specifics come from Dokploy's Environment panel via ${VAR}:
 #   POSTGRES_PASSWORD          — must match the infra Postgres password
 #   KUN_OAUTH_CLIENT_SECRET    — the 鲲 Galgame 表情包 confidential client secret
+# And the CI side needs one GitHub Actions secret: DOKPLOY_WEBHOOK_STICKER.
 #
 # One-time prerequisites against the LIVE infra cluster (the migration that
 # "runs separately" — initdb/seed already ran for the other apps and will NOT
@@ -22,18 +26,17 @@ name: kun-galgame-sticker
 
 services:
   web:
-    # (starter) Dokploy clones this repo and builds the Dockerfile.
-    # (prod)    switch to a CI-prebuilt image to avoid building on the box:
-    #             image: ghcr.io/kunmoe/sticker-web:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        PUBLIC_KUN_STICKER_THEME: kun-sticker-theme
+    # CI (.github/workflows/build.yml) builds + pushes this on every push to
+    # svelte-kit; Dokploy PULLS it (no build on the box). Local dev/test builds
+    # straight from the Dockerfile (`docker build .`), not this file.
+    image: ghcr.io/kunmoe/sticker-web:latest
+    # Force a fresh pull of :latest on every deploy — otherwise `docker compose up`
+    # reuses the stale local image even when the webhook fires post-build.
+    pull_policy: always
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
-      PORT: "3000"
+      PORT: '3000'
       # adapter-node behind Traefik (TLS terminated at the edge). Pin the public
       # origin so SvelteKit's CSRF origin check accepts POST form actions
       # (e.g. /auth/logout); the X-Forwarded-* headers are Traefik defaults.
@@ -51,7 +54,7 @@ services:
       KUN_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
       KUN_OAUTH_CLIENT_SECRET: ${KUN_OAUTH_CLIENT_SECRET:?set KUN_OAUTH_CLIENT_SECRET in Dokploy Environment}
     expose:
-      - "3000"
+      - '3000'
     healthcheck:
       test:
         - CMD
