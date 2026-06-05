@@ -4,13 +4,13 @@ import { localizedPath } from '$lib/i18n'
 import { SITE_URL, STICKER_PACK_COUNT } from '$lib/config'
 import { findStickerPack } from '$lib/server/stickers'
 
-export const prerender = true
+// Generated at runtime (not prerendered): it queries the DB, and runtime-only
+// secrets ($env/dynamic/private) can't be read during build-time prerendering.
+// Crawler-facing only; the 1h cache-control header keeps DB load negligible.
 
 export const GET: RequestHandler = async () => {
   const packs = await Promise.all(
-    Array.from({ length: STICKER_PACK_COUNT }, (_, i) =>
-      findStickerPack(i + 1).catch(() => [])
-    )
+    Array.from({ length: STICKER_PACK_COUNT }, (_, i) => findStickerPack(i + 1).catch(() => []))
   )
 
   const paths = [

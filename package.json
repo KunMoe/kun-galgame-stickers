@@ -11,8 +11,8 @@
     "test": "vitest",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
-    "prisma:push": "pnpm exec prisma db push",
-    "prisma:generate": "pnpm exec prisma generate",
+    "prisma:push": "pnpm prisma db push",
+    "prisma:generate": "pnpm prisma generate",
     "start": "cross-env HOST=127.0.0.1 PORT=9420 pm2 start ecosystem.config.cjs",
     "stop": "pm2 delete kun-visual-novel-sticker",
     "deploy": "tsx scripts/deployBuild.ts"
@@ -21,8 +21,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@sveltejs/adapter-node": "^5.5.4",
-    "pg": "^8.13.1",
-    "prisma": "^7.8.0"
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

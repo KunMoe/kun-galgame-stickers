@@ -1,0 +1,31 @@
+# Dependencies & build artifacts (reinstalled / regenerated inside the image)
+node_modules
+.svelte-kit
+kun-love-ren
+
+# VCS & local tooling
+.git
+.gitignore
+.github
+.vscode
+.prettierignore
+.prettierrc
+eslint.config.js
+
+# Secrets & local env (runtime config is injected by Dokploy / compose).
+# Keep .env.example as documentation.
+.env
+.env.*
+!.env.example
+
+# Docs & deploy/process metadata not needed to build the app
+docs
+scripts
+ecosystem.config.cjs
+*.md
+LICENSE
+
+# Misc
+.DS_Store
+npm-debug.log*
+pnpm-debug.log*

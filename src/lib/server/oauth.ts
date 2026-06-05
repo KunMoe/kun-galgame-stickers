@@ -1,10 +1,4 @@
-import {
-  KUN_OAUTH_CLIENT_ID,
-  KUN_OAUTH_CLIENT_SECRET,
-  KUN_OAUTH_REDIRECT_URI,
-  KUN_OAUTH_SERVER_URL,
-  KUN_OAUTH_WEB_URL
-} from '$env/static/private'
+import { env } from '$env/dynamic/private'
 
 export interface OAuthTokens {
   access_token: string
@@ -41,7 +35,7 @@ export class OAuthError extends Error {
 }
 
 const postJson = async <T>(path: string, body: Record<string, unknown>): Promise<T> => {
-  const res = await fetch(`${KUN_OAUTH_SERVER_URL}${path}`, {
+  const res = await fetch(`${env.KUN_OAUTH_SERVER_URL}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body)
@@ -56,9 +50,9 @@ export const exchangeCodeForTokens = (code: string, codeVerifier: string): Promi
   postJson<OAuthTokens>('/oauth/token', {
     grant_type: 'authorization_code',
     code,
-    redirect_uri: KUN_OAUTH_REDIRECT_URI,
-    client_id: KUN_OAUTH_CLIENT_ID,
-    client_secret: KUN_OAUTH_CLIENT_SECRET,
+    redirect_uri: env.KUN_OAUTH_REDIRECT_URI,
+    client_id: env.KUN_OAUTH_CLIENT_ID,
+    client_secret: env.KUN_OAUTH_CLIENT_SECRET,
     code_verifier: codeVerifier
   })
 
@@ -66,8 +60,8 @@ export const refreshOAuthTokens = (refreshToken: string): Promise<OAuthTokens> =
   postJson<OAuthTokens>('/oauth/token', {
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
-    client_id: KUN_OAUTH_CLIENT_ID,
-    client_secret: KUN_OAUTH_CLIENT_SECRET
+    client_id: env.KUN_OAUTH_CLIENT_ID,
+    client_secret: env.KUN_OAUTH_CLIENT_SECRET
   })
 
 export const revokeOAuthToken = async (token: string): Promise<void> => {
@@ -76,7 +70,7 @@ export const revokeOAuthToken = async (token: string): Promise<void> => {
 }
 
 export const fetchOAuthUser = async (accessToken: string): Promise<OAuthUser> => {
-  const res = await fetch(`${KUN_OAUTH_SERVER_URL}/oauth/userinfo`, {
+  const res = await fetch(`${env.KUN_OAUTH_SERVER_URL}/oauth/userinfo`, {
     headers: { Authorization: `Bearer ${accessToken}` }
   })
   const json = (await res.json().catch(() => null)) as KunResponse<OAuthUser> | null
@@ -91,15 +85,15 @@ export const buildAuthorizeUrl = (
   scope = 'openid profile email'
 ): string => {
   const params = new URLSearchParams({
-    client_id: KUN_OAUTH_CLIENT_ID,
-    redirect_uri: KUN_OAUTH_REDIRECT_URI,
+    client_id: env.KUN_OAUTH_CLIENT_ID,
+    redirect_uri: env.KUN_OAUTH_REDIRECT_URI,
     response_type: 'code',
     scope,
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
   })
-  return `${KUN_OAUTH_SERVER_URL}/oauth/authorize?${params.toString()}`
+  return `${env.KUN_OAUTH_SERVER_URL}/oauth/authorize?${params.toString()}`
 }
 
 /**
@@ -111,8 +105,6 @@ export const buildAuthorizeUrl = (
  * (auto_consent) — issues a code straight back to our `/auth/callback`.
  */
 export const buildRegisterUrl = (authorizeUrl: string): string => {
-  const base = KUN_OAUTH_WEB_URL.replace(/\/$/, '')
+  const base = env.KUN_OAUTH_WEB_URL.replace(/\/$/, '')
   return `${base}/auth/register?redirect=${encodeURIComponent(authorizeUrl)}`
 }
-
-export const OAUTH_REDIRECT_URI = KUN_OAUTH_REDIRECT_URI
