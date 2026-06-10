@@ -305,7 +305,7 @@ admin 在 wiki 后台审核队列看到这条
 ```go
 // 用户身份调用
 type WikiClient struct {
-    baseURL    string  // e.g. https://galgame.kungal.com/api
+    baseURL    string  // e.g. https://wiki.kungal.com/api
     httpClient *http.Client
     // basic auth credentials (只给 MessageFeed 用)
     clientID, clientSecret string

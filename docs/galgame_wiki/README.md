@@ -5,7 +5,7 @@
 | 环境 | Base URL |
 |------|----------|
 | 开发 | `http://127.0.0.1:9280/api` |
-| 生产 | `https://galgame.kungal.com/api` |
+| 生产 | `https://wiki.kungal.com/api` |
 
 ## 文档索引
 
