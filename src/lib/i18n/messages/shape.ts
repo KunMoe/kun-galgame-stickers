@@ -41,6 +41,13 @@ export interface Messages {
     account: string
     profile: string
     anonymous: string
+    logoutTitle: string
+    logoutPrompt: string
+    logoutEverywhere: string
+    logoutEverywhereHint: string
+    logoutLocal: string
+    logoutLocalHint: string
+    cancel: string
   }
   about: {
     title: string

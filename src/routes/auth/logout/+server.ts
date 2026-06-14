@@ -14,6 +14,13 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
   const returnTo =
     typeof requested === 'string' && isSafeReturnTo(requested) ? requested : '/'
 
+  // scope=local: "this site only". We've already revoked our refresh_token and
+  // cleared our session above, so this site is signed out; the central OP (SSO)
+  // session is left intact, so other sites and silent re-login here are
+  // unaffected. Just go back — no OP logout redirect. Any other value (incl.
+  // missing) means "everywhere" and falls through to the OP logout below.
+  if (form?.get('scope') === 'local') redirect(303, returnTo)
+
   // RP-initiated logout. Revoking our refresh_token + clearing our session
   // cookie above only ends OUR session. The central OP (oauth.kungal.com) web
   // session survives — its localStorage user + its own refresh cookie — so the

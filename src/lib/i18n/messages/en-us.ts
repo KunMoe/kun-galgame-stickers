@@ -44,7 +44,16 @@ const messages: Messages = {
     logout: 'Sign out',
     account: 'Account',
     profile: 'Profile',
-    anonymous: 'Not signed in'
+    anonymous: 'Not signed in',
+    logoutTitle: 'Sign out',
+    logoutPrompt: 'Choose what to sign out of:',
+    logoutEverywhere: 'Sign out of this site and OAuth',
+    logoutEverywhereHint:
+      'Signs out of both this site and your OAuth account; other signed-in sites sign out on their next refresh; re-authentication is required next time. Best for public / shared devices.',
+    logoutLocal: 'This site only',
+    logoutLocalHint:
+      'Signs out of this site only; your OAuth account and other sites stay signed in, and signing back in here is instant. Best for your own device.',
+    cancel: 'Cancel'
   },
   about: {
     title: 'About - KUN Visual Novel Stickers',

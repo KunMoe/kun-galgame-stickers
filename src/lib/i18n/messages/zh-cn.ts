@@ -43,7 +43,16 @@ const messages: Messages = {
     logout: '登出',
     account: '账号',
     profile: '个人资料',
-    anonymous: '未登录'
+    anonymous: '未登录',
+    logoutTitle: '登出',
+    logoutPrompt: '请选择登出范围：',
+    logoutEverywhere: '登出本站和 OAuth 账号',
+    logoutEverywhereHint:
+      '本站与 OAuth 账号都会登出；其它已登录的站点会在下次刷新登录态时一并登出；再次登录需重新验证身份。适合公共 / 共享设备。',
+    logoutLocal: '仅登出本站',
+    logoutLocalHint:
+      '只登出本站；OAuth 账号与其它站点保持登录；再次登录本站可免密直接进入。适合自己的设备。',
+    cancel: '取消'
   },
   about: {
     title: '关于 - 鲲 Galgame 表情包',
