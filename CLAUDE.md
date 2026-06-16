@@ -1,7 +1,22 @@
-# kun-galgame-stickers（sticker / 表情包）— AI 代理项目指南
+# kun-galgame-stickers (sticker / emoji pack) — AI Agent Project Guide
 
-galgame **表情包**站。SvelteKit（Svelte 5 runes）+ Tailwind v4 + `@iconify/svelte`；i18n 在 `src/lib/i18n/messages/{en-us,zh-cn}.ts`（改文案要同步 `shape.ts` 类型 + 两个 locale）。数据库用 **Prisma**（`prisma/schema.prisma`，PG 库 `kungalgame_sticker`）。鉴权是 kun-galgame-infra 的 **OAuth RP**（BFF 不透明会话，httpOnly cookie；OAuth / 身份 / 萌萌点等跨服务契约全归 infra，见 `../kun-galgame-infra`）。
+A galgame **emoji pack** site. SvelteKit (Svelte 5 runes) + Tailwind v4 + `@iconify/svelte`; i18n lives in `src/lib/i18n/messages/{en-us,zh-cn}.ts` (when changing copy, keep the `shape.ts` types and both locales in sync). The database uses **Prisma** (`prisma/schema.prisma`, PG database `kungalgame_sticker`). Authentication is an **OAuth RP** of kun-galgame-infra (BFF opaque session, httpOnly cookie; cross-service contracts such as OAuth / identity / moemoepoint all belong to infra, see `../kun-galgame-infra`).
 
-## 数据库 schema 变更 → 必须提醒迁移
+## Core Engineering Principles
 
-只要本次改动动了 `prisma/schema.prisma`（加/改 model 或字段），**任务结束时必须明确告诉用户：是否需要同步生产 schema、跑哪个命令**（`prisma migrate deploy` 或 `prisma db push`）。漏跑 → 线上代码读到不存在的列 → 故障（参考 2026-06 infra 萌萌点发放故障：缺一列导致全站 ~29h 拿不到萌萌点）。
+> Shared baseline across all KUN Galgame repositories. Defaults, not dogma — apply judgment.
+
+1. All commit messages must be written entirely in English.
+2. All code comments must be written entirely in English.
+3. Keep each source file under ~500 lines where practical; once a file grows past ~300 lines, consider splitting it (a guideline, not a hard rule).
+4. Write every frontend function as an arrow function; compose/merge class names with `cn` wherever practical.
+5. Deliberately balance elegant modularity against necessary duplication — choose per case instead of always favoring either.
+6. Constantly verify that frontend and backend agree on the data: field shapes and response formats must match what each side expects.
+7. After every change, watch for unintended side effects elsewhere.
+8. If a change requires running a migration, tell the user explicitly at the end — which command, and against which database.
+9. Always seek the most modern, elegant solution that fits the project's current state; consult the latest official docs and resources online when useful.
+10. Never let the pursuit of elegance or modularity make the code complex or hard to follow, and don't write over-defensive code.
+
+## Database schema changes → migration reminder is mandatory
+
+Whenever this change touches `prisma/schema.prisma` (adding/changing a model or field), **at the end of the task you must explicitly tell the user: whether the production schema needs to be synced, and which command to run** (`prisma migrate deploy` or `prisma db push`). Skipping it → production code reads a column that does not exist → outage (cf. the 2026-06 infra moemoepoint distribution outage: a missing column left the whole site unable to receive moemoepoint for ~29h).
