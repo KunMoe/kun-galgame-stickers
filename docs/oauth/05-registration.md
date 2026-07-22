@@ -290,7 +290,6 @@ const handleOAuthRegister = async () => {
 |---|---|---|
 | 4ed9bc99ec0a789a4796b83e22bd84c5 | 鲲 Galgame 论坛 | www.kungal.com |
 | df3ff6008d740bfacbe46aa8cf483cf2 | 鲲 Galgame 补丁 | www.moyu.moe |
-| 53e9b5ea70bfc4e4d0700a9f7b8818e8 | 鲲 Galgame Wiki | wiki.kungal.com |
 | df46a4cfa71ac919b7b43d63238e2311 | 鲲 Galgame AI | ai.kungal.com |
 | 2d8d48a141a3340b43ae206b73cdaa37 | 鲲 Galgame 表情包 | sticker.kungal.com |
 
