@@ -30,21 +30,16 @@ export class OAuthError extends Error {
 
 /**
  * Read a body from one of the OAuth server's *protocol* endpoints
- * (/oauth/token, /oauth/revoke, /oauth/userinfo), which answer in either of two
- * wire formats: the house `{ code, message, data }` envelope, or the RFC 6749
- * top-level JSON the server emits after its standard-wire cutover. `code` is
- * present iff the body is the envelope; a standard failure instead carries
- * `error` / `error_description` (RFC 6749 §5.2).
+ * (/oauth/token, /oauth/revoke, /oauth/userinfo). These speak RFC 6749 / 6750:
+ * bare top-level JSON on success, `{ error, error_description }` on failure.
+ * The house `{ code, message, data }` envelope lives on house endpoints only
+ * and never appears here.
  */
 const readWire = <T>(body: unknown, status: number): T => {
   if (body === null || typeof body !== 'object') {
     throw new OAuthError(-1, `OAuth server returned non-JSON (HTTP ${status})`)
   }
   const obj = body as Record<string, unknown>
-  if (typeof obj.code === 'number') {
-    if (obj.code !== 0) throw new OAuthError(obj.code, String(obj.message ?? ''))
-    return obj.data as T
-  }
   if (typeof obj.error === 'string') {
     const detail = obj.error_description ? `: ${String(obj.error_description)}` : ''
     throw new OAuthError(-1, `${String(obj.error)}${detail}`)
