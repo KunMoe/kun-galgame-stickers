@@ -18,12 +18,6 @@ export interface OAuthUser {
   updated_at?: number
 }
 
-interface KunResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
 export class OAuthError extends Error {
   constructor(
     public readonly code: number,
@@ -34,16 +28,54 @@ export class OAuthError extends Error {
   }
 }
 
+/**
+ * Read a body from one of the OAuth server's *protocol* endpoints
+ * (/oauth/token, /oauth/revoke, /oauth/userinfo), which answer in either of two
+ * wire formats: the house `{ code, message, data }` envelope, or the RFC 6749
+ * top-level JSON the server emits after its standard-wire cutover. `code` is
+ * present iff the body is the envelope; a standard failure instead carries
+ * `error` / `error_description` (RFC 6749 §5.2).
+ */
+const readWire = <T>(body: unknown, status: number): T => {
+  if (body === null || typeof body !== 'object') {
+    throw new OAuthError(-1, `OAuth server returned non-JSON (HTTP ${status})`)
+  }
+  const obj = body as Record<string, unknown>
+  if (typeof obj.code === 'number') {
+    if (obj.code !== 0) throw new OAuthError(obj.code, String(obj.message ?? ''))
+    return obj.data as T
+  }
+  if (typeof obj.error === 'string') {
+    const detail = obj.error_description ? `: ${String(obj.error_description)}` : ''
+    throw new OAuthError(-1, `${String(obj.error)}${detail}`)
+  }
+  if (status >= 400) throw new OAuthError(-1, `OAuth server returned HTTP ${status}`)
+  return obj as T
+}
+
+const readProtocolResponse = async <T>(res: Response): Promise<T> => {
+  const text = await res.text()
+  if (text === '') {
+    // RFC 7009 revocation answers 200 with an empty body under standard wire.
+    if (res.ok) return undefined as T
+    throw new OAuthError(-1, `OAuth server returned an empty body (HTTP ${res.status})`)
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new OAuthError(-1, `OAuth server returned non-JSON (HTTP ${res.status})`)
+  }
+  return readWire<T>(parsed, res.status)
+}
+
 const postJson = async <T>(path: string, body: Record<string, unknown>): Promise<T> => {
   const res = await fetch(`${env.KUN_OAUTH_SERVER_URL}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
     body: JSON.stringify(body)
   })
-  const json = (await res.json().catch(() => null)) as KunResponse<T> | null
-  if (!json) throw new OAuthError(-1, `OAuth server returned non-JSON (HTTP ${res.status})`)
-  if (json.code !== 0) throw new OAuthError(json.code, json.message)
-  return json.data
+  return readProtocolResponse<T>(res)
 }
 
 export const exchangeCodeForTokens = (code: string, codeVerifier: string): Promise<OAuthTokens> =>
@@ -71,12 +103,9 @@ export const revokeOAuthToken = async (token: string): Promise<void> => {
 
 export const fetchOAuthUser = async (accessToken: string): Promise<OAuthUser> => {
   const res = await fetch(`${env.KUN_OAUTH_SERVER_URL}/oauth/userinfo`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { Authorization: `Bearer ${accessToken}`, accept: 'application/json' }
   })
-  const json = (await res.json().catch(() => null)) as KunResponse<OAuthUser> | null
-  if (!json) throw new OAuthError(-1, `userinfo returned non-JSON (HTTP ${res.status})`)
-  if (json.code !== 0) throw new OAuthError(json.code, json.message)
-  return json.data
+  return readProtocolResponse<OAuthUser>(res)
 }
 
 export const buildAuthorizeUrl = (
