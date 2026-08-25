@@ -87,7 +87,7 @@ Login in local dev also needs a running OAuth server (`KUN_OAUTH_SERVER_URL` in 
 
 ## Deployment
 
-Production is two containers on the shared `dokploy-network`: `web` (Nitro) and `api` (Fiber), plus a one-shot `migrate`. Traefik should send `sticker.kungal.com/api` to the API and everything else to the web. CI builds `ghcr.io/kunmoe/sticker-web`, `sticker-api`, and `sticker-migrate` on push to `svelte-kit`.
+Production is two long-running containers on the shared `dokploy-network`: `web` (Nitro) and `sticker-api` (Fiber). A one-shot `migrate` runs on every compose `up` and gates the API (same pattern as kungal / moyu / infra). Traefik should send `sticker.kungal.com/api` to `sticker-api:9421` and everything else to `web:3000`. CI builds `ghcr.io/kunmoe/sticker-web`, `sticker-api`, and `sticker-migrate` on push to `svelte-kit`.
 
 See [docs/deploy/README.md](docs/deploy/README.md) for the full guide.
 

@@ -87,7 +87,7 @@ pnpm run lint
 
 ## 部署
 
-生产是共享 `dokploy-network` 上的两个容器：`web`（Nitro）和 `api`（Fiber），外加一次性 `migrate`。Traefik 把 `sticker.kungal.com/api` 指到 API，其余指到 web。CI 在 `svelte-kit` 分支 push 后构建 `sticker-web` / `sticker-api` / `sticker-migrate`。
+生产是共享 `dokploy-network` 上的两个常驻容器：`web`（Nitro）和 `sticker-api`（Fiber）。每次 compose `up` 会先跑一次性 `migrate`，成功后才起 API（和 kungal / moyu / infra 一样，不用手工 migrate）。Traefik 把 `sticker.kungal.com/api` 指到 `sticker-api:9421`，其余指到 `web:3000`。CI 在 `svelte-kit` 分支 push 后构建 `sticker-web` / `sticker-api` / `sticker-migrate`。
 
 完整步骤见 [docs/deploy/README.md](docs/deploy/README.md)。
 

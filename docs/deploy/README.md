@@ -1,6 +1,6 @@
 # 表情包站 · 部署指南（Docker + Dokploy）
 
-> **2026-08 架构变更：** 站点已从单个 SvelteKit 进程拆成 **Nuxt 4 前端 + Go Fiber API**（与 forum / patch / kaguya-web 同构）。生产 compose 现在是 `web` + `api` + 一次性 `migrate`。Traefik 需要两条路由：`sticker.kungal.com` → `web:3000`，`sticker.kungal.com/api` → `api:9421`。下文部分段落仍写旧的单容器拓扑，以 compose 文件为准。
+> **2026-08 架构变更：** 站点已从单个 SvelteKit 进程拆成 **Nuxt 4 前端 + Go Fiber API**（与 forum / patch 同构）。生产 compose 是 `web` + `sticker-api` + 一次性 `migrate`。每次 Dokploy `up` 会先跑 migrate（`sticker-api` `depends_on: service_completed_successfully`），和 kungal / moyu / infra 一样，不用手工 migrate。Traefik：`sticker.kungal.com` → `web:3000`，`sticker.kungal.com/api` → `sticker-api:9421`。下文部分段落仍写旧的单容器拓扑，以 compose 文件为准。
 
 把 **kun-galgame-stickers** 作为**第 4 个 Dokploy 应用**接入鲲 Galgame 生态。它自己不拥有任何基础设施，运行时通过**服务名**复用枢纽（kun-galgame-infra）的 `postgres` 与 `oauth`。
 
@@ -10,13 +10,14 @@
 
 ## 0 · 一句话与拓扑
 
-> 一个 `web` 容器（`node kun-love-ren/index.js`，监听 `:3000`）。Traefik 按域名 `sticker.kungal.com` 回源到 `web:3000`；DB 走 `postgres:5432`；OAuth 走公网 `https://oauth.kungal.com/api/v1`。
+> `migrate`（一次性）→ `sticker-api:9421` → `web:3000`。Traefik 按域名 `sticker.kungal.com` 回源到 `web:3000`，`/api` 回源到 `sticker-api:9421`；DB 走 `postgres:5432`；OAuth token 走内部 `oauth:9277`。
 
 ```
-Internet ─► :443 ─► Traefik(Dokploy) ─► sticker.kungal.com ─► web:3000  (本应用)
-                                                               │
-                  dokploy-network（与 infra 共享）             ├─► postgres:5432   (枢纽，新库 kungalgame_sticker)
-                                                               └─► oauth (公网 https://oauth.kungal.com/api/v1)
+Internet ─► :443 ─► Traefik(Dokploy) ─► sticker.kungal.com      ─► web:3000
+                                    └─► sticker.kungal.com/api ─► sticker-api:9421
+                                                                      │
+                  dokploy-network（与 infra 共享）                   ├─► postgres:5432  (kungalgame_sticker)
+                                                                      └─► oauth:9277
 ```
 
 | 项目         | 值                                                                                       |

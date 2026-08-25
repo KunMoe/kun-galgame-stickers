@@ -87,7 +87,7 @@ pnpm run lint
 
 ## デプロイ
 
-本番は共有 `dokploy-network` 上の 2 コンテナ：`web`（Nitro）と `api`（Fiber）、加えてワンショット `migrate`。Traefik は `sticker.kungal.com/api` を API に、それ以外を web に回します。CI は `svelte-kit` ブランチへの push で `sticker-web` / `sticker-api` / `sticker-migrate` をビルドします。
+本番は共有 `dokploy-network` 上の常駐 2 コンテナ：`web`（Nitro）と `sticker-api`（Fiber）。毎回の compose `up` でワンショット `migrate` が先に走り、成功してから API が起動します（kungal / moyu / infra と同じ。手作業の migrate は不要）。Traefik は `sticker.kungal.com/api` を `sticker-api:9421` に、それ以外を `web:3000` に回します。CI は `svelte-kit` ブランチへの push で `sticker-web` / `sticker-api` / `sticker-migrate` をビルドします。
 
 手順は [docs/deploy/README.md](../deploy/README.md) を見てください。
 

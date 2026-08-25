@@ -23,7 +23,7 @@ func main() {
 
 	direction := flag.String("dir", "up", "up or down")
 	step := flag.Int("step", 0, "number of steps (0 = all)")
-	path := flag.String("path", "migrations", "path to migration files")
+	path := flag.String("path", defaultMigrationsPath(), "path to migration files")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -76,4 +76,15 @@ func main() {
 		os.Exit(1)
 	}
 	slog.Info("migrate ok", "dir", *direction)
+}
+
+// The image copies SQL to /migrations and pins WORKDIR /. Local `go run`
+// still uses ./migrations. Prefer the absolute path when it exists so a
+// compose file does not have to hard-code -path (forum's pattern: default
+// `up` with no command, so `run --rm migrate -dir down` still works).
+func defaultMigrationsPath() string {
+	if st, err := os.Stat("/migrations"); err == nil && st.IsDir() {
+		return "/migrations"
+	}
+	return "migrations"
 }

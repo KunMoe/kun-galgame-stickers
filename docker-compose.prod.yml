@@ -1,9 +1,30 @@
 # kun-galgame-sticker — PRODUCTION compose (Dokploy + GHCR).
 #
-# Two services on the shared dokploy-network. Traefik (Dokploy domains):
+# Downstream app: owns NO backing services. Joins the shared `dokploy-network`
+# and reaches infra by service name (postgres:5432, oauth:9277). Bring infra up
+# first.
+#
+# Traefik (Dokploy domains):
 #   sticker.kungal.com            → web:3000
-#   sticker.kungal.com/api        → api:9421   (PathPrefix /api, higher priority)
+#   sticker.kungal.com/api        → sticker-api:9421   (PathPrefix /api, higher priority)
+#
+#   docker compose -f docker-compose.prod.yml up -d
+# The `migrate` service runs automatically before sticker-api on every `up`
+# (api depends_on it completing) — pending DB migrations are applied on each
+# deploy, no manual migrate step. Idempotent + near-instant when nothing is
+# pending; a failed migration blocks the API from starting (intended — never
+# serve an un-migrated schema).
+#
+# Set in this app's Dokploy Environment:
+#   POSTGRES_PASSWORD          — must match infra Postgres
+#   KUN_OAUTH_CLIENT_SECRET    — the 鲲 Galgame 表情包 confidential client secret
 name: kun-galgame-sticker
+
+x-svc-health: &svc-health
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 15s
 
 x-api-env: &api-env
   SERVER_PORT: '9421'
@@ -17,18 +38,9 @@ x-api-env: &api-env
   KUN_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
 
 services:
-  migrate:
-    image: ghcr.io/kunmoe/sticker-migrate:latest
-    pull_policy: always
-    environment:
-      <<: *api-env
-    command: ['-dir', 'up', '-path', '/migrations']
-    restart: 'no'
-    networks:
-      default:
-        aliases: []
-
-  api:
+  # Unique name on dokploy-network (same reason kungal-api / moyu-api are not
+  # just `api`): Dokploy registers the compose service name, not aliases.
+  sticker-api:
     image: ghcr.io/kunmoe/sticker-api:latest
     pull_policy: always
     environment:
@@ -40,10 +52,7 @@ services:
         condition: service_completed_successfully
     healthcheck:
       test: ['CMD', '/app', 'healthcheck']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+      <<: *svc-health
     restart: unless-stopped
 
   web:
@@ -53,7 +62,7 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       NITRO_PORT: '3000'
-      NUXT_API_BASE_URL: http://api:9421
+      NUXT_API_BASE_URL: http://sticker-api:9421
       NUXT_PUBLIC_API_BASE_URL: https://sticker.kungal.com
       NUXT_PUBLIC_SITE_URL: https://sticker.kungal.com
       NUXT_PUBLIC_OAUTH_SERVER_URL: https://oauth.kungal.com/api/v1
@@ -62,7 +71,31 @@ services:
       NUXT_PUBLIC_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
     expose:
       - '3000'
+    depends_on:
+      sticker-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
+      <<: *svc-health
     restart: unless-stopped
+
+  # Schema migrations — auto on every `up`, BEFORE sticker-api. NOT in a jobs
+  # profile. pull_policy: always so each deploy gets the image that baked the
+  # current SQL. No `command:` so the binary's default is `up` (and
+  # `compose run --rm migrate -dir down` still works). WORKDIR / so the default
+  # relative `migrations` path is /migrations (distroless otherwise homes in
+  # /home/nonroot). Manual: docker compose -f docker-compose.prod.yml run --rm migrate
+  migrate:
+    image: ghcr.io/kunmoe/sticker-migrate:latest
+    pull_policy: always
+    working_dir: /
+    environment:
+      <<: *api-env
+    restart: 'no'
 
 networks:
   default:
