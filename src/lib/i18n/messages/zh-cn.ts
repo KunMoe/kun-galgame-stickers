@@ -118,7 +118,10 @@ const messages: Messages = {
     },
     tips: {
       heading: 'Tips',
-      lines: ['如果您觉得我们做得不错, 欢迎给我们点个 star 哦~', '我们的 Telegram 群组: https://t.me/kungalgame'],
+      lines: [
+        '如果您觉得我们做得不错, 欢迎给我们点个 star 哦~',
+        '我们的 Telegram 群组: https://t.me/kungalgame'
+      ],
       note: 'Tips: 我们没有群规, 被鲨了可以重新加'
     }
   }

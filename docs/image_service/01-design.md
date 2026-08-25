@@ -18,14 +18,14 @@
 
 ## 目标
 
-| 目标 | 说明 |
-|------|------|
-| **统一接口** | 所有站点通过同一个 HTTP API 上传图片 |
-| **统一处理** | 格式转换（→ WebP）、尺寸压缩、EXIF 剥离、MIME 嗅探集中一处 |
-| **内容去重** | 内容寻址存储，同 hash 只存一份（跨站物理层面也去重） |
-| **预生成变体** | 按 preset 在上传时生成必要的缩略图，简单可预测 |
-| **多站扩展** | 新站点接入 = 注册一个 OAuth Client + 加配置，不改代码 |
-| **旧数据平滑迁移** | 旧 URL 不断链，业务代码渐进切换 |
+| 目标               | 说明                                                       |
+| ------------------ | ---------------------------------------------------------- |
+| **统一接口**       | 所有站点通过同一个 HTTP API 上传图片                       |
+| **统一处理**       | 格式转换（→ WebP）、尺寸压缩、EXIF 剥离、MIME 嗅探集中一处 |
+| **内容去重**       | 内容寻址存储，同 hash 只存一份（跨站物理层面也去重）       |
+| **预生成变体**     | 按 preset 在上传时生成必要的缩略图，简单可预测             |
+| **多站扩展**       | 新站点接入 = 注册一个 OAuth Client + 加配置，不改代码      |
+| **旧数据平滑迁移** | 旧 URL 不断链，业务代码渐进切换                            |
 
 ## 非目标
 
@@ -38,14 +38,14 @@
 
 三个调用方的历史上传种类不一，明确哪些走 image_service、哪些不走，避免 "图片服务能不能接收补丁 zip" 这种困惑：
 
-| 上传类型 | 文件类型 | 归属 |
-|---------|---------|------|
-| 用户头像 | PNG / JPG / WebP | ✅ image_service（preset=`avatar`） |
-| 用户 topic / 个人页图片 | PNG / JPG / WebP / GIF（首帧） | ✅ image_service（preset=`topic`） |
-| galgame 封面 / banner | PNG / JPG / WebP | ✅ image_service（preset=`galgame_banner`） |
-| 补丁资源 / 游戏压缩包 | .zip / .rar / .7z / .iso | ❌ **不归 image_service**，走各站自己的 S3 presigned 直传 |
-| 视频 / 音频 / PDF / 其他文件 | 任意非图片 | ❌ 不归 image_service |
-| 补丁 banner（moyu 历史） | —— | 已废除，改从 galgame wiki 的 `galgame.banner` 读取 |
+| 上传类型                     | 文件类型                       | 归属                                                      |
+| ---------------------------- | ------------------------------ | --------------------------------------------------------- |
+| 用户头像                     | PNG / JPG / WebP               | ✅ image_service（preset=`avatar`）                       |
+| 用户 topic / 个人页图片      | PNG / JPG / WebP / GIF（首帧） | ✅ image_service（preset=`topic`）                        |
+| galgame 封面 / banner        | PNG / JPG / WebP               | ✅ image_service（preset=`galgame_banner`）               |
+| 补丁资源 / 游戏压缩包        | .zip / .rar / .7z / .iso       | ❌ **不归 image_service**，走各站自己的 S3 presigned 直传 |
+| 视频 / 音频 / PDF / 其他文件 | 任意非图片                     | ❌ 不归 image_service                                     |
+| 补丁 banner（moyu 历史）     | ——                             | 已废除，改从 galgame wiki 的 `galgame.banner` 读取        |
 
 **硬规则**：image_service 只接受 `image/*` MIME（经 magic number 嗅探确认），上传输出**恒定为 WebP**。任何非图片文件请走调用方自己的直传链路。
 
@@ -120,6 +120,7 @@ UPDATE images.last_referenced_at = NOW()
 **选择**：图片的生命周期**完全**由图片服务根据 `last_referenced_at` + TTL 管理。调用方没有 `DELETE /image/:hash` 端点可用。
 
 **触发机制**：
+
 - 调用方删帖/删用户 → 只改自己库里的 `image_hash` 外键
 - 调用方周期性（每天一次）批量 ping "我还在用这些 hash"
 - 图片服务清理 worker 按 TTL 降级：
@@ -128,6 +129,7 @@ UPDATE images.last_referenced_at = NOW()
   - 软删后再 30d → 物理删除
 
 **理由**：
+
 - **内容寻址 + 跨站共享的本质约束**：kungal 的 A 删帖不意味着这张图可以物理删——moyu 的 B 可能还在用
 - **避免跨服务引用计数的分布式一致性问题**
 - **简化调用方心智模型**：调用方只需维护"我现在还在用哪些 hash"这一项事实，不用实现复杂的"上传 / 删除 / 解引用"全生命周期
@@ -145,6 +147,7 @@ UPDATE images.last_referenced_at = NOW()
 - **前端直传（V2 可选）**：用户登录的 JWT（`aud` 字段标明站点）也能用于直传
 
 **理由**：
+
 - 少一套凭证体系 = 少一套过期/泄露/吊销路径
 - `oauth_client` 表已经是"站点"的天然 registry，加几个字段就能承载图片服务的配额/开关配置
 - 审计日志可以和 OAuth 访问日志合流
@@ -154,6 +157,7 @@ UPDATE images.last_referenced_at = NOW()
 **选择**：`images` 表只存 "hash + storage_key + metadata + 审核状态"，**不存** "哪个站的哪个实体在用这张图"。业务引用（`users.avatar_image_hash`、`galgame.banner_image_hash`）由各调用方自己的库维护。
 
 **理由**：
+
 - 每新增一类实体（avatar / banner / topic / cover / post_attachment...）都要改图片服务的 schema，违反单一职责
 - 跨服务维护引用计数天然竞态
 - 调用方查"用户 X 的当前头像"应该是本地 JOIN，不是跨服务 RPC
@@ -165,6 +169,7 @@ UPDATE images.last_referenced_at = NOW()
 **选择**：`images` 表以 `UNIQUE(hash)` 为唯一键（单行），审核态、元数据都挂在这一行上。"哪个站传过这个 hash" 的审计信息放在独立的 `image_site_usage(hash, site, first_uploader_sub, first_uploaded_at)` 表里。
 
 **理由**：
+
 - **物理去重彻底**：跨站相同内容在对象存储只存一份
 - **审核态天然跨站一致**：NSFW 就是 NSFW，不会 kungal 打 rejected 而 moyu 仍 approved 这种分裂
 - **不会出现"两行指向同一 storage_key"的幽灵**：避免 A 站删对象导致 B 站引用断裂
@@ -176,23 +181,23 @@ UPDATE images.last_referenced_at = NOW()
 
 **实际变体清单**（按三站的真实使用模式）：
 
-| entity | preset | 主图 | 额外变体 |
-|--------|--------|------|---------|
-| 用户头像 | `avatar` | fit 1920×1080 webp | 256×256 webp（cover）+ 100×100 webp（cover） |
-| galgame banner | `galgame_banner` | fit 1920×1080 webp | 460×259 webp（cover） |
-| topic 图床 | `topic` | fit 1920×1080 webp | 无 |
+| entity         | preset           | 主图               | 额外变体                                     |
+| -------------- | ---------------- | ------------------ | -------------------------------------------- |
+| 用户头像       | `avatar`         | fit 1920×1080 webp | 256×256 webp（cover）+ 100×100 webp（cover） |
+| galgame banner | `galgame_banner` | fit 1920×1080 webp | 460×259 webp（cover）                        |
+| topic 图床     | `topic`          | fit 1920×1080 webp | 无                                           |
 
 V1 总共 **6 个固定变体产物**（含主图）。avatar 保留 256 变体是为了与 moyu / kungal 历史头像的 256×256 cover 语义对齐（见 [02-storage-and-schema.md](./02-storage-and-schema.md#preset-配置)）。
 
 **理由**：
 
-| 维度 | imgproxy 按需 | 预生成 |
-|------|--------------|-------|
-| 运维 | 多容器 + HMAC key 管理 + 前后 SDK | 纯 S3 直链 |
-| 存储 | 1× | 4×（几块钱/月） |
-| 新增尺寸 | 改 URL | 改代码 + 重跑一次 |
-| 首访延迟 | +50–200ms | 0 |
-| 预测性 | CDN miss 有冷启动 | 完全静态 |
+| 维度     | imgproxy 按需                     | 预生成            |
+| -------- | --------------------------------- | ----------------- |
+| 运维     | 多容器 + HMAC key 管理 + 前后 SDK | 纯 S3 直链        |
+| 存储     | 1×                                | 4×（几块钱/月）   |
+| 新增尺寸 | 改 URL                            | 改代码 + 重跑一次 |
+| 首访延迟 | +50–200ms                         | 0                 |
+| 预测性   | CDN miss 有冷启动                 | 完全静态          |
 
 对三站的实际场景（固定尺寸、几乎不会改样式），预生成方案压倒性简单。**imgproxy 真正解锁价值的时机**是某天要求"任意尺寸"时，那时再上，不是现在。V2.5 可选项。
 
@@ -201,11 +206,13 @@ V1 总共 **6 个固定变体产物**（含主图）。avatar 保留 256 变体�
 **选择**：`images` 表有一列 `last_referenced_at`，调用方周期性（每天一次）批量 ping。清理 worker 按 TTL 降级。
 
 **理由**：
+
 - 避免跨服务原子引用计数的并发问题
 - 调用方漏 ping 最坏浪费一点冷存储，不丢数据
 - 新接入的站点不用实现"上传 / 引用 / 解引用"完整生命周期
 
 **实现要点**：
+
 - 上传本身算一次 ping（自动刷 `last_referenced_at = NOW()`）
 - 调用方每天批量发一次 `POST /image/reference-ping { hashes: [...] }`
 - 每次批量最多 1000 hash
@@ -220,6 +227,7 @@ V1 总共 **6 个固定变体产物**（含主图）。avatar 保留 256 变体�
 ```
 
 **例子**：
+
 ```
 ab/cd/abcd1234...ef.webp         # 主图
 ab/cd/abcd1234...ef_100.webp     # avatar 变体
@@ -227,6 +235,7 @@ ab/cd/abcd1234...ef_mini.webp    # banner 变体
 ```
 
 **去掉 site 前缀的理由**：
+
 - 跨站彻底物理去重（决策 3）的直接结果
 - site 信息放在 `image_site_usage` 表里即可，URL 层无需冗余
 - 避免"同一 hash 在 kungal 路径下、在 moyu 路径下"的双份存储
@@ -235,27 +244,27 @@ ab/cd/abcd1234...ef_mini.webp    # banner 变体
 
 ## 技术栈
 
-| 层 | 选型 | 备注 |
-|---|------|------|
-| HTTP | Fiber v3 | 复用现有 |
-| 图像编解码 | `libvips` (via `davidbyttow/govips`) | 比纯 Go 快 5–10 倍；CGO |
-| 备选 | `kolesa-team/go-webp` + `disintegration/imaging` | 也够用，依赖 libwebp |
-| MIME 嗅探 | `gabriel-vasile/mimetype` | 不信任 Content-Type |
-| 对象存储 | `aws-sdk-go-v2` | S3 协议兼容 R2/OSS/COS/MinIO |
-| DB | Postgres（独立库 `kun_images`） | 新增 `images`、`image_site_usage` 表 |
-| 配额 | Redis day-window | 已有 Redis 基础设施 |
-| 审核（V3） | 云厂商 API | 暂不选型 |
-| 变体（V2.5 可选） | imgproxy | 按需引入 |
+| 层                | 选型                                             | 备注                                 |
+| ----------------- | ------------------------------------------------ | ------------------------------------ |
+| HTTP              | Fiber v3                                         | 复用现有                             |
+| 图像编解码        | `libvips` (via `davidbyttow/govips`)             | 比纯 Go 快 5–10 倍；CGO              |
+| 备选              | `kolesa-team/go-webp` + `disintegration/imaging` | 也够用，依赖 libwebp                 |
+| MIME 嗅探         | `gabriel-vasile/mimetype`                        | 不信任 Content-Type                  |
+| 对象存储          | `aws-sdk-go-v2`                                  | S3 协议兼容 R2/OSS/COS/MinIO         |
+| DB                | Postgres（独立库 `kun_images`）                  | 新增 `images`、`image_site_usage` 表 |
+| 配额              | Redis day-window                                 | 已有 Redis 基础设施                  |
+| 审核（V3）        | 云厂商 API                                       | 暂不选型                             |
+| 变体（V2.5 可选） | imgproxy                                         | 按需引入                             |
 
 ## 风险与缓解
 
-| 风险 | 可能性 | 缓解 |
-|------|--------|------|
-| libvips 内存解压炸弹 | 中 | 限制解码后像素总数（如 50MP），限制原文件大小 |
-| 跨站 hash 碰撞但标签不同 | 低 | 决策 3 明确：审核态 hash 单行，不分裂 |
-| 调用方漏 ping 导致图被清 | 低 | TTL 宽松（60d 冷、365d 软删），且 ping 是批量操作容错空间大 |
-| 对象存储 Region 故障 | 低 | 跨区域复制（V2+ 视需要） |
-| OAuth 令牌换发瓶颈 | 低 | 调用方缓存 access_token；Client Credentials 长 TTL |
+| 风险                     | 可能性 | 缓解                                                        |
+| ------------------------ | ------ | ----------------------------------------------------------- |
+| libvips 内存解压炸弹     | 中     | 限制解码后像素总数（如 50MP），限制原文件大小               |
+| 跨站 hash 碰撞但标签不同 | 低     | 决策 3 明确：审核态 hash 单行，不分裂                       |
+| 调用方漏 ping 导致图被清 | 低     | TTL 宽松（60d 冷、365d 软删），且 ping 是批量操作容错空间大 |
+| 对象存储 Region 故障     | 低     | 跨区域复制（V2+ 视需要）                                    |
+| OAuth 令牌换发瓶颈       | 低     | 调用方缓存 access_token；Client Credentials 长 TTL          |
 
 ## 与本仓库现有模块的关系
 

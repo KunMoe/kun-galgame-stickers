@@ -2,16 +2,16 @@
 
 ## 旧路径清单
 
-| 站点 | 旧路径 | 类型 | 迁移策略 |
-|------|--------|------|---------|
-| kungal | `topic/user_${uid}/${userName}-${unixMS}.webp` | 内容型，markdown 硬编码 | ❌ **不迁移**，老桶只读永久保留 |
-| kungal | `avatar/user_${uid}/avatar.webp` | 实体型，DB 可查 | ❌ **不迁移**（见下方"已压缩老图豁免"原则） |
-| kungal | `avatar/user_${uid}/avatar-100.webp` | 派生图 | ❌ 不迁移（同上） |
-| moyu | `topic/user_${uid}/${userName}-${unixMS}.webp` | 同 kungal | ❌ 不迁移 |
-| moyu | `avatar/user_${uid}/avatar.webp` / `avatar.avif` | 实体型，DB 可查 | ❌ **不迁移**（同样豁免） |
-| moyu | `avatar/user_${uid}/avatar-mini.webp` / `avatar-mini.avif` | 派生图 | ❌ 不迁移 |
-| galgame wiki | `galgame/${gid}/banner/banner.webp` | 实体型，DB 可查 | ✅ **迁移** —— 需要新 `_mini` 460×259 变体 |
-| galgame wiki | `galgame/${gid}/banner/banner-mini.webp` | 派生图 | ❌ 丢弃（新服务以 `_mini` 变体重新生成） |
+| 站点         | 旧路径                                                     | 类型                    | 迁移策略                                    |
+| ------------ | ---------------------------------------------------------- | ----------------------- | ------------------------------------------- |
+| kungal       | `topic/user_${uid}/${userName}-${unixMS}.webp`             | 内容型，markdown 硬编码 | ❌ **不迁移**，老桶只读永久保留             |
+| kungal       | `avatar/user_${uid}/avatar.webp`                           | 实体型，DB 可查         | ❌ **不迁移**（见下方"已压缩老图豁免"原则） |
+| kungal       | `avatar/user_${uid}/avatar-100.webp`                       | 派生图                  | ❌ 不迁移（同上）                           |
+| moyu         | `topic/user_${uid}/${userName}-${unixMS}.webp`             | 同 kungal               | ❌ 不迁移                                   |
+| moyu         | `avatar/user_${uid}/avatar.webp` / `avatar.avif`           | 实体型，DB 可查         | ❌ **不迁移**（同样豁免）                   |
+| moyu         | `avatar/user_${uid}/avatar-mini.webp` / `avatar-mini.avif` | 派生图                  | ❌ 不迁移                                   |
+| galgame wiki | `galgame/${gid}/banner/banner.webp`                        | 实体型，DB 可查         | ✅ **迁移** —— 需要新 `_mini` 460×259 变体  |
+| galgame wiki | `galgame/${gid}/banner/banner-mini.webp`                   | 派生图                  | ❌ 丢弃（新服务以 `_mini` 变体重新生成）    |
 
 ### 已压缩老图豁免原则
 
@@ -51,6 +51,7 @@ kungal / moyu 的所有历史图片（topic 图床 + 用户头像）都按同一
 > 🔒 **kungal / moyu 老 avatar / topic 老 URL 永久保留只读，不迁移、不 rewrite、不二次压缩。新上传全部走新服务，新老数据自然分野。**
 
 理由：
+
 - 二次压缩对已是 WebP@82 的图只会让画质退化，没有任何收益
 - R2 / S3 上几十 GB 的历史数据成本月度几块钱，不值得花工程时间折腾
 - 不增加任何永久维护负担
@@ -94,11 +95,11 @@ uploadToImageService(file) → 写 users.avatar_image_hash
 
 按上一节"已压缩老图豁免原则"过滤后，三站合计**只剩极少数字段**需要写迁移脚本：
 
-| 站点 | 字段 | 原因 |
-|------|------|------|
+| 站点         | 字段             | 原因                                    |
+| ------------ | ---------------- | --------------------------------------- |
 | galgame wiki | `galgame.banner` | 列表页要 `_mini` 460×259 变体，老桶没有 |
-| kungal | （无） | 全部豁免 |
-| moyu | （无） | 全部豁免 |
+| kungal       | （无）           | 全部豁免                                |
+| moyu         | （无）           | 全部豁免                                |
 
 > 如果未来某个字段决定上 V3 审核 / 跨站 dedup 等新特性，再单独把它加进迁移清单即可。骨架在下方，复用方便。
 
@@ -284,6 +285,7 @@ func recordFailure(db *sql.DB, gid int64, attempts int16, cause error) {
 ### 阶段 3：avatar URL 兼容层（可选，2–4 周）
 
 **目的**：阶段 2 之后，业务库里 `users.avatar_image_hash` 已经有值，但可能还有：
+
 - 浏览器缓存里的老 URL
 - 第三方外链引用老 URL（很少）
 - 部分未更新的前端代码
@@ -306,23 +308,23 @@ function resolveAvatarUrl(user) {
 
 每站每个图片字段独立一组 PR。以 kungal 为例（按"老图豁免"原则后实际只切 avatar 写入路径）：
 
-| PR | 工作 | 耗时 |
-|----|------|------|
-| PR-1 | 业务库 migration：加 `users.avatar_image_hash`（豁免字段不需要 status / attempts 列）+ GORM model | 半天 |
+| PR   | 工作                                                                                                                          | 耗时   |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
+| PR-1 | 业务库 migration：加 `users.avatar_image_hash`（豁免字段不需要 status / attempts 列）+ GORM model                             | 半天   |
 | PR-2 | avatar 上传逻辑改调图片服务；上传成功同步写 `avatar_image_hash`（旧 URL 永远停留在 `avatar_url_legacy` 字段，老用户保持原样） | 1–2 天 |
-| PR-3 | topic 图床上传逻辑改调图片服务（`preset=topic`）；老 markdown URL 永久保留指向老桶 | 1–2 天 |
-| PR-4 | 前端 `resolveAvatarUrl(user)` 增加 fallback 链：`avatar_image_hash` → `avatar_url_legacy` → 默认头像 | 1–2 天 |
+| PR-3 | topic 图床上传逻辑改调图片服务（`preset=topic`）；老 markdown URL 永久保留指向老桶                                            | 1–2 天 |
+| PR-4 | 前端 `resolveAvatarUrl(user)` 增加 fallback 链：`avatar_image_hash` → `avatar_url_legacy` → 默认头像                          | 1–2 天 |
 
 > 注意：**没有 PR-5 删 `avatar_url_legacy`**——老用户的头像永远只在这个字段里，删了就裂图。`avatar_url_legacy` 是永久字段，不是迁移期 transient 字段。
 
 galgame wiki 类似但因为 banner 真要迁移，多一个 cmd：
 
-| PR | 工作 | 耗时 |
-|----|------|------|
+| PR   | 工作                                                                                      | 耗时 |
+| ---- | ----------------------------------------------------------------------------------------- | ---- |
 | PR-1 | 加 `galgame.banner_image_hash` + `_migration_status` + `_migration_attempts` + GORM model | 半天 |
-| PR-2 | banner 上传逻辑改调图片服务（`preset=galgame_banner`） | 1 天 |
-| PR-3 | `cmd/migrate-galgame-banners-to-image-service` 离线迁移脚本（用上面的骨架） | 1 天 |
-| PR-4 | 前端 banner 列表页改用 `_mini` 变体 URL；fallback 老 URL | 1 天 |
+| PR-2 | banner 上传逻辑改调图片服务（`preset=galgame_banner`）                                    | 1 天 |
+| PR-3 | `cmd/migrate-galgame-banners-to-image-service` 离线迁移脚本（用上面的骨架）               | 1 天 |
+| PR-4 | 前端 banner 列表页改用 `_mini` 变体 URL；fallback 老 URL                                  | 1 天 |
 
 moyu 结构与 kungal 同（avatar 豁免，无 banner）。三站合计 7–9 个 PR，跨 1–2 个月。
 
@@ -387,12 +389,12 @@ kungal 旧路径 `topic/user_123/alice-1700000000.webp`：`alice` 是上传当�
 
 迁移中任何阶段出错，回滚路径：
 
-| 阶段 | 回滚动作 |
-|------|---------|
-| 1（双写期） | 停掉新代码的写入，旧代码自持续工作 |
+| 阶段          | 回滚动作                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1（双写期）   | 停掉新代码的写入，旧代码自持续工作                                                                         |
 | 2（批量迁移） | 调用方脚本失败行不影响已成功行（`avatar_image_hash IS NULL` 仍代表未迁，再跑就续上）；整体出错则停脚本观察 |
-| 3（URL 回退） | 撤下前端读取的 "优先新 URL" 逻辑，切回 `avatar_url_legacy`；旧桶从未删过，直接可用 |
-| 4（代码切换） | 调用方有 fallback 逻辑，撤回切换不丢数据 |
+| 3（URL 回退） | 撤下前端读取的 "优先新 URL" 逻辑，切回 `avatar_url_legacy`；旧桶从未删过，直接可用                         |
+| 4（代码切换） | 调用方有 fallback 逻辑，撤回切换不丢数据                                                                   |
 
 ## 调用方 cron 清单（每站必备）
 

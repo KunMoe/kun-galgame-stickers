@@ -60,13 +60,13 @@
 }
 ```
 
-| 字段 | 说明 |
-|------|------|
-| access_token | JWT，有效期 15 分钟 |
-| token_type | 固定 "Bearer" |
-| expires_in | 900 秒（15 分钟） |
+| 字段          | 说明                             |
+| ------------- | -------------------------------- |
+| access_token  | JWT，有效期 15 分钟              |
+| token_type    | 固定 "Bearer"                    |
+| expires_in    | 900 秒（15 分钟）                |
 | refresh_token | JWT，有效期 7 天。每次刷新会轮换 |
-| scope | 可选，回显授权时的 scope |
+| scope         | 可选，回显授权时的 scope         |
 
 ---
 
@@ -76,15 +76,15 @@
 
 **查询参数**：
 
-| 参数 | 必填 | 说明 |
-|------|------|------|
-| client_id | 是 | OAuth 客户端 ID |
-| redirect_uri | 是 | 回调地址，必须与注册时一致 |
-| response_type | 是 | 固定 `code` |
-| state | 是 | 随机字符串，防 CSRF |
-| scope | 否 | 权限范围，空格分隔 |
-| code_challenge | 否 | PKCE code challenge |
-| code_challenge_method | 否 | `S256`（默认）或 `plain` |
+| 参数                  | 必填 | 说明                       |
+| --------------------- | ---- | -------------------------- |
+| client_id             | 是   | OAuth 客户端 ID            |
+| redirect_uri          | 是   | 回调地址，必须与注册时一致 |
+| response_type         | 是   | 固定 `code`                |
+| state                 | 是   | 随机字符串，防 CSRF        |
+| scope                 | 否   | 权限范围，空格分隔         |
+| code_challenge        | 否   | PKCE code challenge        |
+| code_challenge_method | 否   | `S256`（默认）或 `plain`   |
 
 **成功响应**：HTTP 302 重定向到 `redirect_uri?code=xxx&state=xxx`
 
@@ -116,15 +116,15 @@
 }
 ```
 
-| 字段 | 说明 |
-|------|------|
-| id | 用户整数 ID（= OAuth `users.id`，与 kungal/moyu 业务表的 `user_id` 外键对齐） |
-| sub | 用户 UUID（OIDC 标准的 subject），与 `id` 标识同一用户，调用方任选其一 |
-| name | 用户名（仅 `profile` scope 或空 scope 时返回） |
-| email | 邮箱（仅 `email` scope 或空 scope 时返回） |
-| picture | 头像 URL（仅 `profile` scope 或空 scope 时返回，可能为空） |
-| roles | 角色名称数组，与 JWT `roles` claim 一致 |
-| updated_at | 最后更新时间（Unix 时间戳） |
+| 字段       | 说明                                                                          |
+| ---------- | ----------------------------------------------------------------------------- |
+| id         | 用户整数 ID（= OAuth `users.id`，与 kungal/moyu 业务表的 `user_id` 外键对齐） |
+| sub        | 用户 UUID（OIDC 标准的 subject），与 `id` 标识同一用户，调用方任选其一        |
+| name       | 用户名（仅 `profile` scope 或空 scope 时返回）                                |
+| email      | 邮箱（仅 `email` scope 或空 scope 时返回）                                    |
+| picture    | 头像 URL（仅 `profile` scope 或空 scope 时返回，可能为空）                    |
+| roles      | 角色名称数组，与 JWT `roles` claim 一致                                       |
+| updated_at | 最后更新时间（Unix 时间戳）                                                   |
 
 **关于 scope 与字段过滤**：
 
@@ -199,12 +199,12 @@
 }
 ```
 
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| name | string? | 2..17 字符；全局唯一 | 用户名 |
-| avatar | string? | ≤255 字符 | 头像 URL（legacy；image_service 普及前继续用） |
-| avatar_image_hash | string? | ≤64 字符 | 头像的 image_service 哈希；前端 resolveAvatarUrl 优先用此字段 |
-| bio | string? | ≤107 字符 | 个人简介 |
+| 字段              | 类型    | 约束                 | 说明                                                          |
+| ----------------- | ------- | -------------------- | ------------------------------------------------------------- |
+| name              | string? | 2..17 字符；全局唯一 | 用户名                                                        |
+| avatar            | string? | ≤255 字符            | 头像 URL（legacy；image_service 普及前继续用）                |
+| avatar_image_hash | string? | ≤64 字符             | 头像的 image_service 哈希；前端 resolveAvatarUrl 优先用此字段 |
+| bio               | string? | ≤107 字符            | 个人简介                                                      |
 
 字段都用指针类型语义：**没传 = 不动；传了 = 设为该值**（包括传空字符串 = 清空）。
 
@@ -212,12 +212,12 @@
 
 **错误响应**：
 
-| HTTP | code | 触发条件 |
-|------|------|----------|
-| 400  | 1    | JSON 格式错误 |
-| 400  | 7    | 字段约束未通过（name 长度、bio 长度等） |
-| 400  | 10007 | name 与其他用户重复 |
-| 401  | 10001/10002/10003 | 未提供 / 无效 / 过期 token |
+| HTTP | code              | 触发条件                                |
+| ---- | ----------------- | --------------------------------------- |
+| 400  | 1                 | JSON 格式错误                           |
+| 400  | 7                 | 字段约束未通过（name 长度、bio 长度等） |
+| 400  | 10007             | name 与其他用户重复                     |
+| 401  | 10001/10002/10003 | 未提供 / 无效 / 过期 token              |
 
 **修改 email 不在这里** —— email 必须走 `/auth/email/send-code` + `/auth/email`（带验证码的两步流程，防止账号被劫持）。
 
@@ -246,9 +246,9 @@ curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
 
 **查询参数**：
 
-| 参数 | 必填 | 说明 |
-|------|------|------|
-| ids | 是 | 1..100 个用户 ID（OAuth 用户表主键），逗号分隔，如 `?ids=1,2,3` |
+| 参数 | 必填 | 说明                                                            |
+| ---- | ---- | --------------------------------------------------------------- |
+| ids  | 是   | 1..100 个用户 ID（OAuth 用户表主键），逗号分隔，如 `?ids=1,2,3` |
 
 **成功响应**：
 
@@ -274,24 +274,24 @@ curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
 }
 ```
 
-| 字段 | 说明 |
-|------|------|
-| users[].id | 用户 ID（与 kungal/moyu 中 `*_user_id` 外键对齐） |
-| users[].uuid | 用户 UUID |
-| users[].name | 用户名 |
-| users[].avatar | 头像 URL（可能为空字符串） |
-| users[].avatar_image_hash | 头像 image_service 哈希（可空） |
-| users[].bio | 个人简介 |
-| users[].status | 0=正常；非 0 时调用方应隐藏或脱敏渲染 |
-| users[].roles | 角色名称数组，如 `["admin"]` |
-| not_found | 请求中存在但 OAuth 库里查不到的 ID 列表 |
+| 字段                      | 说明                                              |
+| ------------------------- | ------------------------------------------------- |
+| users[].id                | 用户 ID（与 kungal/moyu 中 `*_user_id` 外键对齐） |
+| users[].uuid              | 用户 UUID                                         |
+| users[].name              | 用户名                                            |
+| users[].avatar            | 头像 URL（可能为空字符串）                        |
+| users[].avatar_image_hash | 头像 image_service 哈希（可空）                   |
+| users[].bio               | 个人简介                                          |
+| users[].status            | 0=正常；非 0 时调用方应隐藏或脱敏渲染             |
+| users[].roles             | 角色名称数组，如 `["admin"]`                      |
+| not_found                 | 请求中存在但 OAuth 库里查不到的 ID 列表           |
 
 **错误响应**：
 
-| HTTP | code | 触发条件 |
-|------|------|----------|
-| 400  | 9    | `ids` 为空或包含非数字 |
-| 400  | 9    | `ids` 个数超过 100 |
+| HTTP | code              | 触发条件                                            |
+| ---- | ----------------- | --------------------------------------------------- |
+| 400  | 9                 | `ids` 为空或包含非数字                              |
+| 400  | 9                 | `ids` 个数超过 100                                  |
 | 401  | 10001/15001/15009 | Basic Auth 缺失/格式错/client_id 不存在/secret 错误 |
 
 **注意**：响应中**不包含** `email`、`moemoepoint`、`created_at` 等隐私字段。
@@ -311,10 +311,10 @@ curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
 
 **查询参数**：
 
-| 参数 | 必填 | 说明 |
-|------|------|------|
-| q | 是 | 搜索关键词，trim 后 1..50 字符。`%` `_` `\` 等 LIKE 通配符按字面匹配（已转义） |
-| limit | 否 | 返回条数，默认 20，封顶 50 |
+| 参数  | 必填 | 说明                                                                           |
+| ----- | ---- | ------------------------------------------------------------------------------ |
+| q     | 是   | 搜索关键词，trim 后 1..50 字符。`%` `_` `\` 等 LIKE 通配符按字面匹配（已转义） |
+| limit | 否   | 返回条数，默认 20，封顶 50                                                     |
 
 **成功响应**：
 
@@ -334,11 +334,11 @@ curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
 
 **错误响应**：
 
-| HTTP | code | 触发条件 |
-|------|------|----------|
-| 400  | 9    | `q` 为空或缺失 |
-| 400  | 9    | `q` 超过 50 字符 |
-| 400  | 9    | `limit` 不是正整数 |
+| HTTP | code              | 触发条件                      |
+| ---- | ----------------- | ----------------------------- |
+| 400  | 9                 | `q` 为空或缺失                |
+| 400  | 9                 | `q` 超过 50 字符              |
+| 400  | 9                 | `limit` 不是正整数            |
 | 401  | 10001/15001/15009 | Basic Auth 缺失/格式错/凭证错 |
 
 > **注意**：搜索结果**不应缓存**（query 空间无界、结果随注册/改名漂移，缓存命中率低还容易出脏数据）。前端要做实时自动补全，调用方在前端 debounce（推荐 200–300ms）即可。
@@ -368,32 +368,32 @@ curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
 
 ### OAuth 错误 (15xxx)
 
-| Code | HTTP | 消息 | 说明 |
-|------|------|------|------|
-| 15001 | 400 | 无效的客户端 | client_id 不存在 |
-| 15002 | 400 | 无效的回调地址 | redirect_uri 未注册 |
-| 15003 | 400 | 无效的授权码 | code 已过期 / 已使用 / 不存在 |
-| 15004 | 400 | 无效的代码验证器 | PKCE code_verifier 不匹配 |
-| 15005 | 400 | 无效的授权类型 | client 的 `grants` 列里没有当前 grant_type — **常见：admin 创建 client 时漏勾 `refresh_token`** |
-| 15006 | 400 | 无效的权限范围 | 请求的 scope 不在 client 的 `allowed_scopes` 内 |
-| 15007 | 400 | 访问被拒绝 | 用户拒绝授权 |
-| 15008 | 400 | 无效的 client secret | confidential client 没传或填错 client_secret |
-| 15009 | 400 | 需要 PKCE | public client 没传 code_verifier |
+| Code  | HTTP | 消息                 | 说明                                                                                            |
+| ----- | ---- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| 15001 | 400  | 无效的客户端         | client_id 不存在                                                                                |
+| 15002 | 400  | 无效的回调地址       | redirect_uri 未注册                                                                             |
+| 15003 | 400  | 无效的授权码         | code 已过期 / 已使用 / 不存在                                                                   |
+| 15004 | 400  | 无效的代码验证器     | PKCE code_verifier 不匹配                                                                       |
+| 15005 | 400  | 无效的授权类型       | client 的 `grants` 列里没有当前 grant_type — **常见：admin 创建 client 时漏勾 `refresh_token`** |
+| 15006 | 400  | 无效的权限范围       | 请求的 scope 不在 client 的 `allowed_scopes` 内                                                 |
+| 15007 | 400  | 访问被拒绝           | 用户拒绝授权                                                                                    |
+| 15008 | 400  | 无效的 client secret | confidential client 没传或填错 client_secret                                                    |
+| 15009 | 400  | 需要 PKCE            | public client 没传 code_verifier                                                                |
 
 ### 认证错误 (10xxx)
 
-| Code | HTTP | 消息 | 说明 |
-|------|------|------|------|
-| 10001 | 401 | 未授权 | 未提供 Bearer Token |
-| 10002 | 401 | 无效的令牌 | Token 格式错误 / 签名无效 / **refresh 时 client_id 与签发时的不匹配** |
-| 10003 | 401 | 令牌已过期 | access_token 或 refresh_token 已过期，需要刷新或重新登录 |
-| 10005 | 401 | 用户不存在 | UUID 对应的用户不存在（账号被硬删等罕见情况） |
+| Code      | HTTP    | 消息           | 说明                                                                                       |
+| --------- | ------- | -------------- | ------------------------------------------------------------------------------------------ |
+| 10001     | 401     | 未授权         | 未提供 Bearer Token                                                                        |
+| 10002     | 401     | 无效的令牌     | Token 格式错误 / 签名无效 / **refresh 时 client_id 与签发时的不匹配**                      |
+| 10003     | 401     | 令牌已过期     | access_token 或 refresh_token 已过期，需要刷新或重新登录                                   |
+| 10005     | 401     | 用户不存在     | UUID 对应的用户不存在（账号被硬删等罕见情况）                                              |
 | **10014** | **403** | **账号已封禁** | 用户被 admin 封号 — **前端应跳错误页（"账号被封禁"）而非登录页**，让用户再登也是同样的 403 |
 
 ### 通用错误
 
-| Code | 消息 |
-|------|------|
-| 1 | 请求格式错误 |
-| 7 | 参数验证失败 |
-| 10 | 操作失败 |
+| Code | 消息         |
+| ---- | ------------ |
+| 1    | 请求格式错误 |
+| 7    | 参数验证失败 |
+| 10   | 操作失败     |

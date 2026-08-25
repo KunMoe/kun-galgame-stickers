@@ -65,7 +65,7 @@
 
 <ProgressBar />
 
-<div class="flex min-h-dvh flex-col bg-background text-foreground">
+<div class="bg-background text-foreground flex min-h-dvh flex-col">
   <Header />
 
   <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 pt-24 pb-4 sm:px-20">
@@ -73,13 +73,13 @@
     <BackToTop />
   </main>
 
-  <footer class="flex flex-col items-center gap-1 px-4 py-4 text-sm text-default-500">
+  <footer class="text-default-500 flex flex-col items-center gap-1 px-4 py-4 text-sm">
     <p>{m().home.kun}</p>
     <p>
       {m().home.open}
       <a
         href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit"
-        class="text-primary underline underline-offset-4 hover:text-primary-600"
+        class="text-primary hover:text-primary-600 underline underline-offset-4"
       >
         GitHub
       </a>
@@ -88,7 +88,7 @@
       {m().footer.poweredBy}
       <a
         href="https://www.kungal.com"
-        class="text-primary underline underline-offset-4 hover:text-primary-600"
+        class="text-primary hover:text-primary-600 underline underline-offset-4"
       >
         {m().footer.forumName}
       </a>

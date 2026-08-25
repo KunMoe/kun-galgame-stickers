@@ -2,13 +2,13 @@
 
 ## 里程碑概览
 
-| 里程碑 | 目标 | 预估 | 依赖 |
-|--------|------|------|------|
-| **V1** | 安全上线：OAuth + 压缩管线 + 固定变体 + 配额 + TTL 引用 | 4–5 天 | 无 |
-| **V2** | 完善：SDK + 多 preset 配置 + stats + 前端直传（按需） | 3–4 天 | V1 |
-| **V2.5** | ⏸ 可选项：imgproxy（仅当出现"任意尺寸"需求时启用） | 不排期 | V2 |
-| **V3** | ⏸ 延后：AI 审核 + Admin UI | 按需 | V2 |
-| **V4** | 迁移：调用方业务代码切换 + 老数据迁移 | 每站 1–2 个月 | V1 |
+| 里程碑   | 目标                                                    | 预估          | 依赖 |
+| -------- | ------------------------------------------------------- | ------------- | ---- |
+| **V1**   | 安全上线：OAuth + 压缩管线 + 固定变体 + 配额 + TTL 引用 | 4–5 天        | 无   |
+| **V2**   | 完善：SDK + 多 preset 配置 + stats + 前端直传（按需）   | 3–4 天        | V1   |
+| **V2.5** | ⏸ 可选项：imgproxy（仅当出现"任意尺寸"需求时启用）      | 不排期        | V2   |
+| **V3**   | ⏸ 延后：AI 审核 + Admin UI                              | 按需          | V2   |
+| **V4**   | 迁移：调用方业务代码切换 + 老数据迁移                   | 每站 1–2 个月 | V1   |
 
 **平台侧工程周期**：V1 + V2 ≈ **1–2 周**。
 **全量落地**（含三站调用方切换）：**2–4 个月**。
@@ -22,6 +22,7 @@
 单靠 V1 能上线一个**完整可用**的图片服务：接入 kungal 头像（作为最简闭环）能跑起来、不会翻车。
 
 > ⚠️ V1 的每一项都是下限，少一块会炸：
+>
 > - 缺压缩 + 变体 → 前端拿到 5MB 原图直接渲染废页面
 > - 缺配额 → 第一周被 4K 截图刷爆 R2
 > - 缺 OAuth → 谁都能匿名上传
@@ -211,6 +212,7 @@ apps/api/
 ### 注意
 
 **不要替换现有预生成**。imgproxy 是附加能力，不是替换：
+
 - 热路径变体（avatar-100 / banner-mini 等）继续走预生成（稳定、快）
 - 低频或动态变体走 imgproxy
 
@@ -346,8 +348,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -367,9 +369,9 @@ services:
       "
 
   kun-image-service:
-    image: kun-oauth-admin/image-service:latest    # 或 build 本地
+    image: kun-oauth-admin/image-service:latest # 或 build 本地
     ports:
-      - "9278:9278"
+      - '9278:9278'
     env_file:
       - ./.env.image-service.dev
     depends_on:
@@ -401,13 +403,13 @@ KUN_IMAGE_OAUTH_CLIENT_SECRET=<your_client_secret>
 
 ## 风险登记
 
-| 风险 | 里程碑 | 缓解 |
-|------|--------|------|
-| libvips CGO 构建失败 | V1 | 准备 `kolesa-team/go-webp` 作为纯 CGO 备选；CI 镜像固化依赖 |
-| MinIO / S3 协议兼容性差异 | V1 | 使用 `aws-sdk-go-v2` 泛协议，MinIO 开发 + R2 预发测试 |
-| 配额 Redis 短暂不可用 | V1 | 降级策略：Redis 失败时限速到站点配置 1% 兜底，而非直接 500 |
-| 调用方切换周期过长阻塞老桶下线 | V4 | 明确老 avatar/banner 桶至少保留 6 个月；topic 老桶永久保留 |
-| preset 配置漂移 | V2 | preset 改动走 PR review，附回填脚本 dry-run 输出 |
+| 风险                           | 里程碑 | 缓解                                                        |
+| ------------------------------ | ------ | ----------------------------------------------------------- |
+| libvips CGO 构建失败           | V1     | 准备 `kolesa-team/go-webp` 作为纯 CGO 备选；CI 镜像固化依赖 |
+| MinIO / S3 协议兼容性差异      | V1     | 使用 `aws-sdk-go-v2` 泛协议，MinIO 开发 + R2 预发测试       |
+| 配额 Redis 短暂不可用          | V1     | 降级策略：Redis 失败时限速到站点配置 1% 兜底，而非直接 500  |
+| 调用方切换周期过长阻塞老桶下线 | V4     | 明确老 avatar/banner 桶至少保留 6 个月；topic 老桶永久保留  |
+| preset 配置漂移                | V2     | preset 改动走 PR review，附回填脚本 dry-run 输出            |
 
 ---
 

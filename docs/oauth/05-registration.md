@@ -73,12 +73,13 @@
 }
 ```
 
-| 字段 | 类型 | 约束 |
-|---|---|---|
-| name | string | 1..17 字符；允许 Unicode 字母/数字 + `!~_@#$%^&*()+=-`；**禁止**所有不可见 Unicode 字符（零宽、特殊空格、BOM 等 50+ 种）—— 详见 `utils.IsValidName` |
-| email | string | 合法邮箱格式 |
+| 字段  | 类型   | 约束                                                                                                                                                |
+| ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name  | string | 1..17 字符；允许 Unicode 字母/数字 + `!~_@#$%^&*()+=-`；**禁止**所有不可见 Unicode 字符（零宽、特殊空格、BOM 等 50+ 种）—— 详见 `utils.IsValidName` |
+| email | string | 合法邮箱格式                                                                                                                                        |
 
 **行为**：
+
 - 同步预检：name / email 是否已被注册 → 已被注册立即返回错误（不烧验证码额度，不发邮件）
 - 同邮箱限流：15 分钟（默认，可通过 `KUN_AUTH_VERIFICATION_CODE_TTL_MINUTES` 调整）内同一邮箱最多寄 1 次（Redis key `register_code:{email}` 兜底）
 - 验证码 6 位数字，存 Redis 15 分钟（默认，可通过 `KUN_AUTH_VERIFICATION_CODE_TTL_MINUTES` 调整） TTL
@@ -92,14 +93,14 @@
 
 **错误响应**：
 
-| HTTP | code | 触发条件 |
-|------|------|----------|
-| 400  | 1    | JSON 格式错误 |
-| 400  | 7    | 字段约束未通过（name 长度 / email 格式） |
-| 400  | 10006 | 邮箱已被注册 |
-| 400  | 10007 | 用户名已被使用 |
+| HTTP | code  | 触发条件                                                                                           |
+| ---- | ----- | -------------------------------------------------------------------------------------------------- |
+| 400  | 1     | JSON 格式错误                                                                                      |
+| 400  | 7     | 字段约束未通过（name 长度 / email 格式）                                                           |
+| 400  | 10006 | 邮箱已被注册                                                                                       |
+| 400  | 10007 | 用户名已被使用                                                                                     |
 | 400  | 10012 | 该邮箱 15 分钟（默认，可通过 `KUN_AUTH_VERIFICATION_CODE_TTL_MINUTES` 调整）内已发过验证码（限流） |
-| 429  | — | 同 IP 触发 strict 限流（10/分钟） |
+| 429  | —     | 同 IP 触发 strict 限流（10/分钟）                                                                  |
 
 > ⚠️ **错误码 10006 + 10007 会泄露"该邮箱/用户名是否已注册"** —— 这是有意权衡：用户体验上需要明确告知"换一个吧"，而注册场景的账号枚举攻击面比登录小（登录页只回笼统的"账号或密码错误"）。如果产品需要更严的反枚举，未来可改为"如果该邮箱可注册，验证码已寄出"统一文案 + 后端静默吞错。
 
@@ -120,12 +121,12 @@
 }
 ```
 
-| 字段 | 类型 | 约束 |
-|---|---|---|
-| name | string | 1..17 字符；全局唯一；字符集见 send-code 节（`utils.IsValidName`） |
-| email | string | 合法邮箱格式；全局唯一；**必须与 send-code 时一致**（验证码按 email key 存的） |
-| password | string | 6..100 字符 |
-| code | string | 6 位数字；从 send-code 时寄到 email 的邮件正文中获取 |
+| 字段     | 类型   | 约束                                                                           |
+| -------- | ------ | ------------------------------------------------------------------------------ |
+| name     | string | 1..17 字符；全局唯一；字符集见 send-code 节（`utils.IsValidName`）             |
+| email    | string | 合法邮箱格式；全局唯一；**必须与 send-code 时一致**（验证码按 email key 存的） |
+| password | string | 6..100 字符                                                                    |
+| code     | string | 6 位数字；从 send-code 时寄到 email 的邮件正文中获取                           |
 
 **成功响应**：返回访问令牌 + 用户资料 + 刷新令牌（写 httpOnly cookie）。
 
@@ -154,15 +155,15 @@
 
 **错误响应**：
 
-| HTTP | code | 触发条件 |
-|------|------|----------|
-| 400  | 1    | JSON 格式错误 |
-| 400  | 7    | 字段约束未通过（name/email/password/code 长度或格式） |
-| 400  | 10006 | 邮箱已被注册（并发竞争；正常 send-code 阶段就该挡掉） |
-| 400  | 10007 | 用户名已被使用（同上） |
-| 400  | 10010 | 验证码错误（不匹配 send-code 时存的值） |
+| HTTP | code  | 触发条件                                                |
+| ---- | ----- | ------------------------------------------------------- |
+| 400  | 1     | JSON 格式错误                                           |
+| 400  | 7     | 字段约束未通过（name/email/password/code 长度或格式）   |
+| 400  | 10006 | 邮箱已被注册（并发竞争；正常 send-code 阶段就该挡掉）   |
+| 400  | 10007 | 用户名已被使用（同上）                                  |
+| 400  | 10010 | 验证码错误（不匹配 send-code 时存的值）                 |
 | 400  | 10011 | 验证码已过期或从未请求（Redis 里没找到这个邮箱的 code） |
-| 429  | — | 同 IP 触发 strict 限流（10/分钟） |
+| 429  | —     | 同 IP 触发 strict 限流（10/分钟）                       |
 
 > **常见 10011 来源**：用户改了 email 字段后没重新发验证码 → 后端按新 email 找 Redis key 找不到 → 报"已过期"。前端应当锁定 email 字段直到用户主动点"重新发送"。
 
@@ -176,9 +177,9 @@
 
 **查询参数**：
 
-| 参数 | 必填 | 说明 |
-|---|---|---|
-| client_id | ✓ | OAuth client ID |
+| 参数      | 必填 | 说明            |
+| --------- | ---- | --------------- |
+| client_id | ✓    | OAuth client ID |
 
 **成功响应**：
 
@@ -194,21 +195,21 @@
 }
 ```
 
-| 字段 | 说明 |
-|---|---|
-| id | client_id（回显） |
-| name | 展示名 |
+| 字段         | 说明                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------- |
+| id           | client_id（回显）                                                                      |
+| name         | 展示名                                                                                 |
 | auto_consent | 第一方 client 标志；为 true 时前端**跳过同意页**，直接 POST `/oauth/authorize/consent` |
-| site_domain | 关联 site 的 domain（可空），用于展示"将跳转回 X" |
+| site_domain  | 关联 site 的 domain（可空），用于展示"将跳转回 X"                                      |
 
 > **不返回**：`secret`、`redirect_uris`、`scopes` 等敏感 / 实现细节。这个端点只为前端判定 UI 行为服务。
 
 **错误响应**：
 
-| HTTP | code | 触发条件 |
-|---|---|---|
-| 400 | 2 | 缺 client_id |
-| 404 | 15001 | client_id 不存在 |
+| HTTP | code  | 触发条件         |
+| ---- | ----- | ---------------- |
+| 400  | 2     | 缺 client_id     |
+| 404  | 15001 | client_id 不存在 |
 
 ---
 
@@ -252,20 +253,21 @@ const handleOAuthRegister = async () => {
 
 ### 2. 用户感知的完整时间线
 
-| 步 | 用户看到的 URL | 时间 | 用户感知 |
-|---|---|---|---|
-| 1 | `www.kungal.com/login` 点击"注册" | 0 ms | 点击 |
-| 2 | `oauth.kungal.com/auth/register?redirect=...` | ~200 ms | "跳到了账号注册页" |
-| 3 | 同上，填表 | 用户自主时间 | 填邮箱 + 密码 + 用户名 |
-| 4 | `oauth.kungal.com/oauth/authorize?...` | ~100 ms（注册返回后立即跳） | **白屏一闪**（auto_consent 不渲染 UI） |
-| 5 | `www.kungal.com/auth/callback?code=...` | ~150 ms | **白屏一闪**（kungal 在交换 token） |
-| 6 | `www.kungal.com/` (或 redirect_uri 配的路径) | — | "我已经登录了" |
+| 步  | 用户看到的 URL                                | 时间                        | 用户感知                               |
+| --- | --------------------------------------------- | --------------------------- | -------------------------------------- |
+| 1   | `www.kungal.com/login` 点击"注册"             | 0 ms                        | 点击                                   |
+| 2   | `oauth.kungal.com/auth/register?redirect=...` | ~200 ms                     | "跳到了账号注册页"                     |
+| 3   | 同上，填表                                    | 用户自主时间                | 填邮箱 + 密码 + 用户名                 |
+| 4   | `oauth.kungal.com/oauth/authorize?...`        | ~100 ms（注册返回后立即跳） | **白屏一闪**（auto_consent 不渲染 UI） |
+| 5   | `www.kungal.com/auth/callback?code=...`       | ~150 ms                     | **白屏一闪**（kungal 在交换 token）    |
+| 6   | `www.kungal.com/` (或 redirect_uri 配的路径)  | —                           | "我已经登录了"                         |
 
 第 4 步和第 5 步加起来一般在 300 ms 以下，用户感知就是"注册完成后回到原站点已登录"。
 
 ### 3. 已注册用户访问 `/auth/register` 的处理
 
 用户已登录的状态下访问 `oauth.kungal.com/auth/register?redirect=...`，OAuth web 应当：
+
 - 如果 `redirect` 参数存在 → 立即 `window.location.href = redirect`（推进 OAuth code 流程）
 - 否则 → 跳 `/profile`（账号管理页）
 
@@ -278,6 +280,7 @@ const handleOAuthRegister = async () => {
 `oauth_clients.auto_consent` boolean，默认 `false`。**为 true 表示这个 client 在 `/oauth/authorize` 流程中跳过用户同意 UI**——前端不渲染"该应用将获得以下权限"卡片，直接 POST `/oauth/authorize/consent`。
 
 **何时设 true**：
+
 - ✅ **第一方 client**（owner 是 OAuth 平台自己，比如 kungal / moyu / wiki / AI / sticker）
 - ❌ 第三方接入应用
 - ❌ 任何不在你直接控制下的 client
@@ -286,11 +289,11 @@ const handleOAuthRegister = async () => {
 
 **当前的第一方列表**（auto_consent=true）：
 
-| client_id | name | site |
-|---|---|---|
-| 4ed9bc99ec0a789a4796b83e22bd84c5 | 鲲 Galgame 论坛 | www.kungal.com |
-| df3ff6008d740bfacbe46aa8cf483cf2 | 鲲 Galgame 补丁 | www.moyu.moe |
-| df46a4cfa71ac919b7b43d63238e2311 | 鲲 Galgame AI | ai.kungal.com |
+| client_id                        | name              | site               |
+| -------------------------------- | ----------------- | ------------------ |
+| 4ed9bc99ec0a789a4796b83e22bd84c5 | 鲲 Galgame 论坛   | www.kungal.com     |
+| df3ff6008d740bfacbe46aa8cf483cf2 | 鲲 Galgame 补丁   | www.moyu.moe       |
+| df46a4cfa71ac919b7b43d63238e2311 | 鲲 Galgame AI     | ai.kungal.com      |
 | 2d8d48a141a3340b43ae206b73cdaa37 | 鲲 Galgame 表情包 | sticker.kungal.com |
 
 如果将来接入第三方应用（比如某社区合作伙伴），新建的 client 默认 `auto_consent=false`，会渲染同意页让用户明确授权——这是 OAuth 协议的正确语义。

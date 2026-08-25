@@ -2,12 +2,7 @@ import { page } from '$app/state'
 import zhCN from './messages/zh-cn'
 import enUS from './messages/en-us'
 import type { Messages } from './messages/shape'
-import {
-  DEFAULT_LOCALE,
-  type Locale,
-  type MultilingualText,
-  URL_PREFIX_TO_LOCALE
-} from './types'
+import { DEFAULT_LOCALE, type Locale, type MultilingualText, URL_PREFIX_TO_LOCALE } from './types'
 
 export type { Messages }
 
@@ -27,9 +22,7 @@ export const m = (): Messages => getMessages((page.data?.lang as Locale) ?? DEFA
  * Strip a leading locale prefix (e.g. `/en/about` → `{ locale: 'en-us', pathname: '/about' }`).
  * The default locale has no prefix, so `/about` → `{ locale: 'zh-cn', pathname: '/about' }`.
  */
-export const detectLocaleFromPath = (
-  pathname: string
-): { locale: Locale; pathname: string } => {
+export const detectLocaleFromPath = (pathname: string): { locale: Locale; pathname: string } => {
   const match = pathname.match(/^\/([a-z]{2})(\/.*)?$/i)
   if (match) {
     const locale = URL_PREFIX_TO_LOCALE[match[1].toLowerCase()]

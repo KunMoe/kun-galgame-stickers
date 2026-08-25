@@ -1,7 +1,7 @@
 # 07 — 重新开放上传 + CGO/libwebp 部署 Checklist
 
 > 2026-05 实操记录。image service 的上传曾被 `48dc3f4 feat: disable image
-> upload service` 主动关闭，根因不是没做完，而是**编码器选错了**：原实现
+upload service` 主动关闭，根因不是没做完，而是**编码器选错了**：原实现
 > 用纯 Go `nativewebp`，它只能输出无损 VP8L webp、**没有 quality 参数** →
 > 多 MB 大文件 → 不敢放量。已切换为 libwebp（CGO）lossy 编码，质量可控。
 > 本篇是把上传重新开起来的完整 checklist + 回滚预案。
@@ -10,13 +10,13 @@
 
 ## 1. 这次改了什么（背景，先读）
 
-| 项 | 原来 | 现在 |
-|---|---|---|
+| 项        | 原来                                                            | 现在                                                                      |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | WebP 编码 | `github.com/HugoSmits86/nativewebp`（纯 Go，**只能无损 VP8L**） | `github.com/kolesa-team/go-webp`（CGO → libwebp，真 lossy，quality 可控） |
-| 质量 | 无 quality 概念（lossless） | **lossy quality=77**（preset 配置驱动，processor clamp 1..100） |
-| 构建 | 纯 Go，`CGO_ENABLED` 无所谓 | **必须 `CGO_ENABLED=1` + 系统 libwebp** |
-| 上传开关 | `KUN_IMAGE_UPLOAD_ENABLED` 默认 false → 503 | `.env` 显式 `=true` 开启 |
-| 公开域名 | `image.kungal.nextmoe.dev` | `image.kungal.iloveren.link` |
+| 质量      | 无 quality 概念（lossless）                                     | **lossy quality=77**（preset 配置驱动，processor clamp 1..100）           |
+| 构建      | 纯 Go，`CGO_ENABLED` 无所谓                                     | **必须 `CGO_ENABLED=1` + 系统 libwebp**                                   |
+| 上传开关  | `KUN_IMAGE_UPLOAD_ENABLED` 默认 false → 503                     | `.env` 显式 `=true` 开启                                                  |
+| 公开域名  | `image.kungal.nextmoe.dev`                                      | `image.kungal.iloveren.link`                                              |
 
 **老图豁免不变**：kungal/moyu 已压缩的历史 avatar/topic 图**不迁移、不二次压缩**，
 继续走 `*_url_legacy` fallback。只有**新上传**走 image service（→ lossy webp@77）。
@@ -28,12 +28,12 @@ galgame wiki banner 仍按 `04-migration-plan.md` 需要 `_mini` 变体而单独
 
 image service 现在是 cgo 二进制，构建/运行机器都要有 libwebp 开发库。
 
-| 平台 | 安装 |
-|---|---|
-| Arch | `sudo pacman -S libwebp` |
-| Debian/Ubuntu | `sudo apt install libwebp-dev` |
+| 平台           | 安装                                             |
+| -------------- | ------------------------------------------------ |
+| Arch           | `sudo pacman -S libwebp`                         |
+| Debian/Ubuntu  | `sudo apt install libwebp-dev`                   |
 | Alpine（容器） | `apk add libwebp-dev` + 运行期 `apk add libwebp` |
-| macOS（本地） | `brew install webp` |
+| macOS（本地）  | `brew install webp`                              |
 
 验证（构建前必查）：
 
@@ -150,12 +150,12 @@ curl -sS -F file=@test.jpg -F preset=avatar \
 
 ## 8. 回滚预案
 
-| 场景 | 回滚动作 |
-|---|---|
+| 场景                           | 回滚动作                                                                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 上传出问题但服务其他端点要保活 | `.env` 改 `KUN_IMAGE_UPLOAD_ENABLED=false` + 重启 → `/image/upload` 回 503，meta/ping/stats/healthz 照常；调用方按硬失败策略返 503 给用户（不本地兜底） |
-| q77 观感不行 | 调 `image_presets.yaml` quality（如 82）重启；**已上传的图不受影响**（hash 寻址，旧图保留旧编码，新图用新质量） |
-| libwebp 运行机缺失导致起不来 | 运行机 `apt/pacman install libwebp` 后重启；临时可先 `KUN_IMAGE_UPLOAD_ENABLED=false` 让其他端点先活 |
-| 想彻底退回（不推荐） | git revert 编码器改动 → 回纯 Go nativewebp（=回到无损大文件，失去 quality）；只有在死活不能上 CGO 时才考虑 |
+| q77 观感不行                   | 调 `image_presets.yaml` quality（如 82）重启；**已上传的图不受影响**（hash 寻址，旧图保留旧编码，新图用新质量）                                         |
+| libwebp 运行机缺失导致起不来   | 运行机 `apt/pacman install libwebp` 后重启；临时可先 `KUN_IMAGE_UPLOAD_ENABLED=false` 让其他端点先活                                                    |
+| 想彻底退回（不推荐）           | git revert 编码器改动 → 回纯 Go nativewebp（=回到无损大文件，失去 quality）；只有在死活不能上 CGO 时才考虑                                              |
 
 > **不可回滚项**：已经以 q77 写进 R2 的图就是 q77（内容寻址，hash 即指纹）。
 > 调质量只影响**之后**新上传。要"重压"旧图只能让调用方以原图重新 Upload

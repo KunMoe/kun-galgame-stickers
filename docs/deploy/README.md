@@ -67,10 +67,10 @@ push 到 svelte-kit ─► GitHub Actions 构建 ─► 推 ghcr.io/kunmoe/stick
 ### ⚠️ 关于 `prisma` 与镜像体积（务必理解）
 
 - **`prisma` CLI 不是本项目依赖**（不在 `package.json`）。原因：Prisma 7 的 `@prisma/client` 把 `prisma` 声明为**可选 peer**；只要 `prisma` 出现在 workspace，lockfile 就会把它解析进来，连带 `studio-core / effect / pglite / engines / typescript …` 一棵 **~230MB** 的树被拖进**运行时镜像**。
-- 因此构建时用 **`pnpm dlx prisma@7.8.0 generate`**（CLI 从临时缓存跑，不进 `node_modules`），运行时只保留 `@prisma/client + @prisma/adapter-pg + pg`。
+- 因此构建时用 **`pnpm dlx prisma@7.9.1 generate`**（CLI 从临时缓存跑，不进 `node_modules`），运行时只保留 `@prisma/client + @prisma/adapter-pg + pg`。
 - 效果：运行时 `node_modules` 约 **178MB**（而非 ~405MB）。
-- **升级 `@prisma/client` 时**，同步把 Dockerfile 里 `dlx prisma@7.8.0` 的版本号一起改。
-- `pnpm prisma:push` / `pnpm prisma:generate` 这两个 script 写的是 `pnpm prisma …`，**只有在本机存在 prisma 时才可用**；不存在时请直接用 `pnpm dlx prisma@7.8.0 …`（见 §4）。
+- **升级 `@prisma/client` 时**，同步把 Dockerfile 里 `dlx prisma@7.9.1` 的版本号一起改。
+- `pnpm prisma:push` / `pnpm prisma:generate` 这两个 script 写的是 `pnpm prisma …`，**只有在本机存在 prisma 时才可用**；不存在时请直接用 `pnpm dlx prisma@7.9.1 …`（见 §4）。
 
 ### 镜像大小
 
@@ -119,7 +119,7 @@ docker compose -f docker-compose.prod.yml exec postgres \
 
 ```bash
 KUN_DATABASE_URL='postgresql://postgres:<PASSWORD>@<POSTGRES_HOST>:5432/kungalgame_sticker' \
-  pnpm dlx prisma@7.8.0 db push
+  pnpm dlx prisma@7.9.1 db push
 ```
 
 > 运行时镜像里**没有 prisma CLI**，所以 push 不在运行容器里跑，而是用 `dlx` 从仓库/CI 跑。`<POSTGRES_HOST>` 在容器网络里是 `postgres`，从宿主则用映射端口。
@@ -193,7 +193,7 @@ docker build -t sticker:local .
 docker network create stickernet
 docker run -d --name pg --network stickernet -p 55432:5432 \
   -e POSTGRES_PASSWORD=test -e POSTGRES_DB=kungalgame_sticker postgres:18-alpine
-KUN_DATABASE_URL='postgresql://postgres:test@localhost:55432/kungalgame_sticker' pnpm dlx prisma@7.8.0 db push
+KUN_DATABASE_URL='postgresql://postgres:test@localhost:55432/kungalgame_sticker' pnpm dlx prisma@7.9.1 db push
 
 docker run --rm --network stickernet -p 3001:3000 \
   -e KUN_DATABASE_URL='postgresql://postgres:test@pg:5432/kungalgame_sticker?sslmode=disable' \
@@ -212,7 +212,7 @@ docker run --rm --network stickernet -p 3001:3000 \
 ## 9 · 运维 / 取舍
 
 - **日志 / 重部署 / 回滚**：用 Dokploy 面板；预构建镜像模式下回滚 = 切回上一个 GHCR tag。
-- **Schema 变更**：改 `prisma/schema.prisma` 后，对目标库重新 `pnpm dlx prisma@7.8.0 db push`（本项目无 migrations，是 push 流）。
+- **Schema 变更**：改 `prisma/schema.prisma` 后，对目标库重新 `pnpm dlx prisma@7.9.1 db push`（本项目无 migrations，是 push 流）。
 - **证书 / 反代**：Traefik 托管，勿叠加 Caddy/nginx/CF Tunnel。
 - **图片体积**：见 §2；迁对象存储后 `static/` 瘦身，镜像随之变小，是后续独立事项。
 

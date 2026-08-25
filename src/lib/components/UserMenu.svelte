@@ -9,9 +9,7 @@
 
   const user = $derived(page.data.user)
   const displayName = $derived(user?.name ?? user?.email ?? m().auth.anonymous)
-  const initials = $derived(
-    (user?.name ?? user?.email ?? '?').trim().slice(0, 1).toUpperCase()
-  )
+  const initials = $derived((user?.name ?? user?.email ?? '?').trim().slice(0, 1).toUpperCase())
   const returnTo = $derived(page.url.pathname + page.url.search)
   const loginHref = $derived(`/auth/login?return_to=${encodeURIComponent(returnTo)}`)
   const registerHref = $derived(`/auth/register?return_to=${encodeURIComponent(returnTo)}`)
@@ -30,14 +28,14 @@
   <div class="flex items-center gap-1">
     <a
       href={registerHref}
-      class="hidden h-9 items-center px-3 text-sm text-primary transition hover:bg-content2 sm:flex"
+      class="text-primary hover:bg-content2 hidden h-9 items-center px-3 text-sm transition sm:flex"
       data-sveltekit-preload-data="off"
     >
       {m().auth.register}
     </a>
     <a
       href={loginHref}
-      class="flex h-9 items-center gap-2 px-3 text-sm text-primary transition hover:bg-content2"
+      class="text-primary hover:bg-content2 flex h-9 items-center gap-2 px-3 text-sm transition"
       data-sveltekit-preload-data="off"
     >
       <Icon icon="line-md:log-in" class="text-xl" />
@@ -51,7 +49,7 @@
       aria-haspopup="menu"
       aria-expanded={open}
       onclick={() => (open = !open)}
-      class="flex h-9 items-center gap-2 px-2 text-sm transition hover:bg-content2"
+      class="hover:bg-content2 flex h-9 items-center gap-2 px-2 text-sm transition"
     >
       {#if user.picture}
         <img
@@ -65,7 +63,7 @@
       {:else}
         <span
           aria-hidden="true"
-          class="flex h-7 w-7 items-center justify-center bg-primary text-xs font-bold text-white"
+          class="bg-primary flex h-7 w-7 items-center justify-center text-xs font-bold text-white"
         >
           {initials}
         </span>
@@ -76,12 +74,12 @@
     {#if open}
       <div
         role="menu"
-        class="absolute top-12 right-0 z-50 flex w-48 flex-col gap-1 border bg-content1 p-2 shadow-lg"
+        class="bg-content1 absolute top-12 right-0 z-50 flex w-48 flex-col gap-1 border p-2 shadow-lg"
       >
         <div class="border-b px-3 py-2 text-sm">
           <p class="font-semibold">{displayName}</p>
           {#if user.email}
-            <p class="truncate text-xs text-default-500">{user.email}</p>
+            <p class="text-default-500 truncate text-xs">{user.email}</p>
           {/if}
         </div>
 
@@ -90,7 +88,7 @@
           target="_blank"
           rel="noopener noreferrer"
           role="menuitem"
-          class="flex items-center gap-2 px-3 py-1.5 text-sm transition hover:bg-content2"
+          class="hover:bg-content2 flex items-center gap-2 px-3 py-1.5 text-sm transition"
         >
           <Icon icon="line-md:account" class="text-lg" />
           <span>{m().auth.profile}</span>
@@ -103,7 +101,7 @@
             open = false
             showLogout = true
           }}
-          class="flex items-center gap-2 px-3 py-1.5 text-left text-sm transition hover:bg-content2"
+          class="hover:bg-content2 flex items-center gap-2 px-3 py-1.5 text-left text-sm transition"
         >
           <Icon icon="line-md:log-out" class="text-lg" />
           <span>{m().auth.logout}</span>
@@ -113,35 +111,37 @@
   </div>
 
   {#if showLogout}
-    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div
       class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
       role="presentation"
-      onclick={() => (showLogout = false)}
+      onclick={(event) => {
+        if (event.target === event.currentTarget) showLogout = false
+      }}
+      onkeydown={(event) => {
+        if (event.key === 'Escape') showLogout = false
+      }}
     >
-      <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
       <div
         role="dialog"
         aria-modal="true"
         tabindex="-1"
-        class="w-full max-w-md border bg-content1 p-5 shadow-xl"
-        onclick={(event) => event.stopPropagation()}
+        class="bg-content1 w-full max-w-md border p-5 shadow-xl"
       >
         <h2 class="text-base font-semibold">{m().auth.logoutTitle}</h2>
-        <p class="mt-1 text-sm text-default-500">{m().auth.logoutPrompt}</p>
+        <p class="text-default-500 mt-1 text-sm">{m().auth.logoutPrompt}</p>
 
         <form method="POST" action="/auth/logout" class="mt-4 block">
           <input type="hidden" name="return_to" value={returnTo} />
           <input type="hidden" name="scope" value="everywhere" />
           <button
             type="submit"
-            class="flex w-full flex-col gap-1 border border-primary p-3 text-left transition hover:bg-content2"
+            class="border-primary hover:bg-content2 flex w-full flex-col gap-1 border p-3 text-left transition"
           >
             <span class="flex items-center gap-2 text-sm font-medium">
-              <Icon icon="line-md:log-out" class="text-lg text-primary" />
+              <Icon icon="line-md:log-out" class="text-primary text-lg" />
               {m().auth.logoutEverywhere}
             </span>
-            <span class="text-xs text-default-500">{m().auth.logoutEverywhereHint}</span>
+            <span class="text-default-500 text-xs">{m().auth.logoutEverywhereHint}</span>
           </button>
         </form>
 
@@ -150,10 +150,10 @@
           <input type="hidden" name="scope" value="local" />
           <button
             type="submit"
-            class="flex w-full flex-col gap-1 border p-3 text-left transition hover:bg-content2"
+            class="hover:bg-content2 flex w-full flex-col gap-1 border p-3 text-left transition"
           >
             <span class="text-sm font-medium">{m().auth.logoutLocal}</span>
-            <span class="text-xs text-default-500">{m().auth.logoutLocalHint}</span>
+            <span class="text-default-500 text-xs">{m().auth.logoutLocalHint}</span>
           </button>
         </form>
 
@@ -161,7 +161,7 @@
           <button
             type="button"
             onclick={() => (showLogout = false)}
-            class="px-3 py-1.5 text-sm transition hover:bg-content2"
+            class="hover:bg-content2 px-3 py-1.5 text-sm transition"
           >
             {m().auth.cancel}
           </button>

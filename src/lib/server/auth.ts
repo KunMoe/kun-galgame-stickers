@@ -1,11 +1,6 @@
 import type { Cookies } from '@sveltejs/kit'
 import { dev } from '$app/environment'
-import {
-  fetchOAuthUser,
-  refreshOAuthTokens,
-  type OAuthTokens,
-  type OAuthUser
-} from './oauth'
+import { fetchOAuthUser, refreshOAuthTokens, type OAuthTokens, type OAuthUser } from './oauth'
 
 export const COOKIES = {
   access: 'kun_oauth_access',
@@ -22,13 +17,12 @@ const REFRESH_TTL_SEC = 60 * 60 * 24 * 7 // 7 days — matches OAuth refresh_tok
 const PKCE_TTL_SEC = 60 * 10 // 10 minutes — covers the OAuth round-trip
 const ACCESS_SAFETY_WINDOW_SEC = 30
 
-const baseCookie = () =>
-  ({
-    path: '/' as const,
-    httpOnly: true,
-    secure: !dev,
-    sameSite: 'lax' as const
-  })
+const baseCookie = () => ({
+  path: '/' as const,
+  httpOnly: true,
+  secure: !dev,
+  sameSite: 'lax' as const
+})
 
 interface JwtClaims {
   sub: string

@@ -19,11 +19,11 @@
 
 ### 设计说明
 
-| 层 | 作用 |
-|----|------|
+| 层                       | 作用                                                                 |
+| ------------------------ | -------------------------------------------------------------------- |
 | `<hash[:2]>/<hash[2:4]>` | 前缀分片。对象存储本身无目录概念，但便于 `aws s3 ls` / `rclone` 扫描 |
-| `<hash>.webp` | SHA-256 全 hash 做主图文件名；V1 所有输出固定 `.webp` |
-| `<hash>_<variant>.webp` | 变体用下划线 + 变体名后缀（如 `_100`、`_mini`） |
+| `<hash>.webp`            | SHA-256 全 hash 做主图文件名；V1 所有输出固定 `.webp`                |
+| `<hash>_<variant>.webp`  | 变体用下划线 + 变体名后缀（如 `_100`、`_mini`）                      |
 
 ### 为什么不在 key 里带 site
 
@@ -33,11 +33,11 @@
 
 变体名由 preset 配置决定，V1 固定三套：
 
-| preset | 变体集 | 说明 |
-|--------|--------|------|
-| `avatar` | `[256, 100]` | 256×256 方形头像（用于常规展示）+ 100×100 小头像（评论、历史兼容） |
-| `galgame_banner` | `[mini]` | 460×259 banner 缩略图 |
-| `topic` | `[]` | 无变体，仅主图 |
+| preset           | 变体集       | 说明                                                               |
+| ---------------- | ------------ | ------------------------------------------------------------------ |
+| `avatar`         | `[256, 100]` | 256×256 方形头像（用于常规展示）+ 100×100 小头像（评论、历史兼容） |
+| `galgame_banner` | `[mini]`     | 460×259 banner 缩略图                                              |
+| `topic`          | `[]`         | 无变体，仅主图                                                     |
 
 **avatar 保留 256 变体**是为了对齐 moyu / kungal 历史头像的 256×256 cover 语义；100×100 兼容旧版评论列表等小头像使用场景。详见 [04-migration-plan.md](./04-migration-plan.md)。
 
@@ -47,11 +47,11 @@
 
 图片服务的清理 worker 根据 `last_referenced_at` 降级存储：
 
-| 规则 | 触发条件 | 动作 |
-|------|---------|------|
-| Standard → IA | `last_referenced_at` > 60 天未更新 | 转低频存储 |
-| IA → Archive | `last_referenced_at` > 180 天未更新 | 转归档存储（R2 没这层可跳过） |
-| 软删 → 物理删 | `deleted_at < now - 30d` | 物理删除 |
+| 规则          | 触发条件                            | 动作                          |
+| ------------- | ----------------------------------- | ----------------------------- |
+| Standard → IA | `last_referenced_at` > 60 天未更新  | 转低频存储                    |
+| IA → Archive  | `last_referenced_at` > 180 天未更新 | 转归档存储（R2 没这层可跳过） |
+| 软删 → 物理删 | `deleted_at < now - 30d`            | 物理删除                      |
 
 #### ⚠️ TTL 语义澄清：针对"真正无人引用的孤儿"，不是"60 天没被访问"
 
@@ -71,11 +71,13 @@
 ### 复用哪个库？
 
 图片服务**独立建库**：`kun_images`。理由：
+
 - 不污染 `kun_oauth_admin` / `kun_galgame_wiki` 现有 schema
 - 故障隔离（图片服务 DB 挂了不影响 OAuth）
 - 容量伸缩独立
 
 连接配置新增：
+
 ```env
 KUN_IMAGES_PG_HOST=localhost
 KUN_IMAGES_PG_PORT=5432
@@ -127,6 +129,7 @@ CREATE INDEX idx_images_created ON images(created_at DESC);
 ```
 
 **关键点**：
+
 - `hash` 唯一键（决策 3）—— 跨站去重
 - `variants` 列记录该 hash 已生成哪些变体。再次上传同 hash 时检查此列，缺啥补啥
 - `review_status DEFAULT 1`（approved）—— V1 无审核，全通过；V3 接入时改默认值
@@ -153,11 +156,13 @@ CREATE INDEX idx_site_usage_hash ON image_site_usage(hash);
 ```
 
 **作用**：
+
 - 站点视角的统计（kungal 总共上传了多少独立图 / 多少次重复）
 - 审计溯源（某张违规图 kungal、moyu 各自什么时候传过）
 - **不影响**物理存储和审核态（这两件事只由 `images` 主表决定）
 
 **写入时机**：
+
 - 上传时 `INSERT ... ON CONFLICT (hash, site) DO UPDATE SET upload_count = upload_count + 1, last_uploaded_at = NOW()`
 
 #### `upload_audit` — 完整上传日志（可选）
@@ -200,14 +205,14 @@ ALTER TABLE oauth_client
 
 ### 字段语义
 
-| 字段 | 作用 |
-|------|------|
-| `image_enabled` | 站点总开关 |
-| `image_quota_daily` | 日上传张数上限（Redis day-window 计数） |
-| `image_quota_bytes_daily` | 日上传字节数上限（防止大文件刷爆） |
-| `image_max_file_size` | 单文件大小上限 |
-| `image_allowed_presets` | 本站可用的 preset 白名单 |
-| `image_site_key` | 写入 `image_site_usage.site` 的值 |
+| 字段                      | 作用                                    |
+| ------------------------- | --------------------------------------- |
+| `image_enabled`           | 站点总开关                              |
+| `image_quota_daily`       | 日上传张数上限（Redis day-window 计数） |
+| `image_quota_bytes_daily` | 日上传字节数上限（防止大文件刷爆）      |
+| `image_max_file_size`     | 单文件大小上限                          |
+| `image_allowed_presets`   | 本站可用的 preset 白名单                |
+| `image_site_key`          | 写入 `image_site_usage.site` 的值       |
 
 ### 新站点接入流程
 
@@ -241,16 +246,16 @@ main_pipeline:
 presets:
   avatar:
     variants:
-      - name: "256"
+      - name: '256'
         width: 256
         height: 256
-        fit: cover             # 裁剪方形，填满 256×256（对齐历史 moyu/kungal 头像）
+        fit: cover # 裁剪方形，填满 256×256（对齐历史 moyu/kungal 头像）
         format: webp
         quality: 82
-      - name: "100"
+      - name: '100'
         width: 100
         height: 100
-        fit: cover             # 裁剪方形，填满 100×100（评论区等小头像）
+        fit: cover # 裁剪方形，填满 100×100（评论区等小头像）
         format: webp
         quality: 82
     allowed_mime:
@@ -260,10 +265,10 @@ presets:
 
   galgame_banner:
     variants:
-      - name: "mini"
+      - name: 'mini'
         width: 460
         height: 259
-        fit: cover             # 保持比例裁剪到 460×259
+        fit: cover # 保持比例裁剪到 460×259
         format: webp
         quality: 82
     allowed_mime:
@@ -272,12 +277,12 @@ presets:
       - image/webp
 
   topic:
-    variants: []               # 主图够用，无变体
+    variants: [] # 主图够用，无变体
     allowed_mime:
       - image/jpeg
       - image/png
       - image/webp
-      - image/gif              # topic 支持 gif 首帧
+      - image/gif # topic 支持 gif 首帧
 ```
 
 ### 新增 preset 的流程
@@ -290,9 +295,9 @@ presets:
 
 调用方拿到的 URL 直接是 CDN 前的对象存储 URL（或 CDN 域名重写）：
 
-| 用途 | URL | 说明 |
-|------|-----|------|
-| **主图** | `https://cdn.example.com/img/ab/cd/<hash>.webp` | CDN → 对象存储 |
+| 用途     | URL                                                 | 说明           |
+| -------- | --------------------------------------------------- | -------------- |
+| **主图** | `https://cdn.example.com/img/ab/cd/<hash>.webp`     | CDN → 对象存储 |
 | **变体** | `https://cdn.example.com/img/ab/cd/<hash>_100.webp` | 直接拼变体后缀 |
 
 调用方通过 SDK（V2 提供）构造变体 URL：
@@ -308,9 +313,9 @@ imageclient.VariantURL(hash, "100") // → https://cdn.../ab/cd/hash_100.webp
 
 Redis key 设计：
 
-| Key | 类型 | 语义 |
-|-----|------|------|
-| `image:quota:count:{site}:{yyyymmdd}` | counter | 当日上传张数 |
+| Key                                   | 类型    | 语义           |
+| ------------------------------------- | ------- | -------------- |
+| `image:quota:count:{site}:{yyyymmdd}` | counter | 当日上传张数   |
 | `image:quota:bytes:{site}:{yyyymmdd}` | counter | 当日上传字节数 |
 
 TTL：26 小时（跨日安全余量），到期 Redis 自动清理。

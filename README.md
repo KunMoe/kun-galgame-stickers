@@ -10,8 +10,8 @@ Currently, the number of stickers on this website has exceeded 400!
 
 These are stickers captured from various visualnovels, with the purpose of
 
-* Recommending fun and cute games to more people through stickers
-* Moe!
+- Recommending fun and cute games to more people through stickers
+- Moe!
 
 In the future, some SD_CG and CG screenshots from games may be updated as stickers. Currently, there are only pure expressions of characters from the games, and of course, you can also join our group at the end of the article.
 
@@ -43,10 +43,10 @@ You can click the link below to download these stickers
 
 This series of sticker packs tries to follow these standards as much as possible
 
-* All are Visual Novel (galgame) stickers, excluding anime, comics, illustrations, etc.
-Square screenshots
-* Try to capture the character's ahoge completely
-* Mainly small, cute, soft-moe, ~~and fluffy white-haired lass characters~~
+- All are Visual Novel (galgame) stickers, excluding anime, comics, illustrations, etc.
+  Square screenshots
+- Try to capture the character's ahoge completely
+- Mainly small, cute, soft-moe, ~~and fluffy white-haired lass characters~~
 
 Some stickers do not follow these standards because they were captured too early
 
@@ -60,19 +60,17 @@ You can click to see which games were used for the screenshots in the stickers
 
 [Overview of Games in the Sticker Pack](https://github.com/KUN1007/kungalgame-stickers/blob/main/introduction/game.md)
 
-
 ## To-Do List
 
-* [ ] Add login functionality for Kun Galgame forum accounts
+- [ ] Add login functionality for Kun Galgame forum accounts
 
-* [ ] Implement user upload functionality for Kun Galgame forum accounts
+- [ ] Implement user upload functionality for Kun Galgame forum accounts
 
-* [ ] Clarify API documentation for third-party developers
+- [ ] Clarify API documentation for third-party developers
 
-* [ ] Add Telegram sticker index section
+- [ ] Add Telegram sticker index section
 
-* [ ] Add the SD_CG section, which will host SD_CG content for Galgames.
-
+- [ ] Add the SD_CG section, which will host SD_CG content for Galgames.
 
 ## FAQ
 
@@ -91,8 +89,6 @@ A: Some were directly transferred from QQ because I had not started collecting t
 Q: Why are there only expressions of one person from many games in the entire game?
 
 A: I am a one-route warrior
-
-  
 
 If you think we are doing well, feel free to give us a star~
 

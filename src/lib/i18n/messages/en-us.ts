@@ -66,14 +66,12 @@ const messages: Messages = {
         'A video introducing this project has been made',
         'The website now hosts over 400 stickers!'
       ],
-      bilibiliPrefix: 'This video is also released on Bilibili — give it a thumbs up if you like it',
+      bilibiliPrefix:
+        'This video is also released on Bilibili — give it a thumbs up if you like it',
       bilibiliLink: 'I built a Galgame sticker repository with over 350 pure galgame stickers',
       purposeIntro:
         'These are stickers I personally captured from various visual novels, with the purpose of:',
-      purpose: [
-        'Recommending fun and cute games to more people through stickers',
-        'Moe!'
-      ],
+      purpose: ['Recommending fun and cute games to more people through stickers', 'Moe!'],
       future:
         'In the future, some SD_CG and CG screenshots from games may be added. For now we only have pure character expressions.'
     },
@@ -82,8 +80,7 @@ const messages: Messages = {
       intro:
         'These stickers are mirrored to Telegram in packs of 80 — click the links below to add them',
       packLabel: 'KUN Visual Novel Sticker Pack',
-      note:
-        'The stickers in the repository are clearer than those in Telegram because the Telegram set is compressed',
+      note: 'The stickers in the repository are clearer than those in Telegram because the Telegram set is compressed',
       downloadIntro: 'You can download the original stickers below',
       downloadLink: 'Download'
     },

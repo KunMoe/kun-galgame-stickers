@@ -22,7 +22,7 @@
     type="button"
     aria-label={m().sticker.backToTop}
     onclick={scrollToTop}
-    class="fixed right-4 bottom-8 z-50 flex h-12 w-12 items-center justify-center border border-primary bg-content1/80 text-2xl text-primary shadow-sm backdrop-blur transition hover:bg-primary hover:text-white"
+    class="border-primary bg-content1/80 text-primary hover:bg-primary fixed right-4 bottom-8 z-50 flex h-12 w-12 items-center justify-center border text-2xl shadow-sm backdrop-blur transition hover:text-white"
   >
     <Icon icon="line-md:arrow-close-up" />
   </button>

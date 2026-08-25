@@ -42,7 +42,7 @@
     aria-valuenow={Math.round(progress * 100)}
     aria-valuemin="0"
     aria-valuemax="100"
-    class="fixed inset-x-0 top-0 z-[9999] h-[3px] origin-left bg-primary transition-[transform,opacity] duration-200 ease-out"
+    class="bg-primary fixed inset-x-0 top-0 z-[9999] h-[3px] origin-left transition-[transform,opacity] duration-200 ease-out"
     style:transform="scaleX({progress})"
     style:opacity={progress === 1 ? 0 : 1}
   ></output>

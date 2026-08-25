@@ -43,14 +43,14 @@ CREATE INDEX        idx_mp_log_reason ON moemoepoint_log (reason);  -- 分类查
 
 扁平、通用、少。具体业务细节靠 `source_app` + `ref` 区分，**不为每个站点维护各自的枚举**（那是被砍掉的治理层）。
 
-| reason | 方向 | 说明 |
-|---|---|---|
-| `admin_grant` / `admin_deduct` | ± | 管理员发放 / 扣除 |
-| `migration` | + | 迁移起始值（§6）|
-| `content_approved` | + | 产出被采纳（Wiki 投稿通过、补丁发布…，用 source_app+ref 区分）|
-| `content_removed` | − | 上述产出被删 / 撤回时回收（与发放同 `ref`）|
-| `daily_checkin` | + | 每日签到 |
-| `liked` | + | 内容被点赞 |
+| reason                         | 方向 | 说明                                                           |
+| ------------------------------ | ---- | -------------------------------------------------------------- |
+| `admin_grant` / `admin_deduct` | ±    | 管理员发放 / 扣除                                              |
+| `migration`                    | +    | 迁移起始值（§6）                                               |
+| `content_approved`             | +    | 产出被采纳（Wiki 投稿通过、补丁发布…，用 source_app+ref 区分） |
+| `content_removed`              | −    | 上述产出被删 / 撤回时回收（与发放同 `ref`）                    |
+| `daily_checkin`                | +    | 每日签到                                                       |
+| `liked`                        | +    | 内容被点赞                                                     |
 
 约定：`delta` 禁止为 0；可回收的产出，回收用相同 `ref` 对账。新增一种来源 = 往这张表加一行（你一个人控制全部 client，一次小改即可，无需治理协调）。
 
@@ -58,11 +58,11 @@ CREATE INDEX        idx_mp_log_reason ON moemoepoint_log (reason);  -- 分类查
 
 **鉴权**：与 [`/users/batch`](./03-cross-service.md) 相同 —— **OAuth Client Basic Auth**。`source_app` 服务端从认证 client 推导，不信任请求体自报。
 
-| 端点 | 方法 | 用途 |
-|------|------|------|
-| `/users/:id/moemoepoint` | POST | **调整**余额（发放 / 扣除），幂等 |
-| `/users/:id/moemoepoint` | GET | 读当前余额 |
-| `/users/:id/moemoepoint/log` | GET | 分页拉流水（可选；用户"积分明细" / 排查）|
+| 端点                         | 方法 | 用途                                      |
+| ---------------------------- | ---- | ----------------------------------------- |
+| `/users/:id/moemoepoint`     | POST | **调整**余额（发放 / 扣除），幂等         |
+| `/users/:id/moemoepoint`     | GET  | 读当前余额                                |
+| `/users/:id/moemoepoint/log` | GET  | 分页拉流水（可选；用户"积分明细" / 排查） |
 
 ### 3.1 POST /users/:id/moemoepoint
 
@@ -77,14 +77,14 @@ CREATE INDEX        idx_mp_log_reason ON moemoepoint_log (reason);  -- 分类查
 }
 ```
 
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| delta | 是 | 有符号整数，非 0，且 \|delta\| ≤ 1,000,000（防呆上限）|
-| reason | 是 | §2 枚举之一。**s2s 不可用** `admin_grant` / `admin_deduct` / `migration`（OAuth 保留）|
-| ref | 否 | 触发实体（建议填，用于对账）|
-| actor_user_id | 否 | 默认 0（系统）；管理员操作填管理员 id |
-| idempotency_key | 是 | 全局唯一，**调用方生成稳定键**（见 §4）|
-| note | 否 | 备注 |
+| 字段            | 必填 | 说明                                                                                   |
+| --------------- | ---- | -------------------------------------------------------------------------------------- |
+| delta           | 是   | 有符号整数，非 0，且 \|delta\| ≤ 1,000,000（防呆上限）                                 |
+| reason          | 是   | §2 枚举之一。**s2s 不可用** `admin_grant` / `admin_deduct` / `migration`（OAuth 保留） |
+| ref             | 否   | 触发实体（建议填，用于对账）                                                           |
+| actor_user_id   | 否   | 默认 0（系统）；管理员操作填管理员 id                                                  |
+| idempotency_key | 是   | 全局唯一，**调用方生成稳定键**（见 §4）                                                |
+| note            | 否   | 备注                                                                                   |
 
 **成功响应**（首次执行 与 幂等重放 一致）：
 
@@ -127,11 +127,11 @@ CREATE INDEX        idx_mp_log_reason ON moemoepoint_log (reason);  -- 分类查
 
 ## 7. 下游接入
 
-| 现在 | 改成 |
-|---|---|
-| 本地 `UPDATE user SET moemoepoint = moemoepoint + N` | 调 `POST /users/:id/moemoepoint`（Basic Auth + 稳定幂等键）|
-| cron 重放发放 | 同上，幂等键用业务事件唯一 id → 重放安全 |
-| 渲染余额读本地列 | 读 OAuth 实时余额（`/auth/me` 或 §3.2）|
+| 现在                                                 | 改成                                                        |
+| ---------------------------------------------------- | ----------------------------------------------------------- |
+| 本地 `UPDATE user SET moemoepoint = moemoepoint + N` | 调 `POST /users/:id/moemoepoint`（Basic Auth + 稳定幂等键） |
+| cron 重放发放                                        | 同上，幂等键用业务事件唯一 id → 重放安全                    |
+| 渲染余额读本地列                                     | 读 OAuth 实时余额（`/auth/me` 或 §3.2）                     |
 
 > **可用性注意**：发放现在依赖 OAuth 可达。对**非关键**奖励（签到、点赞），调用失败应"记录待补 + 不阻塞用户主流程"，靠幂等键之后重试补发；不要让 OAuth 抖动卡住下游核心操作。
 
@@ -139,11 +139,11 @@ OAuth **不发布 SDK**，每个 consumer 自己写薄客户端（同 `/users/ba
 
 ## 8. 错误码（16xxx）
 
-| code | 常量 | 含义 |
-|---|---|---|
-| 16002 | `ErrMoemoepointInvalidDelta` | delta 为 0 或 \|delta\| > 1,000,000 |
-| 16003 | `ErrMoemoepointInvalidReason` | reason 不在枚举内，或 s2s 用了保留 reason（admin_*/migration）|
-| 16004 | `ErrMoemoepointIdemConflict` | idempotency_key 已存在但请求体不一致 |
+| code  | 常量                          | 含义                                                           |
+| ----- | ----------------------------- | -------------------------------------------------------------- |
+| 16002 | `ErrMoemoepointInvalidDelta`  | delta 为 0 或 \|delta\| > 1,000,000                            |
+| 16003 | `ErrMoemoepointInvalidReason` | reason 不在枚举内，或 s2s 用了保留 reason（admin_*/migration） |
+| 16004 | `ErrMoemoepointIdemConflict`  | idempotency_key 已存在但请求体不一致                           |
 
 > 已实现状态：上述 3 个码 + `moemoepoint_log` 表 + s2s/admin 端点 + 管理端 UI **均已落地**（待 oauth 后端重启生效）。下游消费 + 数据合并迁移（§6/§7）仍待各站对接。
 > 并发同键竞态：唯一索引兜底（不会重复加分），极少数并发同键会得到一次性 500，调用方重试即转为 `applied:false`。
@@ -152,10 +152,10 @@ OAuth **不发布 SDK**，每个 consumer 自己写薄客户端（同 `/users/ba
 
 为对齐当前规模（~9 万用户的爱好社区、单人维护、karma 非货币），以下**故意省略**——等真有需求再加：
 
-| 砍掉的 | 完整账本版才需要 / 何时再加 |
-|---|---|
-| 余额 = `SUM(delta)` 派生 + `balance_after` 快照 + 定时对账巡检 | 资损级系统 / 需要逐行可证一致性时 |
+| 砍掉的                                                                 | 完整账本版才需要 / 何时再加                              |
+| ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| 余额 = `SUM(delta)` 派生 + `balance_after` 快照 + 定时对账巡检         | 资损级系统 / 需要逐行可证一致性时                        |
 | 两级 `category` 闭集 + `reason` 命名空间防伪 + per-app reason 清单模板 | 出现**多个独立团队**各自定义大量积分玩法、需要解耦发版时 |
-| per-client category 白名单、单次/单日累计上限 | 萌萌点可兑换实物、出现真实刷分/欺诈动机时 |
+| per-client category 白名单、单次/单日累计上限                          | 萌萌点可兑换实物、出现真实刷分/欺诈动机时                |
 
 升级是可逆且渐进的：日志表已记 `reason`/`source_app`/`ref`，将来要分两级或加约束都能在现有数据上演进，不必现在预付复杂度。

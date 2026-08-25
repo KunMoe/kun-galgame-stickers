@@ -9,8 +9,5 @@ export const theme = new ThemeState()
 export const isDarkResolved = (t: Theme): boolean => {
   if (t === 'dark') return true
   if (t === 'light') return false
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  )
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
 }

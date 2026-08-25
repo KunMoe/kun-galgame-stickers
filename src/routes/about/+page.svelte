@@ -15,7 +15,7 @@
       href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-primary underline underline-offset-4 hover:text-primary-600"
+      class="text-primary hover:text-primary-600 underline underline-offset-4"
     >
       {m().about.repo}
     </a>
@@ -26,7 +26,7 @@
       <span class="text-primary">#</span>
       {m().about.introduction.heading}
     </h2>
-    {#each m().about.introduction.lines as line}
+    {#each m().about.introduction.lines as line (line)}
       <p>{line}</p>
     {/each}
 
@@ -39,7 +39,7 @@
       Bilibili:
       <a
         href="https://www.bilibili.com/video/BV19u4m1c7ZN"
-        class="text-primary underline underline-offset-4 hover:text-primary-600"
+        class="text-primary hover:text-primary-600 underline underline-offset-4"
       >
         {m().about.introduction.bilibiliLink}
       </a>
@@ -47,7 +47,7 @@
 
     <p class="mt-4">{m().about.introduction.purposeIntro}</p>
     <ul class="list-disc pl-6">
-      {#each m().about.introduction.purpose as item}
+      {#each m().about.introduction.purpose as item (item)}
         <li>{item}</li>
       {/each}
     </ul>
@@ -62,13 +62,13 @@
     </h2>
     <p>{m().about.telegram.intro}</p>
     <ul class="list-disc pl-6">
-      {#each packIds as id}
+      {#each packIds as id (id)}
         <li>
           <a
             href="https://t.me/addstickers/KUNgal{id}"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-primary underline underline-offset-4 hover:text-primary-600"
+            class="text-primary hover:text-primary-600 underline underline-offset-4"
           >
             {m().about.telegram.packLabel} [{id}]
           </a>
@@ -81,7 +81,7 @@
       href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-primary underline underline-offset-4 hover:text-primary-600"
+      class="text-primary hover:text-primary-600 underline underline-offset-4"
     >
       {m().about.telegram.downloadLink}
     </a>
@@ -94,7 +94,7 @@
     </h2>
     <p>{m().about.rules.intro}</p>
     <ul class="list-disc pl-6">
-      {#each m().about.rules.items as item}
+      {#each m().about.rules.items as item (item)}
         <li>{item}</li>
       {/each}
     </ul>
@@ -106,14 +106,14 @@
       <span class="text-primary">#</span>
       {m().about.games.heading}
     </h2>
-    {#each m().about.games.lines as line}
+    {#each m().about.games.lines as line (line)}
       <p>{line}</p>
     {/each}
     <a
       href="https://github.com/KUN1007/kungalgame-stickers/blob/main/introduction/game.md"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-primary underline underline-offset-4 hover:text-primary-600"
+      class="text-primary hover:text-primary-600 underline underline-offset-4"
     >
       {m().about.games.linkLabel}
     </a>
@@ -124,9 +124,9 @@
       <span class="text-primary">#</span>
       {m().about.faq.heading}
     </h2>
-    {#each m().about.faq.items as item}
+    {#each m().about.faq.items as item (item.q)}
       <div class="flex flex-col gap-1">
-        <p class="font-bold text-primary">Q: {item.q}</p>
+        <p class="text-primary font-bold">Q: {item.q}</p>
         <p>A: {item.a}</p>
       </div>
     {/each}
@@ -137,7 +137,7 @@
       <span class="text-primary">#</span>
       {m().about.tips.heading}
     </h2>
-    {#each m().about.tips.lines as line}
+    {#each m().about.tips.lines as line (line)}
       <p>{line}</p>
     {/each}
     <p class="text-default-500">{m().about.tips.note}</p>

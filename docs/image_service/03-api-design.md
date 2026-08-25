@@ -42,21 +42,21 @@
 - 配额超限是唯一带 `details` 的错误（`handler.go` 特例，字段如上）。
 - HTTP 状态码与 `code` 并存，调用方应以**整数 `code`** 为准做分类。
 
-| HTTP | code | 常量 | 场景 |
-|------|------|------|------|
-| 400 | 80014 | `ErrImageBadRequest` | 请求格式错误（缺 file/参数等） |
-| 400 | 80011 | `ErrImagePresetNotFound` | 未知 preset |
-| 400 | 80009 | `ErrImageMIMEDenied` | 该 preset 不接受此格式 |
-| 400 | 80010 | `ErrImageDecodeFailed` | 图片解码失败 |
-| 401 | 80001 | `ErrImageUnauthorized` | 缺失/无效凭证 |
-| 401 | 80002 / 80003 | `ErrImageBadClient` / `ErrImageBadSecret` | client id / secret 错误 |
-| 403 | 80004 / 80005 | `ErrImageSiteDisabled` / `ErrImageSiteUnconfigured` | 站点未开启/缺配置 |
-| 403 | 80006 | `ErrImagePresetDenied` | 站点不允许此 preset |
-| 413 | 80007 | `ErrImageFileTooLarge` | 超过站点上限 |
-| 422 | 60002 | `ErrModerationRejected` | 审核拒绝（仅启用审核时） |
-| 429 | 80008 | `ErrImageQuotaExceeded` | 超出站点日配额（带 `details`） |
-| 500 | 80012 | `ErrImageStoreFailed` | 存储/处理失败 |
-| 503 | 80015 | `ErrImageUploadDisabled` | 上传功能未开放 |
+| HTTP | code          | 常量                                                | 场景                           |
+| ---- | ------------- | --------------------------------------------------- | ------------------------------ |
+| 400  | 80014         | `ErrImageBadRequest`                                | 请求格式错误（缺 file/参数等） |
+| 400  | 80011         | `ErrImagePresetNotFound`                            | 未知 preset                    |
+| 400  | 80009         | `ErrImageMIMEDenied`                                | 该 preset 不接受此格式         |
+| 400  | 80010         | `ErrImageDecodeFailed`                              | 图片解码失败                   |
+| 401  | 80001         | `ErrImageUnauthorized`                              | 缺失/无效凭证                  |
+| 401  | 80002 / 80003 | `ErrImageBadClient` / `ErrImageBadSecret`           | client id / secret 错误        |
+| 403  | 80004 / 80005 | `ErrImageSiteDisabled` / `ErrImageSiteUnconfigured` | 站点未开启/缺配置              |
+| 403  | 80006         | `ErrImagePresetDenied`                              | 站点不允许此 preset            |
+| 413  | 80007         | `ErrImageFileTooLarge`                              | 超过站点上限                   |
+| 422  | 60002         | `ErrModerationRejected`                             | 审核拒绝（仅启用审核时）       |
+| 429  | 80008         | `ErrImageQuotaExceeded`                             | 超出站点日配额（带 `details`） |
+| 500  | 80012         | `ErrImageStoreFailed`                               | 存储/处理失败                  |
+| 503  | 80015         | `ErrImageUploadDisabled`                            | 上传功能未开放                 |
 
 完整码表见 `apps/api/pkg/errors/codes.go`（`ErrImage*` 80001-80015、
 `ErrModeration*` 60001-60003）。
@@ -91,10 +91,10 @@ avatar
 ------xxx--
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `file` | file | ✅ | 图片二进制，支持 `image/jpeg` `image/png` `image/webp` `image/gif`（首帧） |
-| `preset` | string | ✅ | 处理预设名（`avatar` / `galgame_banner` / `topic`），必须在本站 `image_allowed_presets` 中 |
+| 字段     | 类型   | 必填 | 说明                                                                                       |
+| -------- | ------ | ---- | ------------------------------------------------------------------------------------------ |
+| `file`   | file   | ✅   | 图片二进制，支持 `image/jpeg` `image/png` `image/webp` `image/gif`（首帧）                 |
+| `preset` | string | ✅   | 处理预设名（`avatar` / `galgame_banner` / `topic`），必须在本站 `image_allowed_presets` 中 |
 
 > **注意**：V1 **不接受** `keep_original` 参数（主图永远是 `webp@82 fit 1920×1080`）。未来如需保留原图，新加 preset 或字段。
 
@@ -103,6 +103,7 @@ avatar
 V1 **仅接受** `multipart/form-data`，不支持 raw body + `Content-Type: image/*` + header 传 preset 的变体形式。即使调用方是 Server-to-Server 转发（拿到前端 FormData 再转到 image_service），也请保持 multipart。
 
 理由：
+
 - 只有一种 content-type 约定可以让服务端代码和测试大幅简化
 - multipart 解析 1 次的成本几乎可忽略（libvips decode 远比它贵）
 - 统一 error handling、统一日志格式
@@ -127,6 +128,7 @@ V1 **仅接受** `multipart/form-data`，不支持 raw body + `Content-Type: ima
 ```
 
 **字段说明**：
+
 - `hash` — 内容 hash，调用方存入自己库（`users.avatar_image_hash`）作为外键
 - `url` — 主图 CDN 永久 URL，可直接用于 `<img src>`
 - `variant_urls` — 按本次 preset 生成的变体清单。**字段里列出的都是实际落盘的静态 URL**，调用方直接使用
@@ -178,7 +180,7 @@ var (
 
 ```ts
 // 调用方后端
-const token = await getOAuthToken()  // Client Credentials，缓存
+const token = await getOAuthToken() // Client Credentials，缓存
 const fd = new FormData()
 fd.append('file', fileStream)
 fd.append('preset', 'avatar')
@@ -203,12 +205,14 @@ return { avatar: url, avatar_thumb: variant_urls['100'] }
 查询一张图片的元信息。
 
 **请求**：
+
 ```http
 GET /image/abcd1234...ef HTTP/1.1
 Authorization: Bearer <token>
 ```
 
 **响应**：
+
 ```json
 {
   "hash": "abcd...ef",
@@ -241,19 +245,17 @@ Authorization: Bearer <token>
 调用方周期性上报"我当前还在引用这些图"，图片服务更新其 `last_referenced_at`。
 
 **请求**：
+
 ```json
 {
-  "hashes": [
-    "abcd...ef",
-    "1234...aa",
-    "5678...bb"
-  ]
+  "hashes": ["abcd...ef", "1234...aa", "5678...bb"]
 }
 ```
 
 最多 1000 个 hash / 请求。
 
 **响应**：
+
 ```json
 {
   "updated": 998,
@@ -318,6 +320,7 @@ SDK 内部只做字符串拼接（因为 URL 是 content-addressed 且无签名�
 ### `GET /admin/image/list`
 
 **查询参数**：
+
 - `site` — 过滤站点（过滤 `image_site_usage`）
 - `review_status` — `pending` / `rejected` / `manual_review`
 - `from` / `to` — 时间范围
@@ -337,6 +340,7 @@ SDK 内部只做字符串拼接（因为 URL 是 content-addressed 且无签名�
 ### `GET /admin/stats`
 
 **响应**：
+
 ```json
 {
   "upload_count": 12345,
@@ -345,7 +349,7 @@ SDK 内部只做字符串拼接（因为 URL 是 content-addressed 且无签名�
   "total_bytes": 123456789012,
   "by_site": {
     "kungal": { "count": 8000, "unique": 6500 },
-    "moyu":   { "count": 3000, "unique": 2500 },
+    "moyu": { "count": 3000, "unique": 2500 },
     "galgame_wiki": { "count": 1345, "unique": 1234 }
   },
   "by_preset": {
@@ -382,6 +386,7 @@ Prometheus 指标端点（标准 Go runtime + 自定义业务指标）。
 > **仅内网 / VPC 暴露**。不对公网放行（会泄露站点上传量、去重率等敏感业务数据）。部署时在反代/防火墙层面拒绝外部访问。
 
 自定义指标：
+
 - `image_upload_total{site,preset,result}`
 - `image_upload_duration_seconds{site,preset}`
 - `image_processing_duration_seconds{op}` — `decode` / `resize` / `encode` / `variant_gen` / `store`
@@ -393,17 +398,17 @@ Prometheus 指标端点（标准 Go runtime + 自定义业务指标）。
 
 ## 端点汇总
 
-| Method | Path | Scope | 里程碑 |
-|--------|------|-------|--------|
-| POST | `/image/upload` | `image:upload` | V1 |
-| GET | `/image/:hash` | `image:read` | V1 |
-| POST | `/image/reference-ping` | `image:upload` | V1 |
-| GET | `/stats` | `image:read` | V2 |
-| GET | `/admin/image/list` | `image:admin` | V3 |
-| PATCH | `/admin/image/:hash/review` | `image:admin` | V3 |
-| GET | `/admin/stats` | `image:admin` | V3 |
-| GET | `/healthz` | — | V1 |
-| GET | `/metrics` | — | V1 |
+| Method | Path                        | Scope          | 里程碑 |
+| ------ | --------------------------- | -------------- | ------ |
+| POST   | `/image/upload`             | `image:upload` | V1     |
+| GET    | `/image/:hash`              | `image:read`   | V1     |
+| POST   | `/image/reference-ping`     | `image:upload` | V1     |
+| GET    | `/stats`                    | `image:read`   | V2     |
+| GET    | `/admin/image/list`         | `image:admin`  | V3     |
+| PATCH  | `/admin/image/:hash/review` | `image:admin`  | V3     |
+| GET    | `/admin/stats`              | `image:admin`  | V3     |
+| GET    | `/healthz`                  | —              | V1     |
+| GET    | `/metrics`                  | —              | V1     |
 
 ## 没有的端点
 

@@ -11,8 +11,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
   const form = await request.formData().catch(() => null)
   const requested = form?.get('return_to')
-  const returnTo =
-    typeof requested === 'string' && isSafeReturnTo(requested) ? requested : '/'
+  const returnTo = typeof requested === 'string' && isSafeReturnTo(requested) ? requested : '/'
 
   // scope=local: "this site only". We've already revoked our refresh_token and
   // cleared our session above, so this site is signed out; the central OP (SSO)

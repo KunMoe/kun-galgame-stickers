@@ -21,10 +21,10 @@
   <img
     src="/kun-galgame-stickers/telegram/KUNgal{data.sticker.sid}/{data.sticker.pid}.png"
     alt="{game} {lass}"
-    class="max-w-full border bg-content1 p-2 shadow-sm"
+    class="bg-content1 max-w-full border p-2 shadow-sm"
   />
 
-  <section class="flex flex-col items-center gap-1 text-sm text-default-600">
+  <section class="text-default-600 flex flex-col items-center gap-1 text-sm">
     <p>{m().sticker.game}: {game}</p>
     <p>{m().sticker.lass}: {lass}</p>
   </section>

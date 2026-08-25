@@ -6,17 +6,17 @@
 
 ## TL;DR
 
-| 业务域 | 接入状态 | 说明 |
-|---|---|---|
-| galgame banner 上传（创建/编辑/PR/rewrite） | ✅ 全链路 | wiki 主接入点；kungal/moyu 都已切到 multipart → wiki |
-| galgame cover / screenshot 上传 | ✅ 已接 | kungal 走 `/image/galgame` 代理；moyu 走 `/upload/image-service` 代理；都拿 hash 写 covers[]/screenshots[] |
-| 头像上传 | ✅ 已接 | kungal/moyu 都代理到 OAuth `/auth/me/avatar` |
-| 图片保活（refping） | ✅ 已接 | oauth/wiki 侧 `galgame_image_refping` 扫 cover/screenshot/revision/PR snapshot |
-| **头像「展示」** | ⚠️ **不完整** | `KunAvatar` 不读 `avatar_image_hash`；kungal DTO 几乎都没透传该字段 |
-| **JSON 写入时的 hash 探活** | ⚠️ **缺失** | wiki 接受 64 位假 hash 写入，跑到展示时才发现死图 |
-| kungal 论坛 topic / Markdown 图片 | ❌ 未接 | 仍走旧 S3 + 自家 daily-quota |
-| 文档 banner / 网站 icon / 广告图 / 友链 / 静态 MDX 文章图 | ❌ 未接 | 静态资源，按设计不需要接 |
-| patch 资源文件（压缩包/补丁包） | ❌ 不需要接 | image_service 只管图片 |
+| 业务域                                                    | 接入状态      | 说明                                                                                                       |
+| --------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------- |
+| galgame banner 上传（创建/编辑/PR/rewrite）               | ✅ 全链路     | wiki 主接入点；kungal/moyu 都已切到 multipart → wiki                                                       |
+| galgame cover / screenshot 上传                           | ✅ 已接       | kungal 走 `/image/galgame` 代理；moyu 走 `/upload/image-service` 代理；都拿 hash 写 covers[]/screenshots[] |
+| 头像上传                                                  | ✅ 已接       | kungal/moyu 都代理到 OAuth `/auth/me/avatar`                                                               |
+| 图片保活（refping）                                       | ✅ 已接       | oauth/wiki 侧 `galgame_image_refping` 扫 cover/screenshot/revision/PR snapshot                             |
+| **头像「展示」**                                          | ⚠️ **不完整** | `KunAvatar` 不读 `avatar_image_hash`；kungal DTO 几乎都没透传该字段                                        |
+| **JSON 写入时的 hash 探活**                               | ⚠️ **缺失**   | wiki 接受 64 位假 hash 写入，跑到展示时才发现死图                                                          |
+| kungal 论坛 topic / Markdown 图片                         | ❌ 未接       | 仍走旧 S3 + 自家 daily-quota                                                                               |
+| 文档 banner / 网站 icon / 广告图 / 友链 / 静态 MDX 文章图 | ❌ 未接       | 静态资源，按设计不需要接                                                                                   |
+| patch 资源文件（压缩包/补丁包）                           | ❌ 不需要接   | image_service 只管图片                                                                                     |
 
 ## 已接入：详细引用
 
@@ -46,10 +46,12 @@ kungal 不只在「创建时」用 image_service，编辑器的 cover/screenshot
 #### A3. moyu 侧的代理 + 编辑器
 
 moyu 走两条不同链路：
+
 - **banner**（创建/rewrite/PR 的封面）→ multipart 直连 wiki，wiki 自己上传到 image_service
 - **screenshot** → moyu 自己的 `/upload/image-service` 代理（不经过 wiki）
 
 引用：
+
 - moyu 创建 galgame 的 banner multipart：[`apps/web/app/pages/edit/create.vue:246`](../../../kun-galgame-patch-next/apps/web/app/pages/edit/create.vue#L246) → `POST /galgame/submit`
 - moyu rewrite 的 banner multipart：[`apps/web/app/pages/edit/rewrite.vue:325`](../../../kun-galgame-patch-next/apps/web/app/pages/edit/rewrite.vue#L325) → `PUT /galgame/:id`
 - moyu screenshot 编辑器：[`apps/web/app/components/galgame/edit/ScreenshotsEditor.vue:33`](../../../kun-galgame-patch-next/apps/web/app/components/galgame/edit/ScreenshotsEditor.vue#L33) — 调 `ge.uploadImageService(f, 'topic')`
@@ -72,6 +74,7 @@ image_service 用 `last_referenced_at` + TTL 做软清理（见 README 决策 0�
 - [`apps/api/internal/jobs/galgame_image_refping.go:51`](../../apps/api/internal/jobs/galgame_image_refping.go#L51)
 
 它扫的 hash 来源：
+
 1. 当前 `galgame_cover.image_hash`
 2. 当前 `galgame_screenshot.image_hash`
 3. 全部 `galgame_revision.snapshot` 中出现过的 hash（历史 revert / diff 不能让 TTL 复活失败）
@@ -115,6 +118,7 @@ const userAvatarSrc = computed(() => {
 `apps/web/shared/utils/resolveImage.ts` 和 `apps/wiki/app/shared/utils/resolveImage.ts` 都定义了 `resolveAvatarUrl(user, opts)`，但**没有任何头像渲染组件使用它** — 因为通用 `KunAvatar` 走自己的 legacy URL 拼接。
 
 **修复路径**（建议作为单独 PR）：
+
 1. `KunAvatar` 加 `avatarImageHash` prop（或者类型扩展 `props.user`）
 2. `userAvatarSrc` 优先级：`avatar_image_hash` → `avatar` URL → sticker fallback
 3. kungal DTO 补 `AvatarImageHash` 字段透传

@@ -1,0 +1,4 @@
+# pnpm 11+ stores install-time settings here (package.json "pnpm" is ignored).
+allowBuilds:
+  esbuild: true
+  sharp: true

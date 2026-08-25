@@ -4,7 +4,6 @@
 
 1. **No background gradients in any UI, ever.** Never use gradient backgrounds in UI design (`bg-gradient-*`, `from-*/via-*/to-*`, `linear-gradient()`, `radial-gradient()`, `conic-gradient()`, etc.); use solid colors from the project's palette.
 
-
 A galgame **emoji pack** site. SvelteKit (Svelte 5 runes) + Tailwind v4 + `@iconify/svelte`; i18n lives in `src/lib/i18n/messages/{en-us,zh-cn}.ts` (when changing copy, keep the `shape.ts` types and both locales in sync). The database uses **Prisma** (`prisma/schema.prisma`, PG database `kungalgame_sticker`). Authentication is an **OAuth RP** of kun-galgame-infra (BFF opaque session, httpOnly cookie; cross-service contracts such as OAuth / identity / moemoepoint all belong to infra, see `../kun-galgame-infra`).
 
 ## Core Engineering Principles

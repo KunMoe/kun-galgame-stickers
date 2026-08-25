@@ -17,12 +17,12 @@
 
 ## 端点
 
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/oauth/authorize` | GET | 获取授权码（用户必须已登录 OAuth Server） |
-| `/oauth/token` | POST | 用授权码换取 token |
-| `/oauth/userinfo` | GET | 用 access_token 获取用户信息 |
-| `/oauth/revoke` | POST | 吊销 refresh_token |
+| 端点               | 方法 | 说明                                      |
+| ------------------ | ---- | ----------------------------------------- |
+| `/oauth/authorize` | GET  | 获取授权码（用户必须已登录 OAuth Server） |
+| `/oauth/token`     | POST | 用授权码换取 token                        |
+| `/oauth/userinfo`  | GET  | 用 access_token 获取用户信息              |
+| `/oauth/revoke`    | POST | 吊销 refresh_token                        |
 
 ## 需要实现的文件
 
@@ -169,13 +169,13 @@ POST /oauth/revoke
 
 ## 错误处理
 
-| 错误码 | 含义 | 处理 |
-|--------|------|------|
-| 15001 | 无效的客户端 | 检查 client_id |
-| 15002 | 无效的回调地址 | 检查 redirect_uri 是否已注册 |
-| 15003 | 无效的授权码 | 重新走授权流程 |
-| 15004 | PKCE 验证失败 | 检查 code_verifier 生成逻辑 |
-| 10003 | 令牌已过期 | 重新登录 |
+| 错误码 | 含义           | 处理                         |
+| ------ | -------------- | ---------------------------- |
+| 15001  | 无效的客户端   | 检查 client_id               |
+| 15002  | 无效的回调地址 | 检查 redirect_uri 是否已注册 |
+| 15003  | 无效的授权码   | 重新走授权流程               |
+| 15004  | PKCE 验证失败  | 检查 code_verifier 生成逻辑  |
+| 10003  | 令牌已过期     | 重新登录                     |
 
 ## 安全要求
 

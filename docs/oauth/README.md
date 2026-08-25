@@ -2,9 +2,9 @@
 
 基础路径：`/api/v1`
 
-| 环境 | Base URL |
-|------|----------|
-| 开发 | `http://127.0.0.1:9277/api/v1` |
+| 环境 | Base URL                          |
+| ---- | --------------------------------- |
+| 开发 | `http://127.0.0.1:9277/api/v1`    |
 | 生产 | `https://oauth.kungal.com/api/v1` |
 
 ## 🔒 重要约定：身份操作必须在 OAuth 完成
@@ -30,21 +30,21 @@
 
 ### API 参考（按主题）
 
-| # | 文件 | 内容 |
-|---|------|------|
-| 01 | [oauth-endpoints.md](./01-oauth-endpoints.md) | OAuth 2.0 协议端点：`/oauth/token`、`/oauth/authorize`、`/oauth/userinfo`、`/oauth/revoke` |
-| 02 | [user-profile.md](./02-user-profile.md) | 用户自助：`GET/PATCH /auth/me` + `POST /auth/me/avatar`（含头像上传） |
-| 03 | [cross-service.md](./03-cross-service.md) | 服务到服务：`/users/batch`、`/users/search`（OAuth Client Basic Auth） |
-| 04 | [tokens-and-errors.md](./04-tokens-and-errors.md) | JWT Access Token claims + 完整错误码速查（OAuth 15xxx / 认证 10xxx / 通用） |
-| 05 | [registration.md](./05-registration.md) | 🆕 用户注册流程：跳转 OAuth 注册 + 邮箱验证码 + 自动 SSO 回跳；`POST /auth/register/send-code` + `POST /auth/register`、`GET /oauth/client-info`；下游 PKCE 跳转示例 |
-| 06 | [moemoepoint.md](./06-moemoepoint.md) | 🚧 **设计规范（精简版）**：萌萌点全站统一货币（单一真源在 OAuth）。可变余额列 + append-only 审计日志 + 幂等发放/扣除 RPC + 迁移与下游接入；含"刻意没做的"清单（将来需要再升级）|
+| #   | 文件                                              | 内容                                                                                                                                                                            |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01  | [oauth-endpoints.md](./01-oauth-endpoints.md)     | OAuth 2.0 协议端点：`/oauth/token`、`/oauth/authorize`、`/oauth/userinfo`、`/oauth/revoke`                                                                                      |
+| 02  | [user-profile.md](./02-user-profile.md)           | 用户自助：`GET/PATCH /auth/me` + `POST /auth/me/avatar`（含头像上传）                                                                                                           |
+| 03  | [cross-service.md](./03-cross-service.md)         | 服务到服务：`/users/batch`、`/users/search`（OAuth Client Basic Auth）                                                                                                          |
+| 04  | [tokens-and-errors.md](./04-tokens-and-errors.md) | JWT Access Token claims + 完整错误码速查（OAuth 15xxx / 认证 10xxx / 通用）                                                                                                     |
+| 05  | [registration.md](./05-registration.md)           | 🆕 用户注册流程：跳转 OAuth 注册 + 邮箱验证码 + 自动 SSO 回跳；`POST /auth/register/send-code` + `POST /auth/register`、`GET /oauth/client-info`；下游 PKCE 跳转示例            |
+| 06  | [moemoepoint.md](./06-moemoepoint.md)             | 🚧 **设计规范（精简版）**：萌萌点全站统一货币（单一真源在 OAuth）。可变余额列 + append-only 审计日志 + 幂等发放/扣除 RPC + 迁移与下游接入；含"刻意没做的"清单（将来需要再升级） |
 
 ### 完整接入指南
 
-| 文件 | 内容 |
-|------|------|
+| 文件                                                       | 内容                                                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | [oauth-integration-guide.md](./oauth-integration-guide.md) | 端到端 OAuth 接入走查：注册 client、PKCE、token 轮换、并发刷新、跨域 / 跨站坑、安全注意事项 |
-| [nuxt-integration-prompt.md](./nuxt-integration-prompt.md) | Nuxt 3/4 项目的快速上手指南（含 SSR 回调处理代码） |
+| [nuxt-integration-prompt.md](./nuxt-integration-prompt.md) | Nuxt 3/4 项目的快速上手指南（含 SSR 回调处理代码）                                          |
 
 ---
 
@@ -64,11 +64,11 @@
 
 OAuth 一共有三种鉴权方式，按场景区分：
 
-| 方式 | 用在哪 | 谁有 |
-|------|------|------|
-| **Bearer Token**（用户 JWT） | `/auth/*` 用户自助 + `/oauth/userinfo` | 已登录的终端用户 |
-| **OAuth Client Basic Auth** | `/users/batch`、`/users/search`（跨服务） | 已注册的 OAuth Client（kungal / moyu / wiki 等下游后端） |
-| **Admin JWT**（Bearer + role=admin） | `/admin/*`（不在本文档范围） | OAuth 后台管理员 |
+| 方式                                 | 用在哪                                    | 谁有                                                     |
+| ------------------------------------ | ----------------------------------------- | -------------------------------------------------------- |
+| **Bearer Token**（用户 JWT）         | `/auth/*` 用户自助 + `/oauth/userinfo`    | 已登录的终端用户                                         |
+| **OAuth Client Basic Auth**          | `/users/batch`、`/users/search`（跨服务） | 已注册的 OAuth Client（kungal / moyu / wiki 等下游后端） |
+| **Admin JWT**（Bearer + role=admin） | `/admin/*`（不在本文档范围）              | OAuth 后台管理员                                         |
 
 终端用户 JWT 通过完整的 OAuth Authorization Code + PKCE 流程拿到（详见 [oauth-integration-guide.md](./oauth-integration-guide.md)）。Client Basic Auth 的 client_id / client_secret 在 OAuth 后台创建 Client 时生成。
 

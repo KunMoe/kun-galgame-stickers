@@ -386,6 +386,7 @@ kun-galgame-image-refping --dry-run
 ```
 
 行为要点：
+
 - `SELECT DISTINCT banner_image_hash ... WHERE <> ''` → ≤1000 分批 →
   `cli.ReferencePing`。
 - 缺 `KUN_IMAGE_CLIENT_ID/SECRET` 时**硬失败退出**（非降级——这个 job

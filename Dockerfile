@@ -38,7 +38,8 @@ ENV KUN_DATABASE_URL=postgresql://build:build@localhost:5432/build
 # (studio-core, effect, pglite, engines, typescript…) into the runtime image.
 # `pnpm dlx` runs the CLI from a throwaway cache instead; pin it to the
 # @prisma/client version. The adapter-node output lands in `kun-love-ren/`.
-RUN pnpm dlx prisma@7.8.0 generate
+# Keep this pin in lockstep with package.json's @prisma/client.
+RUN pnpm dlx prisma@7.9.1 generate
 RUN pnpm run build
 # Drop dev tooling (vite/svelte/eslint/…) from node_modules; the generated
 # @prisma/client + @prisma/adapter-pg + pg are prod deps and survive the prune.

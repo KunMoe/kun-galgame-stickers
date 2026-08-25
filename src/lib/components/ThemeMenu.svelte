@@ -30,7 +30,7 @@
   tabindex="-1"
   role="menu"
   onfocusout={handleBlur}
-  class="absolute top-12 right-0 z-50 flex w-36 flex-col gap-1 border bg-content1 p-2 shadow-lg"
+  class="bg-content1 absolute top-12 right-0 z-50 flex w-36 flex-col gap-1 border p-2 shadow-lg"
 >
   {#each items as item (item.value)}
     {@const selected = theme.current === item.value}
