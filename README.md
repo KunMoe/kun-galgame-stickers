@@ -1,97 +1,121 @@
 ![kun-galgame-stickers](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/blob/svelte-kit/static/title.webp)
 
-### **[中文版](/Readme_zh_cn.md)**
+### **[English](README.md)** | **[日本語](docs/readme/jp.md)** | **[简体中文](Readme_zh_cn.md)** | **[繁體中文](docs/readme/cht.md)**
 
-## Introduction
+**Site: [sticker.kungal.com](https://sticker.kungal.com)** · **[Telegram](https://t.me/kungalgame)**
 
-KUN Visual Novel Stickers is a subsite of the KUN Visual Novel Forum, dedicated to collecting sticker packs. It does not adhere to the operating principles of the forum.
+# KUN Visual Novel Stickers
 
-Currently, the number of stickers on this website has exceeded 400!
+A sticker / emoji-pack site for visual novels (galgame). It is a subsite of [KUN Visual Novel](https://www.kungal.com) and does **not** follow the forum's operating rules.
 
-These are stickers captured from various visualnovels, with the purpose of
+There are currently **7 packs and 498 stickers** (80 per pack; pack 7 has 18). They are screenshots of character expressions, taken while playing the games.
+
+The point of this collection is:
 
 - Recommending fun and cute games to more people through stickers
 - Moe!
 
-In the future, some SD_CG and CG screenshots from games may be updated as stickers. Currently, there are only pure expressions of characters from the games, and of course, you can also join our group at the end of the article.
+SD_CG and CG stills may show up later. For now it is only pure character expressions. Join the group at the end of this page if you like.
 
-### Telegram Sticker Packs
+## Telegram sticker packs
 
-**This set of stickers will be updated synchronously in the Telegram sticker collection**, with 80 stickers per set. You can also click the links below to add the stickers
+Packs are mirrored to Telegram, 80 stickers per set (pack 7 is smaller). Add them here:
 
-[Kun Galgame Sticker Pack [1]](https://t.me/addstickers/KUNgal1)
+- [KUN Galgame Sticker Pack [1]](https://t.me/addstickers/KUNgal1)
+- [KUN Galgame Sticker Pack [2]](https://t.me/addstickers/KUNgal2)
+- [KUN Galgame Sticker Pack [3]](https://t.me/addstickers/KUNgal3)
+- [KUN Galgame Sticker Pack [4]](https://t.me/addstickers/KUNgal4)
+- [KUN Galgame Sticker Pack [5]](https://t.me/addstickers/KUNgal5)
+- [KUN Galgame Sticker Pack [6]](https://t.me/addstickers/KUNgal6)
+- [KUN Galgame Sticker Pack [7]](https://t.me/addstickers/KUNgal7)
 
-[Kun Galgame Sticker Pack [2]](https://t.me/addstickers/KUNgal2)
+The copies in this repository are sharper than the Telegram sets — Telegram compresses them.
 
-[Kun Galgame Sticker Pack [3]](https://t.me/addstickers/KUNgal3)
-
-[Kun Galgame Sticker Pack [4]](https://t.me/addstickers/KUNgal4)
-
-[Kun Galgame Sticker Pack [5]](https://t.me/addstickers/KUNgal5)
-
-[Kun Galgame Sticker Pack [6]](https://t.me/addstickers/KUNgal6)
-
-[Kun Galgame Sticker Pack [7]](https://t.me/addstickers/KUNgal7)
-
-The stickers in the repository are clearer than those in the Telegram collection because the quality was compressed when making the Telegram sticker collection.
-
-You can click the link below to download these stickers
-
-**[Download Link](https://github.com/KUN1007/kungalgame-stickers/releases)**
+**[Download the originals](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases)**
 
 ## Standards
 
-This series of sticker packs tries to follow these standards as much as possible
+This series tries to follow:
 
-- All are Visual Novel (galgame) stickers, excluding anime, comics, illustrations, etc.
-  Square screenshots
-- Try to capture the character's ahoge completely
-- Mainly small, cute, soft-moe, ~~and fluffy white-haired lass characters~~
+- Visual novel (galgame) stickers only — no anime, manga, or illustrations
+- Square screenshots
+- Capture the character's ahoge in full whenever possible
+- Mostly small, cute, soft-moe ~~fluffy white-haired lass~~ characters
 
-Some stickers do not follow these standards because they were captured too early
+Some early stickers do not follow these, because they were captured before the rules existed.
 
-## Related Games
+## Related games
 
-Below are the games used in the stickers, you can go play the corresponding games yourself
+Every game used here is one I have actually played. ~~They are all moe games.~~
 
-Of course, I have played all these games, all of them are moe games
+[Overview of games in the sticker packs](static/kun-galgame-stickers/introduction/game.md)
 
-You can click to see which games were used for the screenshots in the stickers
+## What the site does
 
-[Overview of Games in the Sticker Pack](https://github.com/KUN1007/kungalgame-stickers/blob/main/introduction/game.md)
+- Browse packs and single stickers, with game / character names from Postgres
+- Sign in / register with a KUN account (OAuth RP of [kun-galgame-infra](https://github.com/KunMoe/kun-galgame-infra); httpOnly session cookie, no tokens in the browser)
+- Chinese by default; English under `/en/...`
+- Light / dark / system theme
+- Download original PNGs; Telegram links on the [About](https://sticker.kungal.com/about) page
 
-## To-Do List
+Images still live as static files in this repo (`static/stickers/` for list webp, `static/kun-galgame-stickers/` for originals). Moving them to object storage is planned, not done.
 
-- [ ] Add login functionality for Kun Galgame forum accounts
+## Tech stack
 
-- [ ] Implement user upload functionality for Kun Galgame forum accounts
+| Layer    | Choice                                                                           |
+| -------- | -------------------------------------------------------------------------------- |
+| App      | [SvelteKit](https://svelte.dev/docs/kit) 2 + Svelte 5 runes, `adapter-node`      |
+| UI       | [Tailwind CSS](https://tailwindcss.com/) 4 + `@iconify/svelte`                   |
+| Database | PostgreSQL (`kungalgame_sticker`) through [Prisma](https://www.prisma.io/) 7     |
+| Auth     | KUN OAuth (PKCE, confidential client, RFC 6749 / 6750 / 7009 protocol endpoints) |
+| Deploy   | Docker image → GHCR → [Dokploy](https://dokploy.com/) at `sticker.kungal.com`    |
 
-- [ ] Clarify API documentation for third-party developers
+## Development
 
-- [ ] Add Telegram sticker index section
+Needs Node 24 and pnpm 9+. Copy `.env.example` to `.env` and fill in `KUN_DATABASE_URL` plus the OAuth secret.
 
-- [ ] Add the SD_CG section, which will host SD_CG content for Galgames.
+```bash
+pnpm install
+# prisma CLI is not a project dependency — pin it to @prisma/client
+pnpm dlx prisma@7.9.1 generate
+pnpm dev          # http://127.0.0.1:5173
+pnpm run check
+pnpm run lint
+```
+
+Login in local dev also needs a running OAuth server (`KUN_OAUTH_SERVER_URL` in `.env`). Pack listing works without it.
+
+## Deployment
+
+Production is a single Node container on the shared `dokploy-network`, using infra's Postgres and OAuth. CI builds `ghcr.io/kunmoe/sticker-web` on push to `svelte-kit`.
+
+See [docs/deploy/README.md](docs/deploy/README.md) for the full guide (image, env, one-time `kungalgame_sticker` database, Dokploy).
+
+## Roadmap
+
+- [x] KUN account login (OAuth)
+- [x] Telegram pack index (this README and `/about`)
+- [ ] User uploads with a KUN account
+- [ ] Public API docs for third-party use
+- [ ] Move sticker images to object storage
+- [ ] SD_CG section for galgame SD_CG
 
 ## FAQ
 
-Q: Will these stickers be continuously updated?
+**Q: Will these stickers keep being updated?**
+A: Yes. I capture stickers while playing. As long as I still play visual novels, there will be updates.
 
-A: Of course. I will capture stickers while playing games, which means as long as I'm still playing visualnovels, there will definitely be updates.
+**Q: Can I contribute stickers?**
+A: Yes. If you use GitHub, open a PR and put your stickers in a named folder under `static/kun-galgame-stickers/Others/`. You can also drop them in the visual-novel group below.
 
-Q: Can I contribute stickers to this series?
+**Q: Why is the first pack's image format mixed?**
+A: Some files were copied from QQ before this collection was deliberate. Everything new is PNG.
 
-A: Certainly! If you are familiar with using GitHub, you can submit a PR to us, placing your own stickers in the Others folder under your own named folder. You can also join the visualnovel discussion group below to share your stickers in the group.
+**Q: Why do many games only have expressions from one character?**
+A: I am a one-route warrior.
 
-Q: Why is the image format of the first set of stickers different?
+If you like this, a GitHub star is welcome.
 
-A: Some were directly transferred from QQ because I had not started collecting these stickers specifically before. All stickers updated in the future will be in PNG format.
+Telegram group: https://t.me/kungalgame
 
-Q: Why are there only expressions of one person from many games in the entire game?
-
-A: I am a one-route warrior
-
-If you think we are doing well, feel free to give us a star~
-
-Our Telegram group: https://t.me/kungalgame
-
-Tips: We have no group rules, if you get kicked out, you can rejoin
+Tips: there are no group rules. If you get kicked, you can rejoin.
