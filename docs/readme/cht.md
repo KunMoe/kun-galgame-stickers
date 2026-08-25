@@ -58,28 +58,28 @@
 - 白天／黑夜／跟隨系統
 - 可下載原圖 PNG；Telegram 索引在 [關於頁](https://sticker.kungal.com/about)
 
-圖片目前仍作為倉庫靜態資源（列表圖 `static/stickers/`，原圖 `static/kun-galgame-stickers/`）。遷到物件儲存是既定方向，還沒做。
+圖片目前仍作為倉庫靜態資源（列表圖 `apps/web/public/stickers/`，原圖 `apps/web/public/kun-galgame-stickers/`）。遷到物件儲存是既定方向，還沒做。
 
 ## 技術棧
 
-| 層     | 選型                                                                            |
-| ------ | ------------------------------------------------------------------------------- |
-| 應用   | [SvelteKit](https://svelte.dev/docs/kit) 2 + Svelte 5 runes，`adapter-node`     |
-| UI     | [Tailwind CSS](https://tailwindcss.com/) 4 + `@iconify/svelte`                  |
-| 資料庫 | PostgreSQL（`kungalgame_sticker`），[Prisma](https://www.prisma.io/) 7          |
-| 鑑權   | 鯤 OAuth（PKCE、confidential client，RFC 6749 / 6750 / 7009 協定端點）          |
-| 部署   | Docker 映像 → GHCR → [Dokploy](https://dokploy.com/)，網域 `sticker.kungal.com` |
+| 層     | 選型                                                                                          |
+| ------ | --------------------------------------------------------------------------------------------- |
+| 前端   | [Nuxt 4](https://nuxt.com/) + [KunUI](https://ui.kungal.com/)（`apps/web`）                   |
+| i18n   | `@nuxtjs/i18n` — 預設中文，`/en` 英語，`/ja` 日語                                             |
+| API    | [Go Fiber](https://gofiber.io/) v3（`apps/api`）                                              |
+| 資料庫 | PostgreSQL（`kungalgame_sticker`），GORM；SQL 遷移在 `apps/api/migrations`                    |
+| 鑑權   | 鯤 OAuth（PKCE、confidential client，RFC 6749 / 6750 / 7009 協定端點）                        |
+| 部署   | Docker 映像 → GHCR → [Dokploy](https://dokploy.com/)，網域 `sticker.kungal.com`               |
 
 ## 本機開發
 
-需要 Node 24 和 pnpm 9+。複製 `.env.example` 為 `.env`，填入 `KUN_DATABASE_URL` 和 OAuth secret。
+需要 Node 24、pnpm 11 和 Go 1.26。複製 `.env.example` 為 `.env`，填入 `KUN_DATABASE_URL` 和 OAuth secret。
 
 ```bash
 pnpm install
-# prisma CLI 不是專案依賴，版本與 @prisma/client 對齊
-pnpm dlx prisma@7.9.1 generate
-pnpm dev          # http://127.0.0.1:5173
-pnpm run check
+pnpm migrate      # 首次，針對 kungalgame_sticker
+pnpm dev          # web http://127.0.0.1:5173  ·  api :9421
+pnpm run typecheck
 pnpm run lint
 ```
 
@@ -87,9 +87,9 @@ pnpm run lint
 
 ## 部署
 
-生產是共享 `dokploy-network` 上的單個 Node 容器，複用樞紐的 Postgres 和 OAuth。CI 在 `svelte-kit` 分支 push 後建構 `ghcr.io/kunmoe/sticker-web`。
+生產是共享 `dokploy-network` 上的兩個容器：`web`（Nitro）和 `api`（Fiber），外加一次性 `migrate`。Traefik 把 `sticker.kungal.com/api` 指到 API，其餘指到 web。CI 在 `svelte-kit` 分支 push 後建構 `sticker-web` / `sticker-api` / `sticker-migrate`。
 
-完整步驟（映像、環境變數、一次性建庫 `kungalgame_sticker`、Dokploy）見 [docs/deploy/README.md](../deploy/README.md)。
+完整步驟見 [docs/deploy/README.md](../deploy/README.md)。
 
 ## 待辦
 

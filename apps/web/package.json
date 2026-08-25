@@ -1,0 +1,33 @@
+{
+  "name": "web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt prepare && vue-tsc -b --force"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.81",
+    "@kungal/ui-core": "2.25.0",
+    "@kungal/ui-nuxt": "2.25.0",
+    "@kungal/ui-tokens": "2.25.0",
+    "@kungal/ui-vue": "2.25.0",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.12.1",
+    "@nuxtjs/color-mode": "^4.0.0",
+    "@nuxtjs/i18n": "^10.1.0",
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.2",
+    "nuxt": "^4.1.2",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.0"
+  }
+}

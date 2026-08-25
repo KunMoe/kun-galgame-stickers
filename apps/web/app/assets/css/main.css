@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import '@kungal/ui-tokens';
+@import '@kungal/ui-vue/style.css';
+
+@source '../../../node_modules/@kungal/ui-vue';
+@source '../../../node_modules/@kungal/ui-core';

@@ -58,28 +58,28 @@ Telegram にも同じセットを同期しています。1 セット 80 枚（�
 - ライト／ダーク／システム追従
 - 原画 PNG のダウンロード。[About](https://sticker.kungal.com/about) に Telegram 索引
 
-画像はまだこのリポジトリの静的ファイルです（一覧 webp は `static/stickers/`、原画は `static/kun-galgame-stickers/`）。オブジェクトストレージへの移行は予定であり、未着手です。
+画像はまだこのリポジトリの静的ファイルです（一覧 webp は `apps/web/public/stickers/`、原画は `apps/web/public/kun-galgame-stickers/`）。オブジェクトストレージへの移行は予定であり、未着手です。
 
 ## 技術スタック
 
-| 層       | 選定                                                                           |
-| -------- | ------------------------------------------------------------------------------ |
-| アプリ   | [SvelteKit](https://svelte.dev/docs/kit) 2 + Svelte 5 runes、`adapter-node`    |
-| UI       | [Tailwind CSS](https://tailwindcss.com/) 4 + `@iconify/svelte`                 |
-| DB       | PostgreSQL（`kungalgame_sticker`）、[Prisma](https://www.prisma.io/) 7         |
-| 認証     | 鯤 OAuth（PKCE、confidential client、RFC 6749 / 6750 / 7009）                  |
-| デプロイ | Docker イメージ → GHCR → [Dokploy](https://dokploy.com/)、`sticker.kungal.com` |
+| 層       | 選定                                                                                          |
+| -------- | --------------------------------------------------------------------------------------------- |
+| フロント | [Nuxt 4](https://nuxt.com/) + [KunUI](https://ui.kungal.com/)（`apps/web`）                   |
+| i18n     | `@nuxtjs/i18n` — 既定は中国語、`/en` 英語、`/ja` 日本語                                       |
+| API      | [Go Fiber](https://gofiber.io/) v3（`apps/api`）                                              |
+| DB       | PostgreSQL（`kungalgame_sticker`）、GORM。SQL マイグレーションは `apps/api/migrations`        |
+| 認証     | 鯤 OAuth（PKCE、confidential client、RFC 6749 / 6750 / 7009）                                 |
+| デプロイ | Docker イメージ → GHCR → [Dokploy](https://dokploy.com/)、`sticker.kungal.com`                |
 
 ## 開発
 
-Node 24 と pnpm 9+ が必要です。`.env.example` を `.env` にコピーし、`KUN_DATABASE_URL` と OAuth secret を入れてください。
+Node 24、pnpm 11、Go 1.26 が必要です。`.env.example` を `.env` にコピーし、`KUN_DATABASE_URL` と OAuth secret を入れてください。
 
 ```bash
 pnpm install
-# prisma CLI はプロジェクト依存関係ではない。バージョンは @prisma/client に合わせる
-pnpm dlx prisma@7.9.1 generate
-pnpm dev          # http://127.0.0.1:5173
-pnpm run check
+pnpm migrate      # 初回、kungalgame_sticker に対して
+pnpm dev          # web http://127.0.0.1:5173  ·  api :9421
+pnpm run typecheck
 pnpm run lint
 ```
 
@@ -87,9 +87,9 @@ pnpm run lint
 
 ## デプロイ
 
-本番は共有 `dokploy-network` 上の単一 Node コンテナで、ハブの Postgres と OAuth を使います。CI は `svelte-kit` ブランチへの push で `ghcr.io/kunmoe/sticker-web` をビルドします。
+本番は共有 `dokploy-network` 上の 2 コンテナ：`web`（Nitro）と `api`（Fiber）、加えてワンショット `migrate`。Traefik は `sticker.kungal.com/api` を API に、それ以外を web に回します。CI は `svelte-kit` ブランチへの push で `sticker-web` / `sticker-api` / `sticker-migrate` をビルドします。
 
-手順（イメージ、環境変数、初回の `kungalgame_sticker` 作成、Dokploy）は [docs/deploy/README.md](../deploy/README.md) を見てください。
+手順は [docs/deploy/README.md](../deploy/README.md) を見てください。
 
 ## ロードマップ
 

@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "title": "鯤 Galgame スタンプ",
+    "description": "鯤 Galgame のギャルゲースタンプ集",
+    "og": "鯤 Galgame",
+    "ogDescription": "鯤 Galgame はビジュアルノベルの共同体です。広告なし、ずっと無料。"
+  },
+  "header": {
+    "title": "鯤 Galgame スタンプ",
+    "home": "ホーム",
+    "about": "について",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム"
+  },
+  "home": {
+    "sticker": "鯤 Galgame スタンプ",
+    "kun": "鯤 Galgame | スタンプ",
+    "open": "オープンソース。ソースは"
+  },
+  "sticker": {
+    "title": "ギャルゲースタンプ",
+    "description": "スタンプのプレビューとダウンロード",
+    "game": "ゲーム",
+    "lass": "キャラクター",
+    "original": "原画",
+    "download": "原画をダウンロード",
+    "notFound": "スタンプが見つかりません"
+  },
+  "footer": {
+    "poweredBy": "",
+    "forumName": "鯤 Galgame フォーラム",
+    "forumSuffix": "提供"
+  },
+  "auth": {
+    "login": "鯤アカウントでログイン",
+    "register": "鯤アカウントを作成",
+    "logout": "ログアウト",
+    "profile": "プロフィール",
+    "logoutTitle": "ログアウト",
+    "logoutPrompt": "ログアウトする範囲を選んでください：",
+    "logoutEverywhere": "本サイトと OAuth アカウントからログアウト",
+    "logoutEverywhereHint": "本サイトと OAuth アカウントの両方からログアウトします。共有デバイス向け。",
+    "logoutLocal": "本サイトのみ",
+    "logoutLocalHint": "本サイトだけログアウトします。OAuth と他サイトはログインしたままです。自分の端末向け。",
+    "cancel": "キャンセル",
+    "callbackError": "ログインに失敗しました。もう一度お試しください。"
+  },
+  "about": {
+    "title": "について - 鯤 Galgame スタンプ",
+    "repo": "kun-galgame-stickers",
+    "introduction": {
+      "heading": "紹介",
+      "lines": ["このプロジェクトの紹介動画を作りました。", "いまサイトには 400 枚以上のスタンプがあります。"],
+      "bilibiliPrefix": "この動画は Bilibili にもあります。よければ高評価を。",
+      "bilibiliLink": "純ギャルゲーのスタンプを 350 枚以上集めたリポジトリ",
+      "purposeIntro": "ギャルゲーから自分で撮ったスタンプです。目的は：",
+      "purpose": ["スタンプを通して萌えゲーをおすすめすること", "萌え！"],
+      "future": "いずれ SD_CG や CG も足すかもしれません。今は表情だけです。"
+    },
+    "telegram": {
+      "heading": "Telegram スタンプパック",
+      "intro": "Telegram にも同じセットを同期しています。1 セット 80 枚。追加はこちら：",
+      "packLabel": "鯤 Galgame スタンプ",
+      "note": "リポジトリ内の画像の方が Telegram よりきれいです。スタンプセット化のときに圧縮されています。",
+      "downloadIntro": "原画のダウンロード：",
+      "downloadLink": "ダウンロード"
+    },
+    "rules": {
+      "heading": "方針",
+      "intro": "できるだけ次に従います。",
+      "items": [
+        "ギャルゲー（Visual Novel）のスタンプだけ。アニメ・漫画・イラストは含めない",
+        "正方形の切り抜き",
+        "可能ならアホ毛まで入れる",
+        "小さくて可愛いソフト萌えの白毛が中心"
+      ],
+      "note": "初期に撮ったものは、この方針より前なので守っていません。"
+    },
+    "games": {
+      "heading": "収録ゲーム",
+      "lines": [
+        "スタンプに使ったゲームです。自分で遊んでみてください。",
+        "全部プレイ済みです。ぜんぶ萌えゲー。",
+        "どのゲームの切り抜きかを見る。"
+      ],
+      "linkLabel": "パックごとの収録ゲーム一覧"
+    },
+    "faq": {
+      "heading": "FAQ",
+      "items": [
+        {
+          "q": "スタンプは更新され続けますか？",
+          "a": "はい。ゲームをやりながら撮っています。ギャルゲーを続けている限り更新します。"
+        },
+        {
+          "q": "スタンプを投稿できますか？",
+          "a": "できます。GitHub で PR を出して、Others の下に自分のフォルダを作って入れてください。"
+        },
+        {
+          "q": "第 1 パックだけ画像形式が混在しているのはなぜ？",
+          "a": "本格収集の前に QQ から持ってきたものがあるからです。今後の更新はすべて PNG です。"
+        },
+        {
+          "q": "なぜ多くの作品で一人分の表情しかないのですか？",
+          "a": "単ルート戦士だからです。"
+        }
+      ]
+    },
+    "tips": {
+      "heading": "Tips",
+      "lines": ["気に入ったら GitHub の star をください。", "Telegram グループ: https://t.me/kungalgame"],
+      "note": "グループルールはありません。蹴られても入り直せます。"
+    }
+  }
+}

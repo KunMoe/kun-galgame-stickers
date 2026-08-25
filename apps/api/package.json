@@ -1,0 +1,13 @@
+{
+  "name": "@apps/api",
+  "private": true,
+  "scripts": {
+    "dev": "go run ./cmd/api",
+    "build": "go build -o ./tmp/api ./cmd/api",
+    "migrate": "go run ./cmd/migrate -dir up",
+    "migrate:down": "go run ./cmd/migrate -dir down -step 1",
+    "vet": "go vet ./...",
+    "test": "go test ./...",
+    "tidy": "go mod tidy"
+  }
+}

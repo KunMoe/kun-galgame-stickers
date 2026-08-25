@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "title": "KUN Visual Novel Stickers",
+    "description": "Visual novel sticker packs from KUN Visual Novel",
+    "og": "KUN Visual Novel",
+    "ogDescription": "KUN Visual Novel is a visual novel alliance. No ads, free forever."
+  },
+  "header": {
+    "title": "KUN Visual Novel Stickers",
+    "home": "Home",
+    "about": "About",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "home": {
+    "sticker": "KUN Visual Novel Sticker",
+    "kun": "KUN Visual Novel | Stickers",
+    "open": "Open source. Source code on"
+  },
+  "sticker": {
+    "title": "Visual Novel Sticker Pack",
+    "description": "Preview and download visual novel stickers",
+    "game": "Game",
+    "lass": "Character",
+    "original": "Original",
+    "download": "Download original",
+    "notFound": "Sticker not found"
+  },
+  "footer": {
+    "poweredBy": "Powered by",
+    "forumName": "KUN Visual Novel Forum",
+    "forumSuffix": ""
+  },
+  "auth": {
+    "login": "Sign in with KUN",
+    "register": "Create a KUN account",
+    "logout": "Sign out",
+    "profile": "Profile",
+    "logoutTitle": "Sign out",
+    "logoutPrompt": "Choose what to sign out of:",
+    "logoutEverywhere": "Sign out of this site and OAuth",
+    "logoutEverywhereHint": "Signs out of this site and your OAuth account. Other sites sign out on their next refresh. Best for public or shared devices.",
+    "logoutLocal": "This site only",
+    "logoutLocalHint": "Signs out of this site only. Your OAuth account and other sites stay signed in. Best for your own device.",
+    "cancel": "Cancel",
+    "callbackError": "Sign-in failed. Please try again."
+  },
+  "about": {
+    "title": "About - KUN Visual Novel Stickers",
+    "repo": "kun-galgame-stickers",
+    "introduction": {
+      "heading": "Introduction",
+      "lines": ["A video introducing this project has been made.", "The site now hosts over 400 stickers."],
+      "bilibiliPrefix": "This video is also on Bilibili — give it a thumbs up if you like it.",
+      "bilibiliLink": "I built a galgame sticker repository with over 350 pure galgame stickers",
+      "purposeIntro": "These are stickers I captured from visual novels, with the purpose of:",
+      "purpose": ["Recommending fun and cute games through stickers", "Moe!"],
+      "future": "SD_CG and CG stills may be added later. For now there are only character expressions."
+    },
+    "telegram": {
+      "heading": "Telegram sticker packs",
+      "intro": "Packs are mirrored to Telegram, 80 stickers per set. Add them here:",
+      "packLabel": "KUN Visual Novel Sticker Pack",
+      "note": "Copies in this repository are sharper than the Telegram sets because Telegram compresses them.",
+      "downloadIntro": "Download the originals here:",
+      "downloadLink": "Download"
+    },
+    "rules": {
+      "heading": "Standards",
+      "intro": "This series tries to follow:",
+      "items": [
+        "Visual novel (galgame) stickers only — no anime, manga, or illustrations",
+        "Square screenshots",
+        "Capture the character's ahoge in full whenever possible",
+        "Mostly small, cute, soft-moe white-haired characters"
+      ],
+      "note": "Some early stickers do not follow these, because they were captured before the rules existed."
+    },
+    "games": {
+      "heading": "Related games",
+      "lines": [
+        "These are the games used in the stickers. Go play them.",
+        "I have played all of them. They are all moe games.",
+        "See which games were used for which screenshots."
+      ],
+      "linkLabel": "Sticker pack game overview"
+    },
+    "faq": {
+      "heading": "FAQ",
+      "items": [
+        {
+          "q": "Will these stickers keep being updated?",
+          "a": "Yes. I capture stickers while playing. As long as I still play visual novels, there will be updates."
+        },
+        {
+          "q": "Can I contribute stickers?",
+          "a": "Yes. Open a PR and put your stickers in a named folder under Others."
+        },
+        {
+          "q": "Why is the first pack's image format mixed?",
+          "a": "Some files were copied from QQ before this collection was deliberate. Everything new is PNG."
+        },
+        {
+          "q": "Why do many games only have expressions from one character?",
+          "a": "I am a one-route warrior."
+        }
+      ]
+    },
+    "tips": {
+      "heading": "Tips",
+      "lines": ["If you like this, a GitHub star is welcome.", "Telegram group: https://t.me/kungalgame"],
+      "note": "There are no group rules. If you get kicked, you can rejoin."
+    }
+  }
+}

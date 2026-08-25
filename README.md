@@ -58,28 +58,28 @@ Every game used here is one I have actually played. ~~They are all moe games.~~
 - Light / dark / system theme
 - Download original PNGs; Telegram links on the [About](https://sticker.kungal.com/about) page
 
-Images still live as static files in this repo (`static/stickers/` for list webp, `static/kun-galgame-stickers/` for originals). Moving them to object storage is planned, not done.
+Images still live as static files in this repo (`apps/web/public/stickers/` for list webp, `apps/web/public/kun-galgame-stickers/` for originals). Moving them to object storage is planned, not done.
 
 ## Tech stack
 
-| Layer    | Choice                                                                           |
-| -------- | -------------------------------------------------------------------------------- |
-| App      | [SvelteKit](https://svelte.dev/docs/kit) 2 + Svelte 5 runes, `adapter-node`      |
-| UI       | [Tailwind CSS](https://tailwindcss.com/) 4 + `@iconify/svelte`                   |
-| Database | PostgreSQL (`kungalgame_sticker`) through [Prisma](https://www.prisma.io/) 7     |
-| Auth     | KUN OAuth (PKCE, confidential client, RFC 6749 / 6750 / 7009 protocol endpoints) |
-| Deploy   | Docker image → GHCR → [Dokploy](https://dokploy.com/) at `sticker.kungal.com`    |
+| Layer    | Choice                                                                                       |
+| -------- | -------------------------------------------------------------------------------------------- |
+| Frontend | [Nuxt 4](https://nuxt.com/) + [KunUI](https://ui.kungal.com/) (`apps/web`)                   |
+| i18n     | `@nuxtjs/i18n` — Chinese default, `/en`, `/ja`                                               |
+| API      | [Go Fiber](https://gofiber.io/) v3 (`apps/api`)                                              |
+| Database | PostgreSQL (`kungalgame_sticker`) through GORM; SQL migrations in `apps/api/migrations`      |
+| Auth     | KUN OAuth (PKCE, confidential client, RFC 6749 / 6750 / 7009 protocol endpoints)             |
+| Deploy   | Docker images → GHCR → [Dokploy](https://dokploy.com/) at `sticker.kungal.com`               |
 
 ## Development
 
-Needs Node 24 and pnpm 9+. Copy `.env.example` to `.env` and fill in `KUN_DATABASE_URL` plus the OAuth secret.
+Needs Node 24, pnpm 11, and Go 1.26. Copy `.env.example` to `.env` and fill in `KUN_DATABASE_URL` plus the OAuth secret.
 
 ```bash
 pnpm install
-# prisma CLI is not a project dependency — pin it to @prisma/client
-pnpm dlx prisma@7.9.1 generate
-pnpm dev          # http://127.0.0.1:5173
-pnpm run check
+pnpm migrate      # first time, against kungalgame_sticker
+pnpm dev          # web http://127.0.0.1:5173  ·  api :9421
+pnpm run typecheck
 pnpm run lint
 ```
 
@@ -87,9 +87,9 @@ Login in local dev also needs a running OAuth server (`KUN_OAUTH_SERVER_URL` in 
 
 ## Deployment
 
-Production is a single Node container on the shared `dokploy-network`, using infra's Postgres and OAuth. CI builds `ghcr.io/kunmoe/sticker-web` on push to `svelte-kit`.
+Production is two containers on the shared `dokploy-network`: `web` (Nitro) and `api` (Fiber), plus a one-shot `migrate`. Traefik should send `sticker.kungal.com/api` to the API and everything else to the web. CI builds `ghcr.io/kunmoe/sticker-web`, `sticker-api`, and `sticker-migrate` on push to `svelte-kit`.
 
-See [docs/deploy/README.md](docs/deploy/README.md) for the full guide (image, env, one-time `kungalgame_sticker` database, Dokploy).
+See [docs/deploy/README.md](docs/deploy/README.md) for the full guide.
 
 ## Roadmap
 

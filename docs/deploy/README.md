@@ -1,6 +1,8 @@
 # 表情包站 · 部署指南（Docker + Dokploy）
 
-把 **kun-galgame-stickers**（SvelteKit / adapter-node 的表情包站）作为**第 4 个 Dokploy 应用**接入鲲 Galgame 生态。它是一个**无状态 SSR 服务**，自己不拥有任何基础设施，运行时通过**服务名**复用枢纽（kun-galgame-infra）的 `postgres` 与 `oauth`。
+> **2026-08 架构变更：** 站点已从单个 SvelteKit 进程拆成 **Nuxt 4 前端 + Go Fiber API**（与 forum / patch / kaguya-web 同构）。生产 compose 现在是 `web` + `api` + 一次性 `migrate`。Traefik 需要两条路由：`sticker.kungal.com` → `web:3000`，`sticker.kungal.com/api` → `api:9421`。下文部分段落仍写旧的单容器拓扑，以 compose 文件为准。
+
+把 **kun-galgame-stickers** 作为**第 4 个 Dokploy 应用**接入鲲 Galgame 生态。它自己不拥有任何基础设施，运行时通过**服务名**复用枢纽（kun-galgame-infra）的 `postgres` 与 `oauth`。
 
 > 枢纽 / kungal / moyu 的部署见 `kun-galgame-infra/docs/deploy/`。本站与它们**平级**，共享同一个 `dokploy-network`。Dokploy 安装、DNS、Traefik、网络等通用前提以那边的 [`12-dokploy.md`](../../../kun-galgame-infra/docs/deploy/12-dokploy.md) 为准，本文只讲本站特有的部分。
 

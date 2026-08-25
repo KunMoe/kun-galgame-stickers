@@ -1,4 +1,8 @@
-# pnpm 11+ stores install-time settings here (package.json "pnpm" is ignored).
+packages:
+  - 'apps/*'
+
 allowBuilds:
   esbuild: true
   sharp: true
+  unrs-resolver: true
+  vue-demi: false

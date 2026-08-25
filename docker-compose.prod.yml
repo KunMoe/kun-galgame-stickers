@@ -1,70 +1,67 @@
-# kun-galgame-sticker — PRODUCTION compose (Dokploy + GHCR prebuilt image).
+# kun-galgame-sticker — PRODUCTION compose (Dokploy + GHCR).
 #
-# Standalone single-service app: joins the shared `dokploy-network` and consumes
-# the hub's `postgres` and `oauth` BY SERVICE NAME. Owns no backing services.
-# Deploy as the 4th Dokploy "Compose" application, AFTER infra postgres/oauth.
-#
-# Image flow (like infra/forum/patch): CI builds + pushes ghcr.io/kunmoe/sticker-web
-# on push to svelte-kit, then triggers the Dokploy webhook → Dokploy pulls :latest.
-# See .github/workflows/build.yml and docs/deploy/README.md.
-#
-# Secrets / deploy-specifics come from Dokploy's Environment panel via ${VAR}:
-#   POSTGRES_PASSWORD          — must match the infra Postgres password
-#   KUN_OAUTH_CLIENT_SECRET    — the 鲲 Galgame 表情包 confidential client secret
-# And the CI side needs one GitHub Actions secret: DOKPLOY_WEBHOOK_STICKER.
-#
-# One-time prerequisites against the LIVE infra cluster (the migration that
-# "runs separately" — initdb/seed already ran for the other apps and will NOT
-# re-run for this one):
-#   1. CREATE DATABASE kungalgame_sticker;            (on the running postgres)
-#   2. register the OAuth client row with redirect    https://sticker.kungal.com/auth/callback
-#   3. prisma db push  → kungalgame_sticker           (schema)
-#   4. restore the existing sticker data into it      (pg_dump → psql)
-#
-# Domain (Dokploy → this app → Domains):  sticker.kungal.com  /  →  web:3000
+# Two services on the shared dokploy-network. Traefik (Dokploy domains):
+#   sticker.kungal.com            → web:3000
+#   sticker.kungal.com/api        → api:9421   (PathPrefix /api, higher priority)
 name: kun-galgame-sticker
 
+x-api-env: &api-env
+  SERVER_PORT: '9421'
+  SERVER_MODE: prod
+  CORS_ALLOW_ORIGINS: https://sticker.kungal.com
+  KUN_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/kungalgame_sticker?sslmode=disable
+  KUN_OAUTH_SERVER_URL: http://oauth:9277/api/v1
+  KUN_OAUTH_WEB_URL: https://oauth.kungal.com
+  KUN_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
+  KUN_OAUTH_CLIENT_SECRET: ${KUN_OAUTH_CLIENT_SECRET:?set KUN_OAUTH_CLIENT_SECRET}
+  KUN_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
+
 services:
+  migrate:
+    image: ghcr.io/kunmoe/sticker-migrate:latest
+    pull_policy: always
+    environment:
+      <<: *api-env
+    command: ['-dir', 'up', '-path', '/migrations']
+    restart: 'no'
+    networks:
+      default:
+        aliases: []
+
+  api:
+    image: ghcr.io/kunmoe/sticker-api:latest
+    pull_policy: always
+    environment:
+      <<: *api-env
+    expose:
+      - '9421'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', '/app', 'healthcheck']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
   web:
-    # CI (.github/workflows/build.yml) builds + pushes this on every push to
-    # svelte-kit; Dokploy PULLS it (no build on the box). Local dev/test builds
-    # straight from the Dockerfile (`docker build .`), not this file.
     image: ghcr.io/kunmoe/sticker-web:latest
-    # Force a fresh pull of :latest on every deploy — otherwise `docker compose up`
-    # reuses the stale local image even when the webhook fires post-build.
     pull_policy: always
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
-      PORT: '3000'
-      # adapter-node behind Traefik (TLS terminated at the edge). Pin the public
-      # origin so SvelteKit's CSRF origin check accepts POST form actions
-      # (e.g. /auth/logout); the X-Forwarded-* headers are Traefik defaults.
-      ORIGIN: https://sticker.kungal.com
-      PROTOCOL_HEADER: x-forwarded-proto
-      HOST_HEADER: x-forwarded-host
-      # ── Database ── hub Postgres, new 6th database. Internal service name.
-      KUN_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in Dokploy Environment}@postgres:5432/kungalgame_sticker?sslmode=disable
-      # ── OAuth ── single base, used for BOTH the browser /oauth/authorize
-      # redirect AND server-side token calls, so it must be the PUBLIC oauth
-      # domain (not the internal `oauth:9277` service name).
-      KUN_OAUTH_SERVER_URL: https://oauth.kungal.com/api/v1
-      KUN_OAUTH_WEB_URL: https://oauth.kungal.com
-      KUN_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
-      KUN_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
-      KUN_OAUTH_CLIENT_SECRET: ${KUN_OAUTH_CLIENT_SECRET:?set KUN_OAUTH_CLIENT_SECRET in Dokploy Environment}
+      NITRO_PORT: '3000'
+      NUXT_API_BASE_URL: http://api:9421
+      NUXT_PUBLIC_API_BASE_URL: https://sticker.kungal.com
+      NUXT_PUBLIC_SITE_URL: https://sticker.kungal.com
+      NUXT_PUBLIC_OAUTH_SERVER_URL: https://oauth.kungal.com/api/v1
+      NUXT_PUBLIC_OAUTH_FRONTEND_URL: https://oauth.kungal.com
+      NUXT_PUBLIC_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
+      NUXT_PUBLIC_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
     expose:
       - '3000'
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
     restart: unless-stopped
 
 networks:

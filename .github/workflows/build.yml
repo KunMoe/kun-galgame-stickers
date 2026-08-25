@@ -1,12 +1,3 @@
-# Build the sticker-site image, push to GHCR, then trigger a Dokploy redeploy.
-# Mirrors infra/forum/patch — see docs/deploy/README.md and
-# kun-galgame-infra/docs/deploy/13-registry-ci.md.
-#
-# Single SvelteKit (adapter-node) image. Runtime config (DB URL / OAuth secret)
-# is injected by Dokploy at RUN time via $env/dynamic/private — NOT baked here,
-# so one image works in any environment. The only build-time value is the
-# non-secret cookie name PUBLIC_KUN_STICKER_THEME, whose Dockerfile default
-# (kun-sticker-theme) is used as-is.
 name: build-and-push
 
 on:
@@ -16,15 +7,28 @@ on:
 
 permissions:
   contents: read
-  packages: write # push to GHCR
+  packages: write
 
-concurrency: # a newer push on the same ref cancels the in-flight build
+concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: sticker-api
+            file: docker/go.Dockerfile
+            args: CMD=api
+          - name: sticker-migrate
+            file: docker/go.Dockerfile
+            args: CMD=migrate
+          - name: sticker-web
+            file: docker/nuxt.Dockerfile
+            args: ''
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -36,24 +40,25 @@ jobs:
       - uses: docker/build-push-action@v7
         with:
           context: .
-          file: Dockerfile
+          file: ${{ matrix.file }}
+          build-args: ${{ matrix.args }}
           push: true
           tags: |
-            ghcr.io/kunmoe/sticker-web:latest
-            ghcr.io/kunmoe/sticker-web:${{ github.sha }}
-          cache-from: type=gha,scope=sticker-web
-          cache-to: type=gha,mode=max,scope=sticker-web
+            ghcr.io/kunmoe/${{ matrix.name }}:latest
+            ghcr.io/kunmoe/${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
-  deploy: # notify Dokploy only AFTER the image is on GHCR (avoids deploying the previous image)
+  deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Dokploy redeploy
-        env: # secret via env, quoted in run (injection-safe)
+        env:
           WEBHOOK: ${{ secrets.DOKPLOY_WEBHOOK_STICKER }}
         run: |
           if [ -z "$WEBHOOK" ]; then
-            echo "DOKPLOY_WEBHOOK_STICKER not set — image pushed to GHCR, skipping redeploy trigger."
+            echo "DOKPLOY_WEBHOOK_STICKER not set — images pushed to GHCR, skipping redeploy trigger."
             exit 0
           fi
           curl -fsS -X POST "$WEBHOOK"

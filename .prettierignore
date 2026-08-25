@@ -1,10 +1,7 @@
 pnpm-lock.yaml
-package-lock.json
-yarn.lock
-
-build/
-.svelte-kit/
-kun-love-ren/
 node_modules/
-prisma/generated/
-static/
+apps/web/.nuxt/
+apps/web/.output/
+apps/api/tmp/
+apps/web/public/
+docs/
