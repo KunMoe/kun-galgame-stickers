@@ -12,7 +12,8 @@
     "lint": "pnpm -F web run lint",
     "typecheck": "pnpm -F web run typecheck",
     "vet": "pnpm -F @apps/api run vet",
-    "migrate": "pnpm -F @apps/api run migrate"
+    "migrate": "pnpm -F @apps/api run migrate",
+    "migrate:images": "pnpm -F @apps/api run migrate:images"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -6,6 +6,7 @@
     "build": "go build -o ./tmp/api ./cmd/api",
     "migrate": "go run ./cmd/migrate -dir up",
     "migrate:down": "go run ./cmd/migrate -dir down -step 1",
+    "migrate:images": "go run ./cmd/migrate-images",
     "vet": "go vet ./...",
     "test": "go test ./...",
     "tidy": "go mod tidy"

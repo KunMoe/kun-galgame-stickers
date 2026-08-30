@@ -144,3 +144,17 @@ func (r *StickerRepo) CountRecentStickersByOwner(uid int, since time.Time) (int6
 		Count(&n).Error
 	return n, err
 }
+
+func (r *StickerRepo) ListWithoutHash() ([]model.Sticker, error) {
+	var rows []model.Sticker
+	err := r.db.Where("image_hash IS NULL OR btrim(image_hash) = ''").
+		Order("sid ASC, pid ASC").
+		Find(&rows).Error
+	return rows, err
+}
+
+func (r *StickerRepo) SetImageHash(sid, pid int, hash string) error {
+	return r.db.Model(&model.Sticker{}).
+		Where("sid = ? AND pid = ?", sid, pid).
+		Update("image_hash", hash).Error
+}
