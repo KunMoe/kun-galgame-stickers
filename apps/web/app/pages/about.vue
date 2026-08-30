@@ -18,7 +18,7 @@ const tips = computed(() => tm('about.tips.lines') as string[])
 <template>
   <article class="flex flex-col gap-12">
     <h1 class="text-center text-3xl font-bold">
-      <KunLink href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit" target="_blank">
+      <KunLink :href="STICKER_GITHUB_REPO" target="_blank">
         {{ t('about.repo') }}
       </KunLink>
     </h1>
@@ -56,7 +56,7 @@ const tips = computed(() => tm('about.tips.lines') as string[])
       <p>{{ t('about.telegram.note') }}</p>
       <p>{{ t('about.telegram.downloadIntro') }}</p>
       <KunLink
-        href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases"
+        :href="STICKER_GITHUB_RELEASES"
         target="_blank"
       >
         {{ t('about.telegram.downloadLink') }}
@@ -76,7 +76,7 @@ const tips = computed(() => tm('about.tips.lines') as string[])
       <KunHeader :name="t('about.games.heading')" scale="h2" />
       <p v-for="line in gameLines" :key="line">{{ line }}</p>
       <KunLink
-        href="https://github.com/KUN1007/kungalgame-stickers/blob/main/introduction/game.md"
+        :href="STICKER_GITHUB_GAME_LIST"
         target="_blank"
       >
         {{ t('about.games.linkLabel') }}

@@ -1,4 +1,4 @@
-![kun-galgame-stickers](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/blob/svelte-kit/static/title.webp)
+![kun-galgame-stickers](https://github.com/KunMoe/kun-galgame-stickers/blob/svelte-kit/apps/web/public/title.webp)
 
 ### **[English](../../README.md)** | **[日本語](jp.md)** | **[简体中文](../../Readme_zh_cn.md)** | **[繁體中文](cht.md)**
 
@@ -31,7 +31,7 @@ Telegram にも同じセットを同期しています。1 セット 80 枚（�
 
 リポジトリ内の画像の方が Telegram よりきれいです。スタンプセット化のときに圧縮されています。
 
-**[原画をダウンロード](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases)**
+**[原画をダウンロード](https://github.com/KunMoe/kun-galgame-stickers/releases)**
 
 ## 方針
 
@@ -48,7 +48,7 @@ Telegram にも同じセットを同期しています。1 セット 80 枚（�
 
 スタンプに使ったゲームです。自分で遊んでみてください。全部プレイ済みです。~~ぜんぶ萌えゲー。~~
 
-[パックごとの収録ゲーム一覧](../../static/kun-galgame-stickers/introduction/game.md)
+[パックごとの収録ゲーム一覧](../../apps/web/public/kun-galgame-stickers/introduction/game.md)
 
 ## サイトの機能
 
@@ -106,7 +106,7 @@ pnpm run lint
 A: はい。ゲームをやりながら撮っています。ギャルゲーを続けている限り更新します。
 
 **Q: スタンプを投稿できますか？**
-A: できます。GitHub が使えるなら PR を出して、`static/kun-galgame-stickers/Others/` の下に自分のフォルダを作って入れてください。下の交流グループに投げても構いません。
+A: できます。GitHub が使えるなら PR を出して、`apps/web/public/kun-galgame-stickers/Others/` の下に自分のフォルダを作って入れてください。下の交流グループに投げても構いません。
 
 **Q: 第 1 パックだけ画像形式が混在しているのはなぜ？**
 A: 本格収集の前に QQ から持ってきたものがあるからです。今後の更新はすべて PNG です。

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /en/auth
+Disallow: /ja/auth
+Disallow: /api
+
+Sitemap: https://sticker.kungal.com/sitemap_index.xml

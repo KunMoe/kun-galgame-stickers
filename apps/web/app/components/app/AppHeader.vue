@@ -61,7 +61,7 @@ const onLanguage = async (item: { key: string }) => {
       <KunButton
         is-icon-only
         variant="light"
-        href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit"
+        :href="STICKER_GITHUB_REPO"
         target="_blank"
         aria-label="GitHub"
       >

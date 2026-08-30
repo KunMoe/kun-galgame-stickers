@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-08-08',
   devtools: { enabled: false },
 
-  modules: ['@nuxt/eslint', '@nuxtjs/color-mode', '@nuxtjs/i18n'],
+  modules: ['@nuxt/eslint', '@nuxtjs/color-mode', '@nuxtjs/i18n', '@nuxtjs/sitemap'],
 
   css: ['~/assets/css/main.css'],
 
@@ -72,6 +72,18 @@ export default defineNuxtConfig({
     classPrefix: 'kun-',
     classSuffix: '-mode',
     storageKey: 'kun-sticker-theme'
+  },
+
+  site: {
+    url: process.env.NUXT_PUBLIC_SITE_URL || 'https://sticker.kungal.com'
+  },
+
+  sitemap: {
+    exclude: ['/auth/**'],
+    sources: ['/api/__sitemap__/urls'],
+    excludeAppSources: true,
+    cacheMaxAgeSeconds: 60 * 60 * 6,
+    defaults: { changefreq: 'weekly', priority: 0.7 }
   },
 
   app: {

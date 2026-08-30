@@ -12,7 +12,7 @@ const { t } = useI18n()
       <p>{{ t('home.kun') }}</p>
       <p>
         {{ t('home.open') }}
-        <KunLink href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit" target="_blank">
+        <KunLink :href="STICKER_GITHUB_REPO" target="_blank">
           GitHub
         </KunLink>
       </p>

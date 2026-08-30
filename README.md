@@ -1,4 +1,4 @@
-![kun-galgame-stickers](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/blob/svelte-kit/static/title.webp)
+![kun-galgame-stickers](https://github.com/KunMoe/kun-galgame-stickers/blob/svelte-kit/apps/web/public/title.webp)
 
 ### **[English](README.md)** | **[日本語](docs/readme/jp.md)** | **[简体中文](Readme_zh_cn.md)** | **[繁體中文](docs/readme/cht.md)**
 
@@ -31,7 +31,7 @@ Packs are mirrored to Telegram, 80 stickers per set (pack 7 is smaller). Add the
 
 The copies in this repository are sharper than the Telegram sets — Telegram compresses them.
 
-**[Download the originals](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases)**
+**[Download the originals](https://github.com/KunMoe/kun-galgame-stickers/releases)**
 
 ## Standards
 
@@ -48,7 +48,7 @@ Some early stickers do not follow these, because they were captured before the r
 
 Every game used here is one I have actually played. ~~They are all moe games.~~
 
-[Overview of games in the sticker packs](static/kun-galgame-stickers/introduction/game.md)
+[Overview of games in the sticker packs](apps/web/public/kun-galgame-stickers/introduction/game.md)
 
 ## What the site does
 
@@ -106,7 +106,7 @@ See [docs/deploy/README.md](docs/deploy/README.md) for the full guide.
 A: Yes. I capture stickers while playing. As long as I still play visual novels, there will be updates.
 
 **Q: Can I contribute stickers?**
-A: Yes. If you use GitHub, open a PR and put your stickers in a named folder under `static/kun-galgame-stickers/Others/`. You can also drop them in the visual-novel group below.
+A: Yes. If you use GitHub, open a PR and put your stickers in a named folder under `apps/web/public/kun-galgame-stickers/Others/`. You can also drop them in the visual-novel group below.
 
 **Q: Why is the first pack's image format mixed?**
 A: Some files were copied from QQ before this collection was deliberate. Everything new is PNG.

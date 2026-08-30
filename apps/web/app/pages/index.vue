@@ -41,7 +41,7 @@ const list = computed(() => (packs.value?.length ? packs.value : fallbackPacks))
         is-icon-only
         variant="light"
         class="relative z-10 ml-auto"
-        href="https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases"
+        :href="STICKER_GITHUB_RELEASES"
         target="_blank"
         :aria-label="`Download sticker pack ${pack.sid}`"
       >

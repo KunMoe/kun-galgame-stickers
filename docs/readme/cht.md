@@ -1,4 +1,4 @@
-![kun-galgame-stickers](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/blob/svelte-kit/static/title.webp)
+![kun-galgame-stickers](https://github.com/KunMoe/kun-galgame-stickers/blob/svelte-kit/apps/web/public/title.webp)
 
 ### **[English](../../README.md)** | **[日本語](jp.md)** | **[简体中文](../../Readme_zh_cn.md)** | **[繁體中文](cht.md)**
 
@@ -31,7 +31,7 @@
 
 **倉庫裡的圖比 Telegram 貼圖集更清晰**，做成貼圖集時品質被壓縮過。
 
-**[點此下載原圖](https://github.com/KUN1007/kun-galgame-stickers-sveltekit/releases)**
+**[點此下載原圖](https://github.com/KunMoe/kun-galgame-stickers/releases)**
 
 ## 規範
 
@@ -48,7 +48,7 @@
 
 下面是表情包裡用到的遊戲，可以自己去玩。這些我都打過，~~全部是萌萌遊戲~~。
 
-[查看表情包用了哪些遊戲的截圖](../../static/kun-galgame-stickers/introduction/game.md)
+[查看表情包用了哪些遊戲的截圖](../../apps/web/public/kun-galgame-stickers/introduction/game.md)
 
 ## 網站功能
 
@@ -106,7 +106,7 @@ pnpm run lint
 A：當然會。我邊打遊戲邊截，只要還在玩 galgame，就一定會更新。
 
 **Q：我可以貢獻表情嗎？**
-A：可以。熟悉 GitHub 的話提 PR，把表情放到 `static/kun-galgame-stickers/Others/` 下你自己命名的目錄。也可以發到下面的 galgame 交流群。
+A：可以。熟悉 GitHub 的話提 PR，把表情放到 `apps/web/public/kun-galgame-stickers/Others/` 下你自己命名的目錄。也可以發到下面的 galgame 交流群。
 
 **Q：為什麼第一套的圖片格式不統一？**
 A：有一些是直接從 QQ 搬過來的，那時還沒開始專門收集。以後更新都是 png。
