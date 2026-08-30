@@ -9,6 +9,7 @@
     "title": "鲲 Galgame 表情包",
     "home": "主页",
     "about": "关于",
+    "myPacks": "我的套装",
     "light": "白天",
     "dark": "黑夜",
     "system": "系统"
@@ -45,6 +46,29 @@
     "logoutLocalHint": "只登出本站；OAuth 账号与其它站点保持登录；再次登录本站可免密直接进入。适合自己的设备。",
     "cancel": "取消",
     "callbackError": "登录失败，请重试"
+  },
+  "publish": {
+    "title": "我的表情包套装",
+    "new": "新建套装",
+    "name": "套装名称",
+    "namePlaceholder": "给这套表情包起个名字",
+    "create": "创建草稿",
+    "creating": "创建中…",
+    "empty": "还没有套装。先建一套草稿，上传表情后再发布。",
+    "draft": "草稿",
+    "published": "已发布",
+    "hidden": "已隐藏",
+    "publish": "发布",
+    "unpublish": "取消发布",
+    "save": "保存",
+    "upload": "上传表情",
+    "uploading": "上传中…",
+    "preview": "设为封面",
+    "remove": "移除",
+    "limit": "每套最多 80 张。",
+    "needSticker": "至少上传一张才能发布。",
+    "notFound": "找不到这套表情包，或你不是作者。",
+    "back": "返回我的套装"
   },
   "about": {
     "title": "关于 - 鲲 Galgame 表情包",

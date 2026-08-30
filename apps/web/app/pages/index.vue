@@ -1,19 +1,22 @@
 <script setup lang="ts">
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 
-const fallbackPacks = [
-  { sid: 1, preview_pid: 1, count: 80 },
-  { sid: 2, preview_pid: 18, count: 80 },
-  { sid: 3, preview_pid: 35, count: 80 },
-  { sid: 4, preview_pid: 52, count: 80 },
-  { sid: 5, preview_pid: 69, count: 80 },
-  { sid: 6, preview_pid: 6, count: 80 },
-  { sid: 7, preview_pid: 12, count: 18 }
+const fallbackPacks: StickerPack[] = [
+  { sid: 1, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 1, preview_url: '/stickers/KUNgal1/1.webp', count: 80 },
+  { sid: 2, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 18, preview_url: '/stickers/KUNgal2/18.webp', count: 80 },
+  { sid: 3, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 35, preview_url: '/stickers/KUNgal3/35.webp', count: 80 },
+  { sid: 4, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 52, preview_url: '/stickers/KUNgal4/52.webp', count: 80 },
+  { sid: 5, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 69, preview_url: '/stickers/KUNgal5/69.webp', count: 80 },
+  { sid: 6, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 6, preview_url: '/stickers/KUNgal6/6.webp', count: 80 },
+  { sid: 7, owner_uid: 2, status: 1, title: {}, description: {}, preview_pid: 12, preview_url: '/stickers/KUNgal7/12.webp', count: 18 }
 ]
 
 const { data: packs } = await useAsyncData('sticker-packs', () => fetchPacks())
 const list = computed(() => (packs.value?.length ? packs.value : fallbackPacks))
+
+const packTitle = (pack: StickerPack) =>
+  resolveMultilingual(pack.title, locale.value) || `${t('home.sticker')} [${pack.sid}]`
 </script>
 
 <template>
@@ -24,7 +27,7 @@ const list = computed(() => (packs.value?.length ? packs.value : fallbackPacks))
       class="border-default-200 relative flex h-20 items-center overflow-hidden border px-6"
     >
       <img
-        :src="`/stickers/KUNgal${pack.sid}/${pack.preview_pid}.webp`"
+        :src="pack.preview_url"
         alt=""
         width="64"
         height="64"
@@ -35,9 +38,10 @@ const list = computed(() => (packs.value?.length ? packs.value : fallbackPacks))
         :to="localePath(`/sticker/${pack.sid}`)"
         class="absolute inset-0 flex items-center pl-24 text-base"
       >
-        {{ t('home.sticker') }} [{{ pack.sid }}]
+        {{ packTitle(pack) }}
       </KunLink>
       <KunButton
+        v-if="pack.sid <= 7"
         is-icon-only
         variant="light"
         class="relative z-10 ml-auto"

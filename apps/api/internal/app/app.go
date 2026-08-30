@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	stderrors "errors"
 	"log/slog"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	stickerservice "kun-galgame-sticker-api/internal/platform/sticker/service"
 	"kun-galgame-sticker-api/pkg/config"
 	"kun-galgame-sticker-api/pkg/errors"
+	"kun-galgame-sticker-api/pkg/imageclient"
 	"kun-galgame-sticker-api/pkg/response"
 
 	"github.com/gofiber/fiber/v3"
@@ -33,18 +35,30 @@ func New(cfg *config.Config) *App {
 	authSvc := identityservice.New(oauthClient)
 	authHandler := identityhandler.New(authSvc, cfg.Server.Secure)
 
-	stickerSvc := stickerservice.New(stickerrepo.New(db))
+	var imgCli *imageclient.Client
+	if cfg.Image.BaseURL != "" {
+		imgCli = imageclient.New(imageclient.Config{
+			BaseURL:      cfg.Image.BaseURL,
+			CDNBase:      cfg.Image.CDNBase,
+			ClientID:     cfg.OAuth.ClientID,
+			ClientSecret: cfg.OAuth.ClientSecret,
+		})
+	}
+
+	stickerSvc := stickerservice.New(stickerrepo.New(db), imgCli)
+	stickerSvc.StartRefPing(context.Background())
 	stickerH := stickerhandler.New(stickerSvc)
 
 	fiberApp := fiber.New(fiber.Config{
 		AppName:        "kun-galgame-sticker-api",
 		ErrorHandler:   errorHandler,
 		ReadBufferSize: 16 << 10,
+		BodyLimit:      12 << 20,
 	})
 	fiberApp.Use(recover.New())
 	fiberApp.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(cfg.CORS.AllowOrigins, ","),
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           86400,
@@ -56,14 +70,25 @@ func New(cfg *config.Config) *App {
 
 	api := fiberApp.Group("/api/v1")
 	api.Get("/sticker/packs", stickerH.ListPacks)
-	api.Get("/sticker/packs/:sid", stickerH.GetPack)
-	api.Get("/sticker/packs/:sid/:pid", stickerH.GetOne)
 
 	api.Post("/auth/oauth/callback", authHandler.Callback)
 	api.Post("/auth/logout", authHandler.Logout)
 
-	authed := api.Group("", middleware.OptionalAuth(authSvc, cfg.Server.Secure))
-	authed.Get("/auth/me", authHandler.Me)
+	opt := api.Group("", middleware.OptionalAuth(authSvc, cfg.Server.Secure))
+	opt.Get("/auth/me", authHandler.Me)
+	opt.Get("/sticker/packs/:sid", stickerH.GetPack)
+	opt.Get("/sticker/packs/:sid/:pid", stickerH.GetOne)
+
+	req := api.Group("", middleware.RequireAuth(authSvc, cfg.Server.Secure))
+	req.Get("/sticker/me/packs", stickerH.ListMine)
+	req.Post("/sticker/packs", stickerH.CreatePack)
+	req.Patch("/sticker/packs/:sid", stickerH.PatchPack)
+	req.Post("/sticker/packs/:sid/publish", stickerH.Publish)
+	req.Post("/sticker/packs/:sid/unpublish", stickerH.Unpublish)
+	req.Post("/sticker/packs/:sid/images", stickerH.UploadImage)
+	req.Post("/sticker/packs/:sid/stickers", stickerH.AddSticker)
+	req.Patch("/sticker/packs/:sid/stickers/:pid", stickerH.PatchSticker)
+	req.Delete("/sticker/packs/:sid/stickers/:pid", stickerH.DeleteSticker)
 
 	return &App{Fiber: fiberApp}
 }
@@ -83,5 +108,3 @@ func errorHandler(c fiber.Ctx, err error) error {
 	slog.Error("unhandled", "error", err)
 	return response.Error(c, errors.ErrInternal("internal error"))
 }
-
-

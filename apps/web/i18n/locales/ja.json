@@ -9,6 +9,7 @@
     "title": "鯤 Galgame スタンプ",
     "home": "ホーム",
     "about": "について",
+    "myPacks": "マイパック",
     "light": "ライト",
     "dark": "ダーク",
     "system": "システム"
@@ -45,6 +46,29 @@
     "logoutLocalHint": "本サイトだけログアウトします。OAuth と他サイトはログインしたままです。自分の端末向け。",
     "cancel": "キャンセル",
     "callbackError": "ログインに失敗しました。もう一度お試しください。"
+  },
+  "publish": {
+    "title": "マイスタンプパック",
+    "new": "新規パック",
+    "name": "パック名",
+    "namePlaceholder": "このパックの名前",
+    "create": "下書きを作成",
+    "creating": "作成中…",
+    "empty": "まだパックがありません。下書きを作ってスタンプを上げてから公開してください。",
+    "draft": "下書き",
+    "published": "公開中",
+    "hidden": "非公開",
+    "publish": "公開する",
+    "unpublish": "公開をやめる",
+    "save": "保存",
+    "upload": "スタンプをアップロード",
+    "uploading": "アップロード中…",
+    "preview": "カバーにする",
+    "remove": "削除",
+    "limit": "1 パックあたり最大 80 枚。",
+    "needSticker": "公開するには 1 枚以上必要です。",
+    "notFound": "パックが見つからないか、作者ではありません。",
+    "back": "マイパックに戻る"
   },
   "about": {
     "title": "について - 鯤 Galgame スタンプ",

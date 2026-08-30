@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t, locales } = useI18n()
 const localePath = useLocalePath()
+const user = useAuthUser()
 const colorMode = useColorMode()
 const switchLocalePath = useSwitchLocalePath()
 
@@ -39,6 +40,13 @@ const onLanguage = async (item: { key: string }) => {
     <nav class="flex flex-1 items-center justify-center gap-6 text-base">
       <KunLink :to="localePath('/')" class="text-primary">{{ t('header.home') }}</KunLink>
       <KunLink :to="localePath('/about')" class="text-primary">{{ t('header.about') }}</KunLink>
+      <KunLink
+        v-if="user"
+        :to="localePath('/me/packs')"
+        class="text-primary"
+      >
+        {{ t('header.myPacks') }}
+      </KunLink>
     </nav>
 
     <div class="flex items-center gap-1">

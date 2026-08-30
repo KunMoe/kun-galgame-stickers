@@ -12,6 +12,12 @@ type Config struct {
 	Database DatabaseConfig
 	OAuth    OAuthConfig
 	CORS     CORSConfig
+	Image    ImageConfig
+}
+
+type ImageConfig struct {
+	BaseURL string
+	CDNBase string
 }
 
 type ServerConfig struct {
@@ -61,6 +67,10 @@ func Load() (*Config, error) {
 		},
 		CORS: CORSConfig{
 			AllowOrigins: env("CORS_ALLOW_ORIGINS", "http://127.0.0.1:5173"),
+		},
+		Image: ImageConfig{
+			BaseURL: strings.TrimRight(os.Getenv("KUN_IMAGE_CLIENT_BASE_URL"), "/"),
+			CDNBase: strings.TrimRight(env("KUN_IMAGE_CDN_BASE", "https://image.kungal.iloveren.link"), "/"),
 		},
 	}
 	if cfg.Database.URL == "" {

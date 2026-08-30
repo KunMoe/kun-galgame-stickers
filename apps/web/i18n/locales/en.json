@@ -9,6 +9,7 @@
     "title": "KUN Visual Novel Stickers",
     "home": "Home",
     "about": "About",
+    "myPacks": "My packs",
     "light": "Light",
     "dark": "Dark",
     "system": "System"
@@ -45,6 +46,29 @@
     "logoutLocalHint": "Signs out of this site only. Your OAuth account and other sites stay signed in. Best for your own device.",
     "cancel": "Cancel",
     "callbackError": "Sign-in failed. Please try again."
+  },
+  "publish": {
+    "title": "My sticker packs",
+    "new": "New pack",
+    "name": "Pack name",
+    "namePlaceholder": "Name this sticker pack",
+    "create": "Create draft",
+    "creating": "Creating…",
+    "empty": "No packs yet. Create a draft, upload stickers, then publish.",
+    "draft": "Draft",
+    "published": "Published",
+    "hidden": "Hidden",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "save": "Save",
+    "upload": "Upload stickers",
+    "uploading": "Uploading…",
+    "preview": "Set as cover",
+    "remove": "Remove",
+    "limit": "Up to 80 stickers per pack.",
+    "needSticker": "Upload at least one sticker before publishing.",
+    "notFound": "Pack not found, or you are not the owner.",
+    "back": "Back to my packs"
   },
   "about": {
     "title": "About - KUN Visual Novel Stickers",

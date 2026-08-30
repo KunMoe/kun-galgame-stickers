@@ -25,7 +25,7 @@ useSeoMeta({
 <template>
   <div v-if="sticker" class="grid place-items-center gap-4">
     <img
-      :src="`/kun-galgame-stickers/telegram/KUNgal${sticker.sid}/${sticker.pid}.png`"
+      :src="stickerOriginalSrc(sticker)"
       :alt="`${game} ${lass}`"
       class="bg-content1 max-w-full border p-2"
     >

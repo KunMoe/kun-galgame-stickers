@@ -40,7 +40,7 @@ const downloadImage = async (path: string) => {
     >
       <div class="aspect-square w-full overflow-hidden">
         <img
-          :src="`/stickers/KUNgal${sid}/${sticker.pid}.webp`"
+          :src="sticker.thumb_url"
           alt=""
           width="320"
           height="320"
@@ -68,7 +68,7 @@ const downloadImage = async (path: string) => {
           is-icon-only
           variant="light"
           :aria-label="t('sticker.download')"
-          @click="downloadImage(`/kun-galgame-stickers/telegram/KUNgal${sid}/${sticker.pid}.png`)"
+          @click="downloadImage(stickerOriginalSrc(sticker))"
         >
           <KunIcon name="lucide:download" class="text-xl" />
         </KunButton>

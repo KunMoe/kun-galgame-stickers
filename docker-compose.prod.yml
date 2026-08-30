@@ -36,6 +36,8 @@ x-api-env: &api-env
   KUN_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
   KUN_OAUTH_CLIENT_SECRET: ${KUN_OAUTH_CLIENT_SECRET:?set KUN_OAUTH_CLIENT_SECRET}
   KUN_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
+  KUN_IMAGE_CLIENT_BASE_URL: http://image:9278
+  KUN_IMAGE_CDN_BASE: https://image.kungal.iloveren.link
 
 services:
   # Unique name on dokploy-network (same reason kungal-api / moyu-api are not

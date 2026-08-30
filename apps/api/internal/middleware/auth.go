@@ -9,6 +9,7 @@ import (
 	"kun-galgame-sticker-api/internal/platform/identity/dto"
 	"kun-galgame-sticker-api/internal/platform/identity/service"
 	"kun-galgame-sticker-api/pkg/errors"
+	"kun-galgame-sticker-api/pkg/response"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -18,9 +19,9 @@ const (
 	CookieRefresh = "kun_oauth_refresh"
 	CookieUser    = "kun_oauth_user"
 
-	refreshTTLSec       = 60 * 60 * 24 * 7
-	accessSafetyWindow  = 30
-	userLocalsKey       = "sticker_user"
+	refreshTTLSec      = 60 * 60 * 24 * 7
+	accessSafetyWindow = 30
+	userLocalsKey      = "sticker_user"
 )
 
 type jwtClaims struct {
@@ -49,6 +50,17 @@ func MustUser(c fiber.Ctx) (*dto.User, *errors.AppError) {
 		return nil, errors.ErrUnauthorized("not signed in")
 	}
 	return user, nil
+}
+
+func RequireAuth(auth *service.AuthService, secure bool) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		user := resolveUser(c, auth, secure)
+		if user == nil {
+			return response.Error(c, errors.ErrUnauthorized("not signed in"))
+		}
+		c.Locals(userLocalsKey, user)
+		return c.Next()
+	}
 }
 
 func resolveUser(c fiber.Ctx, auth *service.AuthService, secure bool) *dto.User {

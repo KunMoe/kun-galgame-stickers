@@ -26,12 +26,20 @@ func ErrUnauthorized(msg string) *AppError {
 	return New(CodeAuth, msg, 401)
 }
 
+func ErrForbidden(msg string) *AppError {
+	return New(CodeAuth, msg, 403)
+}
+
 func ErrBadRequest(msg string) *AppError {
 	return New(CodeBiz, msg, 400)
 }
 
 func ErrNotFound(msg string) *AppError {
 	return New(CodeBiz, msg, 404)
+}
+
+func ErrUnavailable(msg string) *AppError {
+	return New(CodeBiz, msg, 503)
 }
 
 func ErrInternal(msg string) *AppError {
