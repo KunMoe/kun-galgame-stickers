@@ -53,7 +53,7 @@
 ## 网站功能
 
 - 浏览表情包与单张详情，游戏名 / 少女名来自 Postgres
-- 使用鲲账号登录 / 注册（[kun-galgame-infra](https://github.com/KunMoe/kun-galgame-infra) 的 OAuth RP；httpOnly session cookie，浏览器里不放 token）
+- 使用鲲账号登录 / 注册（[nextmoe-infra](https://github.com/next-moe/nextmoe-infra) 的 OAuth RP；httpOnly session cookie，浏览器里不放 token）
 - 默认中文，英文走 `/en/...`
 - 白天 / 黑夜 / 跟随系统
 - 可下载原图 PNG；Telegram 索引在 [关于页](https://sticker.kungal.com/about)

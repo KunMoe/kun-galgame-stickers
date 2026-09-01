@@ -53,7 +53,7 @@
 ## 網站功能
 
 - 瀏覽表情包與單張詳情，遊戲名／少女名來自 Postgres
-- 使用鯤帳號登入／註冊（[kun-galgame-infra](https://github.com/KunMoe/kun-galgame-infra) 的 OAuth RP；httpOnly session cookie，瀏覽器裡不放 token）
+- 使用鯤帳號登入／註冊（[nextmoe-infra](https://github.com/next-moe/nextmoe-infra) 的 OAuth RP；httpOnly session cookie，瀏覽器裡不放 token）
 - 預設中文，英文走 `/en/...`
 - 白天／黑夜／跟隨系統
 - 可下載原圖 PNG；Telegram 索引在 [關於頁](https://sticker.kungal.com/about)

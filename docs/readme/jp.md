@@ -53,7 +53,7 @@ Telegram にも同じセットを同期しています。1 セット 80 枚（�
 ## サイトの機能
 
 - パックと単体スタンプの閲覧。ゲーム名／キャラ名は Postgres から
-- 鯤アカウントでログイン／登録（[kun-galgame-infra](https://github.com/KunMoe/kun-galgame-infra) の OAuth RP。httpOnly の session cookie。ブラウザに token は置かない）
+- 鯤アカウントでログイン／登録（[nextmoe-infra](https://github.com/next-moe/nextmoe-infra) の OAuth RP。httpOnly の session cookie。ブラウザに token は置かない）
 - 既定は中国語。英語は `/en/...`
 - ライト／ダーク／システム追従
 - 原画 PNG のダウンロード。[About](https://sticker.kungal.com/about) に Telegram 索引

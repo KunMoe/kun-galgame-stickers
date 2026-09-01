@@ -5,7 +5,7 @@
 1. **No background gradients in any UI, ever.** Never use gradient backgrounds in UI design (`bg-gradient-*`, `from-*/via-*/to-*`, `linear-gradient()`, `radial-gradient()`, `conic-gradient()`, etc.); use solid colors from the project's palette.
 2. Prefer KunUI components (`KunButton`, `KunCard`, `KunModal`, …). Do not change KunUI itself — report bugs or missing pieces to the user.
 
-A galgame **emoji pack** site. pnpm workspace: **Nuxt 4 + KunUI** frontend (`apps/web`) and **Go Fiber** API (`apps/api`). i18n is `@nuxtjs/i18n` (`zh-cn` default, `/en`, `/ja`). Database is PostgreSQL `kungalgame_sticker` via GORM; schema changes are SQL files in `apps/api/migrations`. Authentication is an **OAuth RP** of kun-galgame-infra (BFF httpOnly cookies; protocol endpoints are RFC-only). Cross-service contracts belong to infra, see `../kun-galgame-infra`.
+A galgame **emoji pack** site. pnpm workspace: **Nuxt 4 + KunUI** frontend (`apps/web`) and **Go Fiber** API (`apps/api`). i18n is `@nuxtjs/i18n` (`zh-cn` default, `/en`, `/ja`). Database is PostgreSQL `kungalgame_sticker` via GORM; schema changes are SQL files in `apps/api/migrations`. Authentication is an **OAuth RP** of nextmoe-infra (BFF httpOnly cookies; protocol endpoints are RFC-only). Cross-service contracts belong to infra, see `../nextmoe-infra`.
 
 Frontend layout follows kaguya-web practices: thin SFCs, domain code in `app/features/<domain>/`, `kunFetch` as the only API entry. Backend layout: `internal/platform/<domain>/{dto,handler,model,repository,service}`; handlers own HTTP, services do not import Fiber.
 

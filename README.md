@@ -53,7 +53,7 @@ Every game used here is one I have actually played. ~~They are all moe games.~~
 ## What the site does
 
 - Browse packs and single stickers, with game / character names from Postgres
-- Sign in / register with a KUN account (OAuth RP of [kun-galgame-infra](https://github.com/KunMoe/kun-galgame-infra); httpOnly session cookie, no tokens in the browser)
+- Sign in / register with a KUN account (OAuth RP of [nextmoe-infra](https://github.com/next-moe/nextmoe-infra); httpOnly session cookie, no tokens in the browser)
 - Chinese by default; English under `/en/...`
 - Light / dark / system theme
 - Download original PNGs; Telegram links on the [About](https://sticker.kungal.com/about) page

@@ -2,9 +2,9 @@
 
 > 站点是 **Nuxt 4 前端 + Go Fiber API**（与 forum / patch 同构）。生产 compose 是 `web` + `sticker-api` + 一次性 `migrate`。每次 Dokploy `up` 会先跑 migrate（`sticker-api` `depends_on: service_completed_successfully`），和 kungal / moyu / infra 一样，不用手工 migrate。
 
-把 **kun-galgame-stickers** 作为 Dokploy 应用接入鲲 Galgame 生态。它自己不拥有任何基础设施，运行时通过**服务名**复用枢纽（kun-galgame-infra）的 `postgres` 与 `oauth`。
+把 **kun-galgame-stickers** 作为 Dokploy 应用接入鲲 Galgame 生态。它自己不拥有任何基础设施，运行时通过**服务名**复用枢纽（nextmoe-infra）的 `postgres` 与 `oauth`。
 
-> 枢纽 / kungal / moyu 的部署见 `kun-galgame-infra/docs/deploy/`。本站与它们**平级**，共享同一个 `dokploy-network`。Dokploy 安装、DNS、Traefik、网络等通用前提以那边的 [`12-dokploy.md`](../../../kun-galgame-infra/docs/deploy/12-dokploy.md) 为准，本文只讲本站特有的部分。
+> 枢纽 / kungal / moyu 的部署见 `nextmoe-infra/docs/deploy/`。本站与它们**平级**，共享同一个 `dokploy-network`。Dokploy 安装、DNS、Traefik、网络等通用前提以那边的 [`12-dokploy.md`](../../../nextmoe-infra/docs/deploy/12-dokploy.md) 为准，本文只讲本站特有的部分。
 
 仓库：[`KunMoe/kun-galgame-stickers`](https://github.com/KunMoe/kun-galgame-stickers)（从 `KUN1007/kun-galgame-stickers-sveltekit` 迁过来）。
 
@@ -66,7 +66,7 @@ push 到 svelte-kit ─► GitHub Actions 构建三镜像 ─► 推 ghcr.io/kun
 - prod compose 里 `pull_policy: always`（强制每次部署重新拉 `:latest`，否则会跑本地旧缓存）。
 - 运行时配置不烤进镜像（见 §3），所以**一个镜像通用于任何环境**。
 
-> ⚠️ **务必关掉 Dokploy 这个 app 的 Auto Deploy**，并在仓库配 `DOKPLOY_WEBHOOK_STICKER` secret。否则 push 一到 Dokploy 就部署（不等 CI 构建完），`pull :latest` 拉到的是**上一次**的镜像。正确触发是 workflow 的 `deploy` job（`needs: build`，构建完才 `curl` webhook）。详见 infra 的 [`13-registry-ci.md`](../../../kun-galgame-infra/docs/deploy/13-registry-ci.md) §13.4。
+> ⚠️ **务必关掉 Dokploy 这个 app 的 Auto Deploy**，并在仓库配 `DOKPLOY_WEBHOOK_STICKER` secret。否则 push 一到 Dokploy 就部署（不等 CI 构建完），`pull :latest` 拉到的是**上一次**的镜像。正确触发是 workflow 的 `deploy` job（`needs: build`，构建完才 `curl` webhook）。详见 infra 的 [`13-registry-ci.md`](../../../nextmoe-infra/docs/deploy/13-registry-ci.md) §13.4。
 
 ### 镜像体积
 
@@ -211,4 +211,4 @@ docker build -f docker/nuxt.Dockerfile -t sticker-web:local .
 
 - [`docker/nuxt.Dockerfile`](../../docker/nuxt.Dockerfile) · [`docker/go.Dockerfile`](../../docker/go.Dockerfile) · [`.dockerignore`](../../.dockerignore) · [`docker-compose.prod.yml`](../../docker-compose.prod.yml)
 - [`.env.example`](../../.env.example) — 完整环境变量样板
-- infra 部署文档：`../../../kun-galgame-infra/docs/deploy/`（Dokploy、网络、CI、备份）
+- infra 部署文档：`../../../nextmoe-infra/docs/deploy/`（Dokploy、网络、CI、备份）
