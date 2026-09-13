@@ -23,6 +23,13 @@ interface PackShape {
  * stays on the server, and so the address a page publishes never changes even
  * when the pack's title does -- the signature moves, this URL does not.
  *
+ * Drawn with the `label` template, not `work`: `work` puts its cover in a
+ * 468x630 portrait frame with object-fit cover, which is right for box art and
+ * wrong for a sticker. A square sticker came out enlarged and cropped through
+ * the character's head. `label` is the one entity template that contains its
+ * image instead, and it keeps a two-line title where `character` would clip
+ * ours to one.
+ *
  * Falls back to the pack's own cover when no OG key is configured: a square
  * sticker makes a worse share card than a composed one, but it is the subject.
  */
@@ -48,13 +55,18 @@ export default defineCachedEventHandler(
     if (data.content_rating === 1) badges.push('R18')
     badges.push(`${data.sticker_count} 张`)
 
+    const title = resolveMultilingual(data.title, locale)
     const game = data.catalog_work ?? data.works?.[0]
+    const gameName = game ? resolveMultilingual(game.name, locale) : ''
+
     const url =
-      buildOgUrl('work', {
-        title: ogText(resolveMultilingual(data.title, locale), 200) ?? 'Sticker pack',
-        originalName: ogText(game ? resolveMultilingual(game.name, locale) : '', 200),
-        cover: data.cover_url || undefined,
-        label: ogText(data.author?.name, 80),
+      buildOgUrl('label', {
+        name: ogText(title, 120) ?? 'Sticker pack',
+        // A pack named after the game it came from is the common case, and a
+        // subtitle repeating the title reads as a rendering bug.
+        originalName: ogText(gameName === title ? '' : gameName, 120),
+        logo: data.cover_url || undefined,
+        founded: ogText(data.author?.name, 40),
         badges: badges.slice(0, 4)
       }) ?? data.cover_url ?? fallback
 

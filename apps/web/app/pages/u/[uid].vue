@@ -33,7 +33,10 @@ useKunSeo(() => ({
   description: author.value
     ? t('user.seo', { name: author.value.name })
     : t('meta.description'),
-  image: kunOgImage('site', locale.value),
+  image: kunOgImage('site', locale.value, {
+    name: author.value ? t('user.title', { name: author.value.name }) : t('user.fallback'),
+    slogan: t('user.packCount', { count: total.value })
+  }),
   type: 'profile'
 }))
 </script>

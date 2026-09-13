@@ -17,7 +17,10 @@ const faq = computed(() =>
 useKunSeo(() => ({
   title: t('about.title'),
   description: t('meta.description'),
-  image: kunOgImage('site', locale.value)
+  image: kunOgImage('site', locale.value, {
+    name: t('meta.title'),
+    slogan: t('about.lead')
+  })
 }))
 </script>
 

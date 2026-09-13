@@ -36,14 +36,23 @@ export default defineCachedEventHandler(
     const { character, appearances, stickers } = page.data
     const locale = String(getQuery(event).locale ?? 'zh-cn')
 
+    // Most catalog characters carry only their Japanese name, which is what
+    // resolveMultilingual then returns for every locale -- printing it again as
+    // the subtitle put the same string on the card twice.
+    const name = resolveMultilingual(character.name, locale)
+    const original = character.name['und']
+
     const url =
       buildOgUrl('character', {
-        name: ogText(resolveMultilingual(character.name, locale), 120) ?? 'Character',
-        originalName: ogText(character.name['und'], 120),
+        name: ogText(name, 120) ?? 'Character',
+        originalName: ogText(original === name ? '' : original, 120),
         portrait: character.image_url || undefined,
-        work: ogText(
+        // The work goes in the footer, not in the template's `work` field:
+        // that field clamps the name above it to a single line, and these names
+        // are long enough that a card about a character cut hers in half.
+        voice: ogText(
           appearances?.[0] ? resolveMultilingual(appearances[0].name, locale) : '',
-          200
+          80
         ),
         badges: stickers?.length ? [`${stickers.length} 张贴纸`] : []
       }) ?? character.image_url ?? fallback

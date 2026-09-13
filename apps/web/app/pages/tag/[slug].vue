@@ -27,7 +27,10 @@ const currentPage = computed({
 useKunSeo(() => ({
   title: `#${slug.value}`,
   description: t('tag.seo', { tag: slug.value }),
-  image: kunOgImage('site', locale.value)
+  image: kunOgImage('site', locale.value, {
+    name: `#${slug.value}`,
+    slogan: t('tag.seo', { tag: slug.value })
+  })
 }))
 </script>
 

@@ -107,5 +107,12 @@ export const useKunSeo = (input: MaybeRefOrGetter<KunSeoInput>) => {
  * reaching for useRuntimeConfig() there throws NUXT_E1001. useKunSeo makes it
  * absolute against the site URL it captured at setup.
  */
-export const kunOgImage = (path: string, locale: string): string =>
-  `/og/${path}?locale=${encodeURIComponent(locale)}`
+export const kunOgImage = (
+  path: string,
+  locale: string,
+  params: Record<string, string> = {}
+): string => {
+  const query = new URLSearchParams({ locale })
+  for (const [key, value] of Object.entries(params)) if (value) query.set(key, value)
+  return `/og/${path}?${query}`
+}

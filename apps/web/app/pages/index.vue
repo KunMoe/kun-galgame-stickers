@@ -34,7 +34,10 @@ const currentPage = computed({
 useKunSeo(() => ({
   title: t('discovery.title'),
   description: t('meta.description'),
-  image: kunOgImage('site', locale.value),
+  image: kunOgImage('site', locale.value, {
+    name: t('meta.title'),
+    slogan: t('discovery.subtitle')
+  }),
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
