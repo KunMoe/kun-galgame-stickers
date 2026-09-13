@@ -1,22 +1,22 @@
-# 鲲 Galgame OAuth 文档
+# NextMoe·未萌 账号 OAuth 文档
 
 基础路径：`/api/v1`
 
 | 环境 | Base URL                          |
 | ---- | --------------------------------- |
 | 开发 | `http://127.0.0.1:9277/api/v1`    |
-| 生产 | `https://oauth.kungal.com/api/v1` |
+| 生产 | `https://account.nextmoe.com/api/v1` |
 
 ## 🔒 重要约定：身份操作必须在 OAuth 完成
 
 下游 kungal / moyu / wiki **不要在自己前端实现下列操作**：
 
-- **新用户注册**（跳转到 `oauth.kungal.com/auth/register?redirect=<oauth-authorize-url>`，注册成功后自动 SSO 回跳）—— 详见 [05-registration.md](./05-registration.md)
+- **新用户注册**（跳转到 `account.nextmoe.com/auth/register?redirect=<oauth-authorize-url>`，注册成功后自动 SSO 回跳）—— 详见 [05-registration.md](./05-registration.md)
 - **改邮箱**（POST /auth/email/send-code + PUT /auth/email）
 - **改密码**（PUT /auth/password）
 - 重设密码 / 启用 2FA / 管理登录设备 / 注销账号 / 撤销已授权 OAuth Client（未来）
 
-跳转目标：注册去 `/auth/register?redirect=...`，账号管理去 `https://oauth.kungal.com/profile`。
+跳转目标：注册去 `/auth/register?redirect=...`，账号管理去 `https://account.nextmoe.com/profile`。
 
 技术上这些端点都能通过 end-user JWT 代理，但身份层操作**必须集中在一个前端**：安全审计单点、未来加 2FA / 异地通知时只改一处、避免邮箱劫持攻击面跨多个站点放大。
 

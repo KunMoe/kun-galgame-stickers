@@ -1,6 +1,6 @@
-# 鲲 Galgame OAuth 接入指南
+# NextMoe·未萌 账号 OAuth 接入指南
 
-本文档面向需要接入 鲲 Galgame OAuth 系统的第三方网站（如 kungal-nuxt、moyu-moe 等），提供完整的 OAuth 2.0 Authorization Code + PKCE 对接流程。
+本文档面向需要接入 NextMoe·未萌 账号 OAuth 系统的第三方网站（如 kungal-nuxt、moyu-moe 等），提供完整的 OAuth 2.0 Authorization Code + PKCE 对接流程。
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 1.1 注册 OAuth 客户端
 
-在 鲲 Galgame OAuth 管理后台创建 OAuth 客户端，必须正确配置以下字段（**任何一项错配都会导致 refresh 后用户被踢回登录页**）：
+在 NextMoe·未萌 账号 OAuth 管理后台创建 OAuth 客户端，必须正确配置以下字段（**任何一项错配都会导致 refresh 后用户被踢回登录页**）：
 
 | 字段                        | 说明                                                                             | 错配的后果                                             |
 | --------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------ |
@@ -38,7 +38,7 @@
 | 环境 | Base URL                          |
 | ---- | --------------------------------- |
 | 开发 | `http://127.0.0.1:9277/api/v1`    |
-| 生产 | `https://oauth.kungal.com/api/v1` |
+| 生产 | `https://account.nextmoe.com/api/v1` |
 
 ### 1.4 端点列表
 
@@ -60,7 +60,7 @@
 ### 流程概览
 
 ```
-用户点击「使用 KUN 账号登录」
+用户点击「使用 NextMoe 账号登录」
   ↓
 客户端生成 PKCE code_verifier + code_challenge
   ↓
@@ -138,7 +138,7 @@ const params = new URLSearchParams({
 })
 
 // 重定向
-window.location.href = `https://oauth.kungal.com/api/v1/oauth/authorize?${params}`
+window.location.href = `https://account.nextmoe.com/api/v1/oauth/authorize?${params}`
 ```
 
 **注意**：用户在此时会被重定向到 OAuth Server。如果用户未登录，OAuth Server 会先要求用户登录，登录成功后自动重定向回你的 `redirect_uri`。
@@ -181,7 +181,7 @@ sessionStorage.removeItem('oauth_code_verifier')
 export default defineEventHandler(async (event) => {
   const { code, code_verifier } = await readBody(event)
 
-  const response = await $fetch('https://oauth.kungal.com/api/v1/oauth/token', {
+  const response = await $fetch('https://account.nextmoe.com/api/v1/oauth/token', {
     method: 'POST',
     body: {
       grant_type: 'authorization_code',
@@ -213,7 +213,7 @@ export default defineEventHandler(async (event) => {
 ### 步骤 5：获取用户信息
 
 ```typescript
-const userInfo = await $fetch('https://oauth.kungal.com/api/v1/oauth/userinfo', {
+const userInfo = await $fetch('https://account.nextmoe.com/api/v1/oauth/userinfo', {
   headers: {
     Authorization: `Bearer ${accessToken}`
   }
@@ -266,7 +266,7 @@ if (!localUser) {
 Access token 有效期 15 分钟。过期后用 refresh token 获取新的：
 
 ```typescript
-const response = await $fetch('https://oauth.kungal.com/api/v1/oauth/token', {
+const response = await $fetch('https://account.nextmoe.com/api/v1/oauth/token', {
   method: 'POST',
   body: {
     grant_type: 'refresh_token',
@@ -467,7 +467,7 @@ N 个并发请求
 用户在你的网站登出时，应该吊销 OAuth 令牌：
 
 ```typescript
-await $fetch('https://oauth.kungal.com/api/v1/oauth/revoke', {
+await $fetch('https://account.nextmoe.com/api/v1/oauth/revoke', {
   method: 'POST',
   body: {
     token: storedRefreshToken
@@ -540,7 +540,7 @@ await $fetch('https://oauth.kungal.com/api/v1/oauth/revoke', {
 
 ```env
 # .env
-OAUTH_SERVER_URL=https://oauth.kungal.com/api/v1
+OAUTH_SERVER_URL=https://account.nextmoe.com/api/v1
 OAUTH_CLIENT_ID=your-client-id
 OAUTH_CLIENT_SECRET=your-client-secret
 OAUTH_REDIRECT_URI=https://www.kungal.com/auth/callback
@@ -577,7 +577,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <button @click="handleLogin">使用 KUN 账号登录</button>
+  <button @click="handleLogin">使用 NextMoe 账号登录</button>
 </template>
 ```
 

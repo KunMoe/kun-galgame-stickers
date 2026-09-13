@@ -1,17 +1,17 @@
-# 鲲 Galgame OAuth 接入 — Nuxt 项目实施提示词
+# NextMoe·未萌 账号 OAuth 接入 — Nuxt 项目实施提示词
 
-> 本文档是给 AI 编码助手（如 Claude）的提示词，用于在 Nuxt 3/4 项目中实现 鲲 Galgame OAuth 登录功能。
+> 本文档是给 AI 编码助手（如 Claude）的提示词，用于在 Nuxt 3/4 项目中实现 NextMoe·未萌 账号 OAuth 登录功能。
 > 将本文件内容作为 context 提供给 AI，它就能正确编写对接代码。
 
 ---
 
 ## 任务
 
-在当前 Nuxt 项目中接入 鲲 Galgame OAuth 2.0 登录系统，实现「使用 KUN 账号登录」功能。
+在当前 Nuxt 项目中接入 NextMoe·未萌 账号 OAuth 2.0 登录系统，实现「使用 NextMoe 账号登录」功能。
 
 ## OAuth Server 信息
 
-- **生产环境 Base URL**: `https://oauth.kungal.com/api/v1`
+- **生产环境 Base URL**: `https://account.nextmoe.com/api/v1`
 - **开发环境 Base URL**: `http://127.0.0.1:9277/api/v1`
 - **协议**: OAuth 2.0 Authorization Code + PKCE (S256)
 
@@ -30,7 +30,7 @@
 
 ```env
 # .env
-NUXT_OAUTH_SERVER_URL=https://oauth.kungal.com/api/v1
+NUXT_OAUTH_SERVER_URL=https://account.nextmoe.com/api/v1
 NUXT_PUBLIC_OAUTH_CLIENT_ID=<从管理后台获取>
 NUXT_OAUTH_CLIENT_SECRET=<从管理后台获取>
 NUXT_PUBLIC_OAUTH_REDIRECT_URI=https://www.kungal.com/auth/callback
@@ -61,7 +61,7 @@ runtimeConfig: {
 
 ### 3. 登录触发（客户端）
 
-在登录页面添加一个「使用 KUN 账号登录」按钮，点击后：
+在登录页面添加一个「使用 NextMoe 账号登录」按钮，点击后：
 
 1. 调用 `generateCodeVerifier()` 和 `generateCodeChallenge()` 和 `generateState()`
 2. 将 `code_verifier` 和 `state` 存入 `sessionStorage`

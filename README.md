@@ -53,7 +53,7 @@ Every game used here is one I have actually played. ~~They are all moe games.~~
 ## What the site does
 
 - Browse packs and single stickers, with game / character names from Postgres
-- Sign in / register with a KUN account (OAuth RP of [nextmoe-infra](https://github.com/next-moe/nextmoe-infra); httpOnly session cookie, no tokens in the browser)
+- Sign in / register with a NextMoe account (OAuth RP of [nextmoe-infra](https://github.com/next-moe/nextmoe-infra); httpOnly session cookie, no tokens in the browser)
 - Chinese by default; English under `/en/...`
 - Light / dark / system theme
 - Download original PNGs; Telegram links on the [About](https://sticker.kungal.com/about) page
@@ -93,9 +93,9 @@ See [docs/deploy/README.md](docs/deploy/README.md) for the full guide.
 
 ## Roadmap
 
-- [x] KUN account login (OAuth)
+- [x] NextMoe account login (OAuth)
 - [x] Telegram pack index (this README and `/about`)
-- [ ] User uploads with a KUN account
+- [ ] User uploads with a NextMoe account
 - [ ] Public API docs for third-party use
 - [ ] Move sticker images to object storage
 - [ ] SD_CG section for galgame SD_CG

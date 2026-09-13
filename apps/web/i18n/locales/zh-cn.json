@@ -103,15 +103,15 @@
   },
   "auth": {
     "login": "登录",
-    "register": "注册鲲账号",
+    "register": "注册 NextMoe 账号",
     "logout": "登出",
-    "profile": "个人资料",
+    "profile": "NextMoe·未萌 账号",
     "logoutTitle": "登出",
     "logoutPrompt": "你希望登出到什么程度？",
-    "logoutEverywhere": "登出所有鲲账号站点",
-    "logoutEverywhereHint": "同时结束中央账号会话",
+    "logoutEverywhere": "登出所有 NextMoe 站点",
+    "logoutEverywhereHint": "同时结束 NextMoe 账号会话",
     "logoutLocal": "只登出本站",
-    "logoutLocalHint": "其他鲲账号站点保持登录",
+    "logoutLocalHint": "其他 NextMoe 站点保持登录",
     "cancel": "取消",
     "callbackError": "登录失败，请重试"
   },
@@ -121,7 +121,7 @@
   },
   "about": {
     "title": "关于本站",
-    "lead": "这里收集来自视觉小说的表情包。任何鲲账号用户都可以发布自己的套装。",
+    "lead": "这里收集来自视觉小说的表情包。任何 NextMoe 账号用户都可以发布自己的套装。",
     "what": {
       "heading": "这是什么",
       "lines": [
@@ -131,7 +131,7 @@
     },
     "publish": {
       "heading": "怎么发布",
-      "intro": "用鲲账号登录之后，几步就能发出一套：",
+      "intro": "用 NextMoe 账号登录之后，几步就能发出一套：",
       "steps": [
         "新建一套表情包，填好标题。",
         "上传图片，一次可以选多张。",

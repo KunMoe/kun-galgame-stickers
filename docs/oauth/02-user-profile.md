@@ -4,7 +4,7 @@
 
 > 🔒 **重要 — 身份层操作必须在 OAuth profile 完成，下游禁止代理**
 >
-> **改邮箱、改密码、注销账号、管理登录设备**这类操作**只能**走 OAuth 自己的前端（https://oauth.kungal.com/profile）。**kungal / moyu / wiki 都不要在自己前端实现这些 UI**，即使技术上可以代理 JWT。详细分类见下表。
+> **改邮箱、改密码、注销账号、管理登录设备**这类操作**只能**走 OAuth 自己的前端（https://account.nextmoe.com/profile）。**kungal / moyu / wiki 都不要在自己前端实现这些 UI**，即使技术上可以代理 JWT。详细分类见下表。
 
 ## 身份操作 vs 展示操作
 
@@ -30,7 +30,7 @@ OAuth 的用户自助 API 在设计上分两层。下游接入时**不要**把�
 
 ```vue
 <NuxtLink
-  :to="`https://oauth.kungal.com/profile?return=${encodeURIComponent(currentUrl)}`"
+  :to="`https://account.nextmoe.com/profile?return=${encodeURIComponent(currentUrl)}`"
   external
   class="..."
 >
@@ -137,7 +137,7 @@ OAuth 的用户自助 API 在设计上分两层。下游接入时**不要**把�
 **举例**：仅改头像 hash（image_service 上传完毕之后）：
 
 ```bash
-curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
+curl -X PATCH https://account.nextmoe.com/api/v1/auth/me \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"avatar_image_hash":"abc123def456..."}'
@@ -206,7 +206,7 @@ curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
 **举例**：
 
 ```bash
-curl -X POST https://oauth.kungal.com/api/v1/auth/me/avatar \
+curl -X POST https://account.nextmoe.com/api/v1/auth/me/avatar \
   -H "Authorization: Bearer <access_token>" \
   -F "file=@avatar.png"
 ```
@@ -216,7 +216,7 @@ curl -X POST https://oauth.kungal.com/api/v1/auth/me/avatar \
 ```ts
 const fd = new FormData()
 fd.append('file', file) // <input type="file"> 的 File 对象
-const r = await fetch('https://oauth.kungal.com/api/v1/auth/me/avatar', {
+const r = await fetch('https://account.nextmoe.com/api/v1/auth/me/avatar', {
   method: 'POST',
   headers: { Authorization: `Bearer ${accessToken}` },
   body: fd // 注意：不要手动设 Content-Type，让浏览器自动带 boundary

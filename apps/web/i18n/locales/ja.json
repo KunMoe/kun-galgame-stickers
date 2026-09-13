@@ -103,15 +103,15 @@
   },
   "auth": {
     "login": "ログイン",
-    "register": "鯤アカウントを作成",
+    "register": "NextMoe アカウントを作成",
     "logout": "ログアウト",
-    "profile": "プロフィール",
+    "profile": "NextMoe·未萌 アカウント",
     "logoutTitle": "ログアウト",
     "logoutPrompt": "どこまでログアウトしますか？",
-    "logoutEverywhere": "すべての鯤サイトからログアウト",
-    "logoutEverywhereHint": "中央アカウントのセッションも終了します",
+    "logoutEverywhere": "すべての NextMoe サイトからログアウト",
+    "logoutEverywhereHint": "NextMoe アカウントのセッションも終了します",
     "logoutLocal": "このサイトのみ",
-    "logoutLocalHint": "他の鯤サイトはログインしたまま",
+    "logoutLocalHint": "他の NextMoe サイトはログインしたまま",
     "cancel": "キャンセル",
     "callbackError": "ログインに失敗しました。もう一度お試しください"
   },
@@ -121,7 +121,7 @@
   },
   "about": {
     "title": "このサイトについて",
-    "lead": "ビジュアルノベルのスタンプを集めています。鯤アカウントがあれば誰でも公開できます。",
+    "lead": "ビジュアルノベルのスタンプを集めています。NextMoe アカウントがあれば誰でも公開できます。",
     "what": {
       "heading": "これは何か",
       "lines": [
@@ -131,7 +131,7 @@
     },
     "publish": {
       "heading": "公開の手順",
-      "intro": "鯤アカウントでログインすれば数ステップです：",
+      "intro": "NextMoe アカウントでログインすれば数ステップです：",
       "steps": [
         "セットを作り、タイトルを付ける。",
         "画像をアップロードする（複数選択できます）。",

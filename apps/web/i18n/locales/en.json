@@ -103,15 +103,15 @@
   },
   "auth": {
     "login": "Sign in",
-    "register": "Create a KUN account",
+    "register": "Create a NextMoe account",
     "logout": "Sign out",
-    "profile": "Profile",
+    "profile": "NextMoe·未萌 Account",
     "logoutTitle": "Sign out",
     "logoutPrompt": "How far do you want to sign out?",
-    "logoutEverywhere": "Sign out of every KUN site",
-    "logoutEverywhereHint": "Ends the central account session too",
+    "logoutEverywhere": "Sign out of every NextMoe site",
+    "logoutEverywhereHint": "Ends the NextMoe account session too",
     "logoutLocal": "Sign out of this site only",
-    "logoutLocalHint": "Other KUN sites stay signed in",
+    "logoutLocalHint": "Other NextMoe sites stay signed in",
     "cancel": "Cancel",
     "callbackError": "Sign-in failed, please try again"
   },
@@ -121,7 +121,7 @@
   },
   "about": {
     "title": "About",
-    "lead": "Stickers captured from visual novels. Any KUN account can publish a pack.",
+    "lead": "Stickers captured from visual novels. Any NextMoe account can publish a pack.",
     "what": {
       "heading": "What this is",
       "lines": [
@@ -131,7 +131,7 @@
     },
     "publish": {
       "heading": "Publishing",
-      "intro": "Sign in with a KUN account and it takes a few steps:",
+      "intro": "Sign in with a NextMoe account and it takes a few steps:",
       "steps": [
         "Create a pack and give it a title.",
         "Upload images — you can select several at once.",

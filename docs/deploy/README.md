@@ -89,18 +89,18 @@ compose 里已经固定的值（不要在面板里改掉语义）：
 | --------------------------------- | ------------------------------------------- | ---------------------------- |
 | `KUN_DATABASE_URL`                | `postgresql://postgres:…@postgres:5432/kungalgame_sticker?sslmode=disable` | API / migrate                |
 | `KUN_OAUTH_SERVER_URL`            | `http://oauth:9277/api/v1`                  | **仅 API**（容器内直连 OP）  |
-| `KUN_OAUTH_WEB_URL`               | `https://oauth.kungal.com`                  | API（注册跳转用）            |
+| `KUN_OAUTH_WEB_URL`               | `https://account.nextmoe.com`               | API（注册跳转用）            |
 | `KUN_OAUTH_REDIRECT_URI`          | `https://sticker.kungal.com/auth/callback`  | API 换 token                 |
 | `KUN_OAUTH_CLIENT_ID`             | `c5cd7b074804ba134934eb6c175a8f4d`          | API                          |
 | `CORS_ALLOW_ORIGINS`              | `https://sticker.kungal.com`                | API                          |
 | `NUXT_API_BASE_URL`               | `http://sticker-api:9421`                   | **web SSR**（容器内打 API）  |
 | `NUXT_PUBLIC_API_BASE_URL`        | `https://sticker.kungal.com`                | 浏览器经 Traefik `/api`      |
 | `NUXT_PUBLIC_SITE_URL`            | `https://sticker.kungal.com`                | canonical / sitemap / og     |
-| `NUXT_PUBLIC_OAUTH_SERVER_URL`    | `https://oauth.kungal.com/api/v1`           | **浏览器** authorize / logout |
-| `NUXT_PUBLIC_OAUTH_FRONTEND_URL`  | `https://oauth.kungal.com`                  | 注册页                       |
+| `NUXT_PUBLIC_OAUTH_SERVER_URL`    | `https://account.nextmoe.com/api/v1`        | **浏览器** authorize / logout |
+| `NUXT_PUBLIC_OAUTH_FRONTEND_URL`  | `https://account.nextmoe.com`               | 注册页                       |
 | `NUXT_PUBLIC_OAUTH_REDIRECT_URI`  | `https://sticker.kungal.com/auth/callback`  | PKCE 回调                    |
 
-> 浏览器 OAuth 必须走公网 `https://oauth.kungal.com`；API 换 token 走内部 `oauth:9277`。这是 Nuxt + Fiber 拆开之后的分工，不再需要 SvelteKit 时代的 `ORIGIN` / `PROTOCOL_HEADER`。
+> 浏览器 OAuth 必须走公网 `https://account.nextmoe.com`；API 换 token 走内部 `oauth:9277`。这是 Nuxt + Fiber 拆开之后的分工，不再需要 SvelteKit 时代的 `ORIGIN` / `PROTOCOL_HEADER`。
 
 ---
 
@@ -174,7 +174,7 @@ curl -I https://sticker.kungal.com/robots.txt            # 200，Sitemap 指向 
 curl -s https://sticker.kungal.com/api/healthz           # 若 Traefik 把 /api 全打到 API；否则 web 无此路由
 ```
 
-- 登录：点站内登录 → 跳 `https://oauth.kungal.com/oauth/authorize` → 授权后回 `/auth/callback` → 落地。
+- 登录：点站内登录 → 跳 `https://account.nextmoe.com/oauth/authorize` → 授权后回 `/auth/callback` → 落地。
 - `sticker-api` 日志应有 Fiber 监听 `:9421`；`web` 是 Nitro `:3000`。不要再找 Prisma / `kun-love-ren`。
 
 ---

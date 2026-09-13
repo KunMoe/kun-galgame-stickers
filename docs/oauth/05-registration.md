@@ -8,7 +8,7 @@
 
 ```
 ┌──────────┐                                   ┌─────────────────────┐
-│ Kungal   │  ① 用户点"注册" → window.location  │ oauth.kungal.com    │
+│ Kungal   │  ① 用户点"注册" → window.location  │ account.nextmoe.com    │
 │ /moyu /  │ ──────────────────────────────►   │ /auth/register      │
 │ wiki     │   ?redirect=<encoded(authorize)>   │ ?redirect=...       │
 └──────────┘                                   └────────┬────────────┘
@@ -23,7 +23,7 @@
      │                                                  │    发 access_token + refresh cookie)
      │                                                  ▼
      │                                          ┌─────────────────────┐
-     │                                          │ oauth.kungal.com    │
+     │                                          │ account.nextmoe.com    │
      │                                          │ /oauth/authorize    │
      │                                          │ ?client_id=...      │
      │ ⑥ /auth/callback?code=...               │ &state=...&PKCE=... │
@@ -167,7 +167,7 @@
 
 > **常见 10011 来源**：用户改了 email 字段后没重新发验证码 → 后端按新 email 找 Redis key 找不到 → 报"已过期"。前端应当锁定 email 字段直到用户主动点"重新发送"。
 
-**调用方**：**只有 oauth.kungal.com 自己的前端应该直接调这两个端点**。下游 kungal / moyu / wiki 应该走"跳转到 oauth.kungal.com/auth/register"的模式（见下方"下游接入"）。
+**调用方**：**只有 account.nextmoe.com 自己的前端应该直接调这两个端点**。下游 kungal / moyu / wiki 应该走"跳转到 account.nextmoe.com/auth/register"的模式（见下方"下游接入"）。
 
 ---
 
@@ -249,16 +249,16 @@ const handleOAuthRegister = async () => {
 }
 ```
 
-注意 `oauthWebUrl` 是前端域名（开发 `:9420` / 生产 `oauth.kungal.com`），`oauthServerUrl` 是 API 域名——两者可能不同。详见 [oauth-integration-guide.md §1.3](./oauth-integration-guide.md#13-oauth-server-地址)。
+注意 `oauthWebUrl` 是前端域名（开发 `:9420` / 生产 `account.nextmoe.com`），`oauthServerUrl` 是 API 域名——两者可能不同。详见 [oauth-integration-guide.md §1.3](./oauth-integration-guide.md#13-oauth-server-地址)。
 
 ### 2. 用户感知的完整时间线
 
 | 步  | 用户看到的 URL                                | 时间                        | 用户感知                               |
 | --- | --------------------------------------------- | --------------------------- | -------------------------------------- |
 | 1   | `www.kungal.com/login` 点击"注册"             | 0 ms                        | 点击                                   |
-| 2   | `oauth.kungal.com/auth/register?redirect=...` | ~200 ms                     | "跳到了账号注册页"                     |
+| 2   | `account.nextmoe.com/auth/register?redirect=...` | ~200 ms                     | "跳到了账号注册页"                     |
 | 3   | 同上，填表                                    | 用户自主时间                | 填邮箱 + 密码 + 用户名                 |
-| 4   | `oauth.kungal.com/oauth/authorize?...`        | ~100 ms（注册返回后立即跳） | **白屏一闪**（auto_consent 不渲染 UI） |
+| 4   | `account.nextmoe.com/oauth/authorize?...`        | ~100 ms（注册返回后立即跳） | **白屏一闪**（auto_consent 不渲染 UI） |
 | 5   | `www.kungal.com/auth/callback?code=...`       | ~150 ms                     | **白屏一闪**（kungal 在交换 token）    |
 | 6   | `www.kungal.com/` (或 redirect_uri 配的路径)  | —                           | "我已经登录了"                         |
 
@@ -266,7 +266,7 @@ const handleOAuthRegister = async () => {
 
 ### 3. 已注册用户访问 `/auth/register` 的处理
 
-用户已登录的状态下访问 `oauth.kungal.com/auth/register?redirect=...`，OAuth web 应当：
+用户已登录的状态下访问 `account.nextmoe.com/auth/register?redirect=...`，OAuth web 应当：
 
 - 如果 `redirect` 参数存在 → 立即 `window.location.href = redirect`（推进 OAuth code 流程）
 - 否则 → 跳 `/profile`（账号管理页）

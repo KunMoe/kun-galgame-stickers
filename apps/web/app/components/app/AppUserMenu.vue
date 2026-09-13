@@ -2,6 +2,7 @@
 const { t } = useI18n()
 const route = useRoute()
 const localePath = useLocalePath()
+const config = useRuntimeConfig()
 const user = useAuthUser()
 const showLogout = ref(false)
 const pending = ref<'local' | 'everywhere' | null>(null)
@@ -52,13 +53,16 @@ const logoutEverywhere = async () => {
         <span class="hidden max-w-32 truncate sm:inline">{{ displayName }}</span>
       </KunButton>
     </template>
-    <div class="flex w-48 flex-col gap-1 p-2">
+    <div class="flex w-64 flex-col gap-1 p-2">
+      <!-- The account centre is a different property under a different brand;
+           the mark is how a user sees that before leaving the site. -->
       <KunButton
         variant="light"
-        href="https://oauth.kungal.com/profile"
+        :href="`${config.public.oauthFrontendUrl}/profile`"
         target="_blank"
-        class="justify-start"
+        class="justify-start gap-2"
       >
+        <img src="/nextmoe.webp" alt="" width="16" height="16" class="size-4 shrink-0">
         {{ t('auth.profile') }}
       </KunButton>
       <KunButton

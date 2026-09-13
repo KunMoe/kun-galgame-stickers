@@ -226,7 +226,7 @@
 **举例**：仅改头像 hash（image_service 上传完毕之后）：
 
 ```bash
-curl -X PATCH https://oauth.kungal.com/api/v1/auth/me \
+curl -X PATCH https://account.nextmoe.com/api/v1/auth/me \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"avatar_image_hash":"abc123def456..."}'

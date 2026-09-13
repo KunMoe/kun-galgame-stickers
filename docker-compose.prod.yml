@@ -43,7 +43,7 @@ x-api-env: &api-env
   CORS_ALLOW_ORIGINS: https://sticker.kungal.com
   KUN_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/kungalgame_sticker?sslmode=disable
   KUN_OAUTH_SERVER_URL: http://oauth:9277/api/v1
-  KUN_OAUTH_WEB_URL: https://oauth.kungal.com
+  KUN_OAUTH_WEB_URL: https://account.nextmoe.com
   KUN_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
   KUN_OAUTH_CLIENT_SECRET: ${KUN_OAUTH_CLIENT_SECRET:?set KUN_OAUTH_CLIENT_SECRET}
   KUN_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
@@ -129,8 +129,8 @@ services:
       NUXT_API_BASE_URL: http://sticker-api:9421
       NUXT_PUBLIC_API_BASE_URL: https://sticker.kungal.com
       NUXT_PUBLIC_SITE_URL: https://sticker.kungal.com
-      NUXT_PUBLIC_OAUTH_SERVER_URL: https://oauth.kungal.com/api/v1
-      NUXT_PUBLIC_OAUTH_FRONTEND_URL: https://oauth.kungal.com
+      NUXT_PUBLIC_OAUTH_SERVER_URL: https://account.nextmoe.com/api/v1
+      NUXT_PUBLIC_OAUTH_FRONTEND_URL: https://account.nextmoe.com
       NUXT_PUBLIC_OAUTH_CLIENT_ID: c5cd7b074804ba134934eb6c175a8f4d
       NUXT_PUBLIC_OAUTH_REDIRECT_URI: https://sticker.kungal.com/auth/callback
       # Server-side only: the signature is computed in a Nitro route, so this

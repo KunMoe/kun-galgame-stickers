@@ -79,7 +79,7 @@ func Load() (*Config, error) {
 		},
 		OAuth: OAuthConfig{
 			ServerURL:    strings.TrimRight(os.Getenv("KUN_OAUTH_SERVER_URL"), "/"),
-			WebURL:       strings.TrimRight(env("KUN_OAUTH_WEB_URL", "https://oauth.kungal.com"), "/"),
+			WebURL:       strings.TrimRight(env("KUN_OAUTH_WEB_URL", "https://account.nextmoe.com"), "/"),
 			ClientID:     os.Getenv("KUN_OAUTH_CLIENT_ID"),
 			ClientSecret: os.Getenv("KUN_OAUTH_CLIENT_SECRET"),
 			RedirectURI:  os.Getenv("KUN_OAUTH_REDIRECT_URI"),
