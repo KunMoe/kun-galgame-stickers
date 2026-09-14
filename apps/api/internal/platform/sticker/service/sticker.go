@@ -197,6 +197,9 @@ func (s *Service) DeleteSticker(packID, stickerID uuid.UUID, v Viewer) *errors.A
 	if appErr != nil {
 		return appErr
 	}
+	if appErr := refuseOfficialDelete(pack); appErr != nil {
+		return appErr
+	}
 	if err := s.stickers.Delete(packID, stickerID); err != nil {
 		if stderrors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrStickerNotFound()

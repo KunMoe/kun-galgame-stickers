@@ -7,6 +7,7 @@
 | 01 | [data-inventory.md](./01-data-inventory.md) | 库里有什么、字段含义、哪些能对外哪些不能、与其他 infra 服务的现状 |
 | 02 | [opening-the-api.md](./02-opening-the-api.md) | 三条已写进 infra 文档的接入路径的**实际状态核对**、建议的面形状、需要 infra 拍板的四件事、上线清单 |
 | 03 | [wiring.md](./03-wiring.md) | **接线现状**：infra 已交付什么、本站已交付什么、还差什么，含容器别名与端口 |
+| 04 | [editor-packs.md](./04-editor-packs.md) | 编辑器贴纸选择器载荷的消费方契约：**存 hash 不要存 src**，以及官方贴纸只下架不删除 |
 | — | [sticker-openapi.yaml](./sticker-openapi.yaml) | 面的 OpenAPI 3.1 契约（9 op，`redocly lint` 通过） |
 
 ## 三十秒版本

@@ -211,6 +211,20 @@ func (s *Service) visiblePack(id uuid.UUID, v Viewer) (*model.Pack, *errors.AppE
 	return pack, nil
 }
 
+// An official sticker's hash is embedded in post content on other sites -- the forum
+// alone had 1620 such embeds. A hard delete drops the hash out of this site's daily
+// reference ping, and the image service then collects the bytes on its own TTL, so
+// every one of those posts breaks retroactively. Unpublishing (status -> PackDraft)
+// takes a pack out of the picker while keeping its rows, and therefore its ping.
+func refuseOfficialDelete(pack *model.Pack) *errors.AppError {
+	if !pack.IsOfficial {
+		return nil
+	}
+	return errors.ErrForbidden(
+		"official stickers are retired by unpublishing the pack, never deleted: " +
+			"other sites' posts reference these images by hash")
+}
+
 func (s *Service) editablePack(id uuid.UUID, v Viewer) (*model.Pack, *errors.AppError) {
 	pack, err := s.packs.Get(id)
 	if err != nil {
@@ -359,6 +373,9 @@ func (s *Service) DeletePack(id uuid.UUID, v Viewer) *errors.AppError {
 	}
 	if !(pack.OwnerUID == v.UID || perm.Can(v.Roles, perm.PackDeleteAny)) {
 		return errors.ErrNotOwner()
+	}
+	if appErr := refuseOfficialDelete(pack); appErr != nil {
+		return appErr
 	}
 
 	var tagIDs []uuid.UUID
