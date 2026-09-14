@@ -204,7 +204,11 @@ type AvatarPool struct {
 // field names match @kungal/editor-core's StickerPack/StickerItem so a
 // consumer can hand the response straight to its `stickerSource` adapter.
 type EditorPacks struct {
-	Packs []EditorPack `json:"packs"`
+	// Variant is which image-service derivative Src points at, so a consumer
+	// storing Hash instead of Src can rebuild the same URL. One value for the
+	// whole payload: a picker grid renders every tile at one size.
+	Variant string       `json:"variant"`
+	Packs   []EditorPack `json:"packs"`
 }
 
 type EditorPack struct {
@@ -215,4 +219,10 @@ type EditorPack struct {
 type EditorSticker struct {
 	Src  string `json:"src"`
 	Name string `json:"name"`
+	// Hash is the identity Src is built from. A consumer that stores Src in
+	// post content bakes this host into every post it ever writes, and the
+	// forum lost 1620 sticker embeds to exactly that when the previous host
+	// stopped serving them. Hash lets a consumer store a host-free reference
+	// and resolve it at render time instead of parsing Src back apart.
+	Hash string `json:"hash"`
 }

@@ -66,6 +66,7 @@ func (s *Service) EditorPacks() (*dto.EditorPacks, *errors.AppError) {
 			stickers = append(stickers, dto.EditorSticker{
 				Src:  s.images.VariantURL(st.ImageHash, editorPackVariant),
 				Name: label + " - " + strconv.Itoa(st.Position),
+				Hash: st.ImageHash,
 			})
 		}
 		if len(stickers) == 0 {
@@ -73,7 +74,7 @@ func (s *Service) EditorPacks() (*dto.EditorPacks, *errors.AppError) {
 		}
 		packs = append(packs, dto.EditorPack{Name: label, Stickers: stickers})
 	}
-	return &dto.EditorPacks{Packs: packs}, nil
+	return &dto.EditorPacks{Variant: editorPackVariant, Packs: packs}, nil
 }
 
 // displayTitle flattens a multilingual title to the one string a picker tab
