@@ -107,6 +107,18 @@ export const setCommentNotification = (
   })
 
 /**
+ * Lays incoming comments over the ones already shown, keyed by id and kept in
+ * post order. The wall is oldest first and the reader's own new comment is
+ * shown before the pages between it and them are loaded, so a later page can
+ * both overlap what is here and belong above part of it.
+ */
+export const mergeComments = (shown: Comment[], incoming: Comment[]): Comment[] => {
+  const byId = new Map(shown.map((comment) => [comment.id, comment]))
+  for (const comment of incoming) byId.set(comment.id, comment)
+  return [...byId.values()].sort((a, b) => a.post_number - b.post_number)
+}
+
+/**
  * Groups a flat page into one level of nesting. community threads arbitrarily
  * deep -- a reply to a reply keeps the root of the exchange -- but a comment
  * section under a sticker pack reads better as "comment, then answers to it"

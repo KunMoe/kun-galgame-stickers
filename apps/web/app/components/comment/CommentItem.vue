@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Comment } from '~/features/comment/api'
+import type { Comment, LikeResult } from '~/features/comment/api'
 
 const props = defineProps<{ comment: Comment; nested?: boolean }>()
 const emit = defineEmits<{
@@ -7,7 +7,7 @@ const emit = defineEmits<{
   edit: [comment: Comment]
   remove: [comment: Comment]
   report: [comment: Comment]
-  changed: []
+  liked: [id: number, result: LikeResult]
 }>()
 
 const { t } = useI18n()
@@ -16,19 +16,11 @@ const route = useRoute()
 const user = useAuthUser()
 const mutate = useMutation()
 
-// Optimistic-ish: the count comes back from the server, so the button shows
-// the truth rather than an increment guessed on the client.
-const liked = ref(props.comment.is_liked)
-const likeCount = ref(props.comment.like_count)
+// Not optimistic: the count comes back from community, so the button shows the
+// truth rather than an increment guessed on the client. The section owns the
+// list and writes the result into it; a copy held here would be overwritten
+// the next time the section rebuilt its nodes.
 const liking = ref(false)
-
-watch(
-  () => props.comment,
-  (next) => {
-    liked.value = next.is_liked
-    likeCount.value = next.like_count
-  }
-)
 
 const toggleLike = async () => {
   if (liking.value) return
@@ -39,10 +31,7 @@ const toggleLike = async () => {
   liking.value = true
   const result = await mutate(() => toggleCommentLike(props.comment.id))
   liking.value = false
-  if (result) {
-    liked.value = result.liked
-    likeCount.value = result.like_count
-  }
+  if (result) emit('liked', props.comment.id, result)
 }
 
 const formatTime = (value: string) => new Date(value).toLocaleString()
@@ -93,18 +82,18 @@ const formatTime = (value: string) => new Date(value).toLocaleString()
       <div class="text-default-500 mt-1 flex flex-wrap items-center gap-1">
         <button
           type="button"
-          :aria-pressed="liked"
+          :aria-pressed="comment.is_liked"
           :disabled="liking"
           :class="
             cn(
               'flex items-center gap-1 px-1.5 py-0.5 text-xs transition-colors',
-              liked ? 'text-primary' : 'hover:text-foreground'
+              comment.is_liked ? 'text-primary' : 'hover:text-foreground'
             )
           "
           @click="toggleLike"
         >
-          <KunIcon :name="liked ? 'lucide:heart' : 'lucide:heart'" class="text-sm" />
-          <span v-if="likeCount">{{ likeCount }}</span>
+          <KunIcon name="lucide:heart" class="text-sm" />
+          <span v-if="comment.like_count">{{ comment.like_count }}</span>
           <span v-else>{{ t('comment.like') }}</span>
         </button>
 

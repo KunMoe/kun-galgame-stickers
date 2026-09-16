@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Comment, FlagReason } from '~/features/comment/api'
+import type { Comment, FlagReason, LikeResult } from '~/features/comment/api'
 
 const props = defineProps<{ packId: string }>()
 
@@ -12,6 +12,37 @@ const { data, refresh } = await useAsyncData(`comments-${props.packId}`, () =>
   fetchComments(props.packId)
 )
 
+// The first page is the SSR payload. Later pages and the reader's own writes
+// are laid over it here rather than re-fetched, so saving an edit on page three
+// does not send the reader back to page one.
+const list = ref<Comment[]>([])
+const cursor = ref('')
+const total = ref(0)
+const loadingMore = ref(false)
+watch(
+  data,
+  (page) => {
+    list.value = page?.comments ?? []
+    cursor.value = page?.next_cursor ?? ''
+    total.value = page?.total ?? 0
+  },
+  { immediate: true }
+)
+
+const loadMore = async () => {
+  if (!cursor.value || loadingMore.value) return
+  loadingMore.value = true
+  const page = await fetchComments(props.packId, cursor.value)
+  loadingMore.value = false
+  if (!page) {
+    useKunMessage(t('comment.unavailable'), 'error')
+    return
+  }
+  list.value = mergeComments(list.value, page.comments)
+  cursor.value = page.next_cursor ?? ''
+  total.value = page.total
+}
+
 const draft = ref('')
 const sending = ref(false)
 const editing = ref<Comment | null>(null)
@@ -22,8 +53,7 @@ const reporting = ref<Comment | null>(null)
 const reportReason = ref<FlagReason>(0)
 const reportNote = ref('')
 
-const nodes = computed(() => nestComments(data.value?.comments ?? []))
-const comments = computed(() => data.value?.comments ?? [])
+const nodes = computed(() => nestComments(list.value))
 // A null payload means the request failed, not that there are no comments --
 // showing an input that will fail on submit is worse than showing nothing.
 const enabled = computed(() => data.value?.enabled === true)
@@ -34,11 +64,18 @@ const submit = async () => {
   sending.value = true
   const created = await mutate(() => addComment(props.packId, body, replyingTo.value?.id))
   sending.value = false
-  if (created) {
-    draft.value = ''
-    replyingTo.value = null
+  if (!created) return
+  draft.value = ''
+  replyingTo.value = null
+  // The first comment is what creates the thread, and the section needs the
+  // thread's id before it can offer to subscribe; every later one is shown in
+  // place.
+  if (!threadId.value) {
     await refresh()
+    return
   }
+  list.value = mergeComments(list.value, [created])
+  total.value += 1
 }
 
 const startReply = (comment: Comment) => {
@@ -79,10 +116,9 @@ const saveEdit = async () => {
   const body = editDraft.value.trim()
   if (!target || !body) return
   const saved = await mutate(() => editComment(target.id, body))
-  if (saved) {
-    editing.value = null
-    await refresh()
-  }
+  if (!saved) return
+  editing.value = null
+  list.value = mergeComments(list.value, [saved])
 }
 
 const confirmRemove = async () => {
@@ -90,7 +126,17 @@ const confirmRemove = async () => {
   removing.value = null
   if (!target) return
   const done = await mutate(() => deleteComment(target.id))
-  if (done) await refresh()
+  if (!done) return
+  // Replies stay: a tombstoned root still leaves its answers standing, and
+  // nestComments shows them on their own.
+  list.value = list.value.filter((comment) => comment.id !== target.id)
+  total.value = Math.max(0, total.value - 1)
+}
+
+const applyLike = (id: number, result: LikeResult) => {
+  list.value = list.value.map((comment) =>
+    comment.id === id ? { ...comment, is_liked: result.liked, like_count: result.like_count } : comment
+  )
 }
 
 const signIn = () => startOAuthLogin(route.fullPath)
@@ -134,7 +180,7 @@ onMounted(() => {
     <div class="flex items-center justify-between gap-3">
       <h2 class="text-lg font-medium">
         {{ t('comment.title') }}
-        <span v-if="data?.total" class="text-default-500 text-sm font-normal">{{ data.total }}</span>
+        <span v-if="total" class="text-default-500 text-sm font-normal">{{ total }}</span>
       </h2>
       <!-- Commenting already subscribes you upstream, so this button exists for
            the two deliberate choices: muting a wall you are in, and following
@@ -180,7 +226,9 @@ onMounted(() => {
       <KunButton size="sm" variant="flat" @click="signIn">{{ t('auth.login') }}</KunButton>
     </div>
 
-    <p v-if="!comments.length" class="text-default-500 text-sm">{{ t('comment.empty') }}</p>
+    <p v-if="!list.length && !cursor" class="text-default-500 text-sm">
+      {{ t('comment.empty') }}
+    </p>
 
     <ul v-else class="flex flex-col gap-5">
       <li v-for="node in nodes" :key="node.id" class="flex flex-col gap-3">
@@ -200,6 +248,7 @@ onMounted(() => {
           @edit="startEdit"
           @remove="removing = $event"
           @report="openReport"
+          @liked="applyLike"
         />
 
         <div
@@ -226,11 +275,23 @@ onMounted(() => {
               @edit="startEdit"
               @remove="removing = $event"
               @report="openReport"
+              @liked="applyLike"
             />
           </template>
         </div>
       </li>
     </ul>
+
+    <!-- The wall is oldest first, so what is left to load is the newer end. -->
+    <KunButton
+      v-if="cursor"
+      variant="bordered"
+      class-name="self-center"
+      :disabled="loadingMore"
+      @click="loadMore"
+    >
+      {{ loadingMore ? t('comment.loading') : t('comment.loadMore') }}
+    </KunButton>
 
     <KunModal
       :model-value="!!reporting"
