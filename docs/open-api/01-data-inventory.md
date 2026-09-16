@@ -82,12 +82,9 @@ pack_tag  (pack_id, tag_id) PK
 ```
 `pack_count` 只数已发布的包。
 
-### `comment_like`
+### ~~`comment_like`~~（已由 migration 000009 删除）
 
-```
-(post_id bigint, user_id integer) PK, created_at
-```
-community 的 reaction 在本地的镜像。`post_id` 是 **community 的 id**，指向另一个库，所以没有外键。存在的理由：community 的 post 投影不带任何 reaction 字段，消费方无法从任何读接口拿到「几个赞」。
+曾是 community reaction 在本地的镜像，理由是 community 的 post 投影不带任何 reaction 字段。community 后来在读接口上补了 `reaction_count` / `viewer_reacted`，开关也直接返回新计数，这张表就退役了：点赞只存在于 community，本站一行都不存。
 
 ## 3. 多语言键空间
 
@@ -116,7 +113,7 @@ community 的 reaction 在本地的镜像。`post_id` 是 **community 的 id**�
 | `status != 1` 的包 | 草稿/隐藏，只有作者和有 `pack.view_hidden` 的人能看 |
 | `owner_uid` 之外的用户信息 | 本站不存 user 表，姓名头像来自 OP 批量接口，是 OP 的数据不是我们的 |
 | 评论正文 | 住在 community，租户是 `sticker`；要开放得由 community 决定，不该由本站转发 |
-| `comment_like` | 同上 |
+| 评论点赞 | 同上；本站不存，计数和「我赞过」都直接读 community |
 | `search_text` | 内部索引载体，拍平了各语言，对调用方无意义 |
 | 站内管理端点（`/me/*`） | 与 infra 03 §4、06 §11 同则：staff / 管理端点永不入面 |
 

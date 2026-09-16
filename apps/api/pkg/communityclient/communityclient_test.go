@@ -24,7 +24,8 @@ func TestResponseShapesPerLane(t *testing.T) {
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
 				"thread":{"id":57182,"kind":1,"anchor_kind":2,"anchor_id":"pack-uuid",
 				"posts_count":3,"highest_post_number":3},
-				"posts":[{"id":11048,"post_number":1,"author_id":3,"content_html":"<p>hi</p>","status":0}],
+				"posts":[{"id":11048,"post_number":1,"author_id":3,"content_html":"<p>hi</p>","status":0,
+				"reaction_count":2,"viewer_reacted":true}],
 				"next_cursor":"1"}}`))
 		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/community/comments":
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
@@ -32,7 +33,12 @@ func TestResponseShapesPerLane(t *testing.T) {
 				"post":{"id":11049,"thread_id":57182,"post_number":4,"author_id":3,
 				"content_raw":"hey","content_html":"<p>hey</p>","status":0}}}`))
 		case r.Method == http.MethodPatch:
-			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"post":{"id":11049,"content_html":"<p>edited</p>","status":0}}}`))
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"post":{"id":11049,"content_html":"<p>edited</p>","status":0,
+				"reaction_count":5}}}`))
+		case r.URL.Path == "/api/v1/community/posts/11049/reaction":
+			// The toggle answers flat -- no {"post": …} -- and carries the count.
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
+				"added":true,"reaction_count":6,"author_id":3,"thread_id":57182,"anchor_kind":2,"anchor_id":"pack-uuid"}}`))
 		case r.URL.Path == "/api/v1/community/threads/57182/read":
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
 				"thread_id":57182,"user_id":3,"last_read_post_number":4,
@@ -64,7 +70,7 @@ func TestResponseShapesPerLane(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	page, err := c.Comments(ctx, AnchorSiteResource, "pack-uuid", "", 30)
+	page, err := c.Comments(ctx, AnchorSiteResource, "pack-uuid", "", 30, 3)
 	if err != nil {
 		t.Fatalf("comments: %v", err)
 	}
@@ -73,6 +79,9 @@ func TestResponseShapesPerLane(t *testing.T) {
 	}
 	if len(page.Posts) != 1 || page.Posts[0].ContentHTML != "<p>hi</p>" {
 		t.Errorf("comments decoded posts wrong: %+v", page.Posts)
+	}
+	if page.Posts[0].ReactionCount != 2 || !page.Posts[0].ViewerReacted {
+		t.Errorf("comments dropped the likes: %+v", page.Posts[0])
 	}
 
 	written, err := c.Comment(ctx, CommentParams{
@@ -89,8 +98,16 @@ func TestResponseShapesPerLane(t *testing.T) {
 	if err != nil {
 		t.Fatalf("edit: %v", err)
 	}
-	if edited.ContentHTML != "<p>edited</p>" {
+	if edited.ContentHTML != "<p>edited</p>" || edited.ReactionCount != 5 {
 		t.Errorf("edit decoded wrong: %+v", edited)
+	}
+
+	toggled, err := c.ToggleReaction(ctx, 11049, 3, ReactionLike)
+	if err != nil {
+		t.Fatalf("toggle: %v", err)
+	}
+	if !toggled.Added || toggled.ReactionCount != 6 || toggled.AnchorID != "pack-uuid" {
+		t.Errorf("toggle decoded wrong (data is flat): %+v", toggled)
 	}
 
 	state, err := c.MarkRead(ctx, 57182, 3, 4)
@@ -146,7 +163,7 @@ func TestCommentsOnAnUntouchedAnchorHasNoThread(t *testing.T) {
 	defer srv.Close()
 
 	page, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
-		Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30)
+		Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30, 0)
 	if err != nil {
 		t.Fatalf("comments: %v", err)
 	}
@@ -189,6 +206,32 @@ func TestFeedFiltersAreAlwaysOnTheWire(t *testing.T) {
 	}
 }
 
+// viewer_reacted is only filled for the viewer a read names, and "nobody" has
+// to stay off the wire: viewer_id=0 means the same upstream today, but a
+// reader who is not signed in is not user 0 and should not be sent as one.
+func TestCommentsNameTheViewerOnlyWhenThereIsOne(t *testing.T) {
+	var seen url.Values
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = r.URL.Query()
+		_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"posts":[]}}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"})
+	if _, err := c.Comments(context.Background(), AnchorSiteResource, "pack-uuid", "30", 30, 42); err != nil {
+		t.Fatalf("comments: %v", err)
+	}
+	if seen.Get("viewer_id") != "42" || seen.Get("after") != "30" {
+		t.Errorf("signed-in read lost its viewer or cursor: %v", seen)
+	}
+	if _, err := c.Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30, 0); err != nil {
+		t.Fatalf("comments: %v", err)
+	}
+	if seen.Has("viewer_id") || seen.Has("after") {
+		t.Errorf("anonymous first page sent a viewer or a cursor: %v", seen)
+	}
+}
+
 // community answers errors with a non-2xx status today, but the envelope
 // carries its own code and the client's own doc comment says that code is the
 // verdict. If the two ever disagree, a 200 whose code is non-zero must not be
@@ -201,7 +244,7 @@ func TestNonZeroCodeIsAFailureEvenOnTwoHundred(t *testing.T) {
 	defer srv.Close()
 
 	_, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
-		Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30)
+		Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30, 0)
 	if err == nil {
 		t.Fatal("a non-zero code on a 200 must not read as success")
 	}
@@ -258,7 +301,7 @@ func TestForbiddenAndRateLimitAreDistinct(t *testing.T) {
 			_, _ = w.Write([]byte(`{"code":1,"message":"nope"}`))
 		}))
 		_, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
-			Comments(context.Background(), AnchorSiteResource, "x", "", 30)
+			Comments(context.Background(), AnchorSiteResource, "x", "", 30, 0)
 		if err != tc.want {
 			t.Errorf("status %d gave %v, want %v", tc.status, err, tc.want)
 		}
@@ -271,7 +314,7 @@ func TestUnconfiguredClientRefusesRatherThanCallingNowhere(t *testing.T) {
 	if c.Configured() {
 		t.Fatal("an empty config must not report configured")
 	}
-	if _, err := c.Comments(context.Background(), AnchorSiteResource, "x", "", 30); err != ErrNotConfigured {
+	if _, err := c.Comments(context.Background(), AnchorSiteResource, "x", "", 30, 0); err != ErrNotConfigured {
 		t.Errorf("got %v, want ErrNotConfigured", err)
 	}
 }

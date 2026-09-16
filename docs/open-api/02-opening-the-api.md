@@ -129,3 +129,5 @@ NSFW 能力位已于 2026-08-25 整档退役（03 §4.2），任何 key 都能�
 ## 8. 一条不属于本文但相关的建议
 
 本站是 community 服务的第三个消费者（forum / letmoe / 本站），而 community 的 post 投影**不带任何 reaction 字段**，导致每个消费方都得自己建一张 like 镜像表各数各的。三家实现已经长得一模一样。如果 infra 有余力，在 community 的 post 投影上加 `reaction_count` + `viewer_reacted`（或一条批量 reaction 读接口）会一次性消掉三份重复代码——这跟开放 API 无关，但既然在盘点跨服务契约，一并提出。
+
+> **已采纳（2026-09-16）**：community 在 infra #213 / #215 / #216 给读接口加了 `reaction_count` + `viewer_reacted`（按 `viewer_id` 填），开关也直接返回新计数。本站随即删掉了 `comment_like`（migration 000009）。

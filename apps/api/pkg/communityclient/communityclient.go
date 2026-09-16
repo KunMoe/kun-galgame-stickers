@@ -18,10 +18,13 @@
 // oauth_clients.community_site and falling back to oauth_clients.catalog_site.
 // That binding is what stops one site writing into another's threads, and it is
 // also why setting community_site on a client that already has threads strands
-// them: they were filed under the old tenant and nothing moves them. The acting user is different -- community trusts this site
-// to have authenticated them, so every write carries an author_id this site
-// vouches for. That means author_id must never come from the request body a
-// browser sent; it comes from the session.
+// them: they were filed under the old tenant and nothing moves them.
+//
+// The acting user is different -- community trusts this site to have
+// authenticated them, so every write carries an author_id this site vouches
+// for, and every read that renders "you liked this" carries a viewer_id on the
+// same terms. Neither may come from what a browser sent; both come from the
+// session.
 package communityclient
 
 import (
@@ -224,6 +227,12 @@ type Post struct {
 	CreatedAt         string `json:"created_at"`
 	EditedAt          string `json:"edited_at"`
 	EditedByModerator bool   `json:"edited_by_moderator"`
+	// Likes are community's own count, hydrated on every face that returns a
+	// post it did not just create. ViewerReacted is only ever true for the
+	// viewer_id the request named, and a request that named nobody gets false
+	// on every post.
+	ReactionCount int  `json:"reaction_count"`
+	ViewerReacted bool `json:"viewer_reacted"`
 }
 
 // CommentsPage is the read lane's answer. Thread is nil until somebody
@@ -238,12 +247,13 @@ type CommentsPage struct {
 
 // Comments reads an anchor's comment wall. It writes nothing: no thread is
 // created by rendering a page. `after` is a post_number, and the empty string
-// starts from the top.
+// starts from the top. viewerID is whose likes to report; 0 is an anonymous
+// reader and leaves every viewer_reacted false.
 func (c *Client) Comments(
 	ctx context.Context,
 	anchorKind int,
 	anchorID, after string,
-	limit int,
+	limit, viewerID int,
 ) (*CommentsPage, error) {
 	q := url.Values{}
 	q.Set("anchor_kind", strconv.Itoa(anchorKind))
@@ -253,6 +263,9 @@ func (c *Client) Comments(
 	}
 	if limit > 0 {
 		q.Set("limit", strconv.Itoa(limit))
+	}
+	if viewerID > 0 {
+		q.Set("viewer_id", strconv.Itoa(viewerID))
 	}
 	var env envelope[CommentsPage]
 	if err := c.do(ctx, http.MethodGet, withQuery("/comments", q), nil, &env); err != nil {
@@ -273,7 +286,9 @@ type CommentParams struct {
 }
 
 // CommentResult carries the thread as it stands after the write -- newly
-// created on the first comment, and already there on every one after it.
+// created on the first comment, and already there on every one after it. The
+// post is not hydrated, and needs no hydration: it was inserted by this call,
+// so nobody has liked it yet.
 type CommentResult struct {
 	Thread Thread `json:"thread"`
 	Post   Post   `json:"post"`
@@ -300,6 +315,8 @@ func (c *Client) Comment(ctx context.Context, p CommentParams) (*CommentResult, 
 	return &env.Data, nil
 }
 
+// Edit rewrites a post. The answer carries the post's real like count, with
+// the author standing as the viewer: the response is theirs to render.
 func (c *Client) Edit(ctx context.Context, postID int64, authorID int, body string) (*Post, error) {
 	// The post write lanes wrap their result: data is {"post": …}.
 	var env envelope[postWrapper]
@@ -327,16 +344,18 @@ const (
 	FlagNSFWMislabel = 4
 )
 
-// ReactionResult is what a toggle answers with. It reports the new state and
-// the post's context, which the reaction flow has resolved anyway, but no
-// count: the read faces carry reaction_count, this one does not. So a caller
-// that has just toggled still has to get the new number from somewhere else.
+// ReactionResult is what a toggle answers with: the clicker's new state, the
+// post's like count counted in the same transaction as the toggle, and the
+// post's context, which the reaction flow has resolved anyway. Added is the
+// viewer_reacted a read face would now report for this user, and ReactionCount
+// is the number it would report for everyone, so a toggle needs no re-read.
 type ReactionResult struct {
-	Added      bool   `json:"added"`
-	AuthorID   int    `json:"author_id"`
-	ThreadID   int64  `json:"thread_id"`
-	AnchorKind int    `json:"anchor_kind"`
-	AnchorID   string `json:"anchor_id"`
+	Added         bool   `json:"added"`
+	ReactionCount int    `json:"reaction_count"`
+	AuthorID      int    `json:"author_id"`
+	ThreadID      int64  `json:"thread_id"`
+	AnchorKind    int    `json:"anchor_kind"`
+	AnchorID      string `json:"anchor_id"`
 }
 
 func (c *Client) ToggleReaction(ctx context.Context, postID int64, userID int, kind int) (*ReactionResult, error) {

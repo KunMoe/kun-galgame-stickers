@@ -90,7 +90,6 @@ func New(cfg *config.Config) *App {
 		stickerrepo.NewPackRepo(db),
 		stickerrepo.NewStickerRepo(db),
 		stickerrepo.NewTagRepo(db),
-		stickerrepo.NewCommentLikeRepo(db),
 		imgCli,
 		users,
 		catalog,

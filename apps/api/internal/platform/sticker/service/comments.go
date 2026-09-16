@@ -49,7 +49,7 @@ func (s *Service) PackComments(
 	}
 
 	page, err := s.community.Comments(
-		ctx, communityclient.AnchorSiteResource, pack.ID.String(), after, commentPageSize,
+		ctx, communityclient.AnchorSiteResource, pack.ID.String(), after, commentPageSize, v.UID,
 	)
 	if err != nil {
 		return nil, communityError(err)
@@ -100,19 +100,10 @@ func (s *Service) commentPage(
 	v Viewer,
 ) *dto.CommentPage {
 	authorIDs := make([]int, 0, len(posts))
-	postIDs := make([]int64, 0, len(posts))
 	for _, post := range posts {
 		authorIDs = append(authorIDs, post.AuthorID)
-		postIDs = append(postIDs, post.ID)
 	}
 	authors := s.users.Users(ctx, authorIDs)
-	// The counts come from this site's mirror -- two queries for the whole
-	// page. community's post projection does now carry reaction_count and
-	// viewer_reacted, which is the authority the mirror only approximates, but
-	// reading them means sending viewer_id and decoding fields this client does
-	// not yet have. Until then the mirror is what the wall renders.
-	likeCounts, _ := s.likes.Counts(postIDs)
-	liked, _ := s.likes.LikedSet(v.UID, postIDs)
 
 	// "in reply to X" needs the name of a post that may be on another page, so
 	// the ones on this page are indexed first and anything else stays unnamed.
@@ -151,8 +142,11 @@ func (s *Service) commentPage(
 			Author:      dto.Author{ID: author.ID, Name: author.Name, Avatar: author.Avatar},
 			CanEdit:     v.UID > 0 && post.AuthorID == v.UID,
 			CanDelete:   v.UID > 0 && (post.AuthorID == v.UID || perm.Can(v.Roles, perm.PackDeleteAny)),
-			LikeCount:   likeCounts[post.ID],
-			IsLiked:     liked[post.ID],
+			// Likes are community's, read off the post: it counts them from the
+			// same rows the trust engine does, so there is no second number here
+			// to fall out of step with it.
+			LikeCount:   post.ReactionCount,
+			IsLiked:     post.ViewerReacted,
 			ReplyTo:     post.ReplyToPostID,
 			RootID:      post.RootPostID,
 			ReplyToName: nameByPost[post.ReplyToPostID],
@@ -263,9 +257,9 @@ func communityError(err error) *errors.AppError {
 }
 
 // ToggleCommentLike flips a reaction. community decides the new state -- its
-// toggle is authoritative and feeds the trust engine -- and this site mirrors
-// the outcome so it has something to count. A mirror write that fails leaves
-// the count stale rather than the reaction lost, so it is logged, not raised.
+// toggle is authoritative and feeds the trust engine -- and answers with the
+// count it took in the same transaction, so the reply is the whole truth and
+// nothing on this site records it.
 func (s *Service) ToggleCommentLike(ctx context.Context, postID int64, v Viewer) (*dto.CommentLikeResult, *errors.AppError) {
 	if !s.community.Configured() {
 		return nil, errors.ErrCommunityUnavailable()
@@ -274,20 +268,7 @@ func (s *Service) ToggleCommentLike(ctx context.Context, postID int64, v Viewer)
 	if err != nil {
 		return nil, communityError(err)
 	}
-
-	if result.Added {
-		if mirrorErr := s.likes.Ensure(postID, v.UID); mirrorErr != nil {
-			slog.Warn("comment like mirror insert failed", "post_id", postID, "user_id", v.UID, "error", mirrorErr)
-		}
-	} else if mirrorErr := s.likes.Remove(postID, v.UID); mirrorErr != nil {
-		slog.Warn("comment like mirror delete failed", "post_id", postID, "user_id", v.UID, "error", mirrorErr)
-	}
-
-	counts, err := s.likes.Counts([]int64{postID})
-	if err != nil {
-		return nil, errors.ErrInternal("failed to count likes")
-	}
-	return &dto.CommentLikeResult{Liked: result.Added, LikeCount: counts[postID]}, nil
+	return &dto.CommentLikeResult{Liked: result.Added, LikeCount: result.ReactionCount}, nil
 }
 
 // FlagComment hands a report to community's review queue. Nothing about it is
