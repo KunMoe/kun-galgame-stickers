@@ -38,9 +38,17 @@ export type FlagReason = (typeof FLAG_REASONS)[number]
 /**
  * community's notification levels. Commenting subscribes you at `watching`,
  * and community never downgrades a level you set yourself -- muting a thread
- * and then replying to it leaves you muted.
+ * and then replying to it leaves you muted. `watchingFirstPost` exists only
+ * on a followed pack; this site never sets it but may read it back from
+ * another client.
  */
-export const NOTIFY = { muted: 0, normal: 1, tracking: 2, watching: 3 } as const
+export const NOTIFY = {
+  muted: 0,
+  normal: 1,
+  tracking: 2,
+  watching: 3,
+  watchingFirstPost: 4
+} as const
 export type NotifyLevel = (typeof NOTIFY)[keyof typeof NOTIFY]
 
 /** The reader's own row on a thread. Absent until they touch it. */
@@ -102,6 +110,19 @@ export const setCommentNotification = (
   level: NotifyLevel
 ): Promise<CommentViewerState> =>
   kunFetch<CommentViewerState>(`/comments/threads/${threadId}/notification`, {
+    method: 'POST',
+    body: { level }
+  })
+
+/**
+ * Follows a pack whose comment wall has no thread yet. Once a thread exists,
+ * the thread-level call is the one that counts.
+ */
+export const setPackCommentNotification = (
+  packId: string,
+  level: typeof NOTIFY.normal | typeof NOTIFY.watching
+): Promise<CommentViewerState> =>
+  kunFetch<CommentViewerState>(`/packs/${packId}/comments/notification`, {
     method: 'POST',
     body: { level }
   })

@@ -102,10 +102,12 @@ func commentIDParam(c fiber.Ctx) (int64, *errors.AppError) {
 	return id, nil
 }
 
-// The unread, feed and search lanes are addressed by community's thread id
-// rather than by a pack, because that is what the reader already holds: the
-// comment page hands out thread_id, and turning a pack back into a thread
-// would cost an upstream round trip to learn something the client knows.
+// The read receipt and the thread subscription are addressed by community's
+// thread id rather than by a pack, because that is what the reader already
+// holds: the comment page hands out thread_id, and turning a pack back into a
+// thread would cost an upstream round trip to learn something the client
+// knows. Following a pack with no thread yet is the one exception, and it is
+// routed by the pack.
 func (h *Handler) MarkCommentsRead(c fiber.Ctx) error {
 	threadID, appErr := threadIDParam(c)
 	if appErr != nil {
@@ -138,12 +140,20 @@ func (h *Handler) SetCommentNotification(c fiber.Ctx) error {
 	return response.OK(c, state)
 }
 
-func (h *Handler) UnreadComments(c fiber.Ctx) error {
-	unread, appErr := h.svc.UnreadComments(c.Context(), viewer(c))
+func (h *Handler) SetPackCommentNotification(c fiber.Ctx) error {
+	packID, appErr := uuidParam(c, "packId")
 	if appErr != nil {
 		return response.Error(c, appErr)
 	}
-	return response.OK(c, unread)
+	req, appErr := parseBody[dto.CommentNotificationRequest](c)
+	if appErr != nil {
+		return response.Error(c, appErr)
+	}
+	state, appErr := h.svc.SetPackCommentNotification(c.Context(), packID, req.Level, viewer(c))
+	if appErr != nil {
+		return response.Error(c, appErr)
+	}
+	return response.OK(c, state)
 }
 
 func (h *Handler) LatestComments(c fiber.Ctx) error {

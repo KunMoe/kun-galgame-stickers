@@ -172,6 +172,7 @@ func New(cfg *config.Config) *App {
 	// upstream -- there is no thread id stored here to route by.
 	api.Get("/packs/:packId/comments", readLimit, optionalAuth, h.ListComments)
 	api.Post("/packs/:packId/comments", requireAuth, writeLimit, h.AddComment)
+	api.Post("/packs/:packId/comments/notification", requireAuth, writeLimit, h.SetPackCommentNotification)
 	api.Patch("/comments/:commentId", requireAuth, writeLimit, h.PatchComment)
 	api.Delete("/comments/:commentId", requireAuth, writeLimit, h.DeleteComment)
 	api.Post("/comments/:commentId/like", requireAuth, writeLimit, h.ToggleCommentLike)
@@ -182,14 +183,19 @@ func New(cfg *config.Config) *App {
 	api.Get("/comments/latest", readLimit, h.LatestComments)
 	api.Get("/comments/search", readLimit, h.SearchComments)
 
-	// Unread and subscription. A read receipt is a write on purpose -- a GET
-	// that marks a thread read cannot be prefetched or retried safely -- so the
-	// two receipts sit behind the write limiter. The badge itself is a read,
-	// but a costly one: the header asks for it on every page, and each ask is
-	// an upstream page walk.
-	api.Get("/me/comments/unread", requireAuth, readLimit, h.UnreadComments)
+	// Read receipt and thread subscription. A read receipt is a write on
+	// purpose -- a GET that marks a thread read cannot be prefetched or
+	// retried safely -- so both sit behind the write limiter.
 	api.Post("/comments/threads/:threadId/read", requireAuth, writeLimit, h.MarkCommentsRead)
 	api.Post("/comments/threads/:threadId/notification", requireAuth, writeLimit, h.SetCommentNotification)
+
+	// Notifications. community writes the rows and this site only reads and
+	// acknowledges them; the count is its own route because the header asks
+	// on every page and it needs neither packs nor users; marking read is a
+	// write, so it sits behind the write limiter.
+	api.Get("/me/notifications", requireAuth, readLimit, h.ListNotifications)
+	api.Get("/me/notifications/unread-count", requireAuth, readLimit, h.UnreadNotificationCount)
+	api.Post("/me/notifications/read", requireAuth, writeLimit, h.MarkNotificationsRead)
 
 	// The catalog pickers sit behind auth: the application key must never
 	// reach a browser, and only an author composing a pack needs them. They

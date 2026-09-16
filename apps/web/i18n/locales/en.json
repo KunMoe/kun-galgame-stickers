@@ -284,7 +284,6 @@
     "pageTitle": "Comments",
     "pageSubtitle": "What people are saying under every sticker pack",
     "tabLatest": "Latest",
-    "tabUnread": "Unread",
     "searchPlaceholder": "Search comments (2 characters or more)",
     "searchLabel": "Search comments",
     "searching": "Searching…",
@@ -293,12 +292,27 @@
     "feedEmpty": "Nobody has commented on a pack yet.",
     "loadMore": "Load more",
     "loading": "Loading…",
-    "unreadEmpty": "Nothing unread.",
-    "commentCount": "no comments | 1 comment | {count} comments",
     "subscribe": "Subscribe",
     "mute": "Unsubscribe",
     "subscribed": "Subscribed — you'll hear about new replies.",
     "muted": "Unsubscribed.",
     "unavailable": "Comments are unavailable right now. Try again in a moment."
+  },
+  "notification": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "unread": "Unread",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "someone": "Someone",
+    "packUnavailable": "an unavailable pack",
+    "replied": "{name} replied to your comment on “{pack}”",
+    "mentioned": "{name} mentioned you on “{pack}”",
+    "posted": "{name} commented on “{pack}”",
+    "postedMany": "{name} and others ({count} people) commented on “{pack}”",
+    "newComments": "{count} new",
+    "liked": "{name} liked your comment on “{pack}”",
+    "likedMany": "{name} and others ({count} people) liked your comment on “{pack}”",
+    "other": "Something new on “{pack}”"
   }
 }

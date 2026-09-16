@@ -284,7 +284,6 @@
     "pageTitle": "コメント",
     "pageSubtitle": "各スタンプパックでの会話をまとめて読む",
     "tabLatest": "最新",
-    "tabUnread": "未読",
     "searchPlaceholder": "コメントを検索（2文字以上）",
     "searchLabel": "コメントを検索",
     "searching": "検索中…",
@@ -293,12 +292,27 @@
     "feedEmpty": "まだどのパックにもコメントがありません",
     "loadMore": "もっと見る",
     "loading": "読み込み中…",
-    "unreadEmpty": "未読はありません",
-    "commentCount": "{count} 件のコメント",
     "subscribe": "購読する",
     "mute": "購読をやめる",
     "subscribed": "購読しました。新しい返信をお知らせします",
     "muted": "購読を解除しました",
     "unavailable": "コメントサービスに接続できません。しばらくしてからお試しください"
+  },
+  "notification": {
+    "title": "通知",
+    "empty": "通知はまだありません",
+    "unread": "未読",
+    "markRead": "既読にする",
+    "markAllRead": "すべて既読にする",
+    "someone": "誰か",
+    "packUnavailable": "利用できなくなったセット",
+    "replied": "{name} さんが「{pack}」のあなたのコメントに返信しました",
+    "mentioned": "{name} さんが「{pack}」のコメントであなたに言及しました",
+    "posted": "{name} さんが「{pack}」にコメントしました",
+    "postedMany": "{name} さんなど {count} 人が「{pack}」にコメントしました",
+    "newComments": "新着 {count} 件",
+    "liked": "{name} さんが「{pack}」のあなたのコメントにいいねしました",
+    "likedMany": "{name} さんなど {count} 人が「{pack}」のあなたのコメントにいいねしました",
+    "other": "「{pack}」に新しい動きがあります"
   }
 }

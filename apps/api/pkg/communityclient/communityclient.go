@@ -83,13 +83,15 @@ const (
 	StatusDeleted = 2
 )
 
-// Notification levels. Posting subscribes the author at watching; community
-// never downgrades a level a user set for themselves.
+// Notification levels. 0 muted, 1 normal, 3 watching and 4 watching-first-post
+// apply to anchors; 2 (tracking) is thread-only. Posting subscribes the author
+// at watching; community never downgrades a level a user set for themselves.
 const (
-	NotifyMuted    = 0
-	NotifyNormal   = 1
-	NotifyTracking = 2
-	NotifyWatching = 3
+	NotifyMuted             = 0
+	NotifyNormal            = 1
+	NotifyTracking          = 2
+	NotifyWatching          = 3
+	NotifyWatchingFirstPost = 4
 )
 
 type Config struct {

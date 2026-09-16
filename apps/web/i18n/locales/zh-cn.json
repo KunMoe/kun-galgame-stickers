@@ -284,7 +284,6 @@
     "pageTitle": "评论",
     "pageSubtitle": "看看大家在各个表情包下都聊了些什么",
     "tabLatest": "最新",
-    "tabUnread": "未读",
     "searchPlaceholder": "搜索评论内容…（至少 2 个字）",
     "searchLabel": "搜索评论",
     "searching": "搜索中…",
@@ -293,12 +292,27 @@
     "feedEmpty": "还没有人评论过任何表情包",
     "loadMore": "加载更多",
     "loading": "加载中…",
-    "unreadEmpty": "没有未读评论",
-    "commentCount": "{count} 条评论",
     "subscribe": "订阅",
     "mute": "取消订阅",
     "subscribed": "已订阅，有新回复会通知你",
     "muted": "已取消订阅",
     "unavailable": "评论服务暂时不可用，请稍后再试"
+  },
+  "notification": {
+    "title": "通知",
+    "empty": "暂时没有通知",
+    "unread": "未读",
+    "markRead": "标为已读",
+    "markAllRead": "全部标为已读",
+    "someone": "有人",
+    "packUnavailable": "已不可用的表情包",
+    "replied": "{name} 回复了你在「{pack}」下的评论",
+    "mentioned": "{name} 在「{pack}」的评论里提到了你",
+    "posted": "{name} 在「{pack}」下发表了评论",
+    "postedMany": "{name} 等 {count} 人在「{pack}」下发表了评论",
+    "newComments": "{count} 条新评论",
+    "liked": "{name} 赞了你在「{pack}」下的评论",
+    "likedMany": "{name} 等 {count} 人赞了你在「{pack}」下的评论",
+    "other": "「{pack}」有新动态"
   }
 }

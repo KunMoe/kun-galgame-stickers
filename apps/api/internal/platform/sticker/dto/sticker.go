@@ -176,7 +176,8 @@ type CommentPage struct {
 	// counts tombstones, so it is not len(Comments).
 	HighestPostNumber int `json:"highest_post_number"`
 	// Viewer is the reader's own state on this thread, and is absent for an
-	// anonymous reader or one who has never touched it.
+	// anonymous reader or one who has never touched it. Before the thread
+	// exists it carries only the signed-in reader's follow of the pack.
 	Viewer *CommentViewerState `json:"viewer,omitempty"`
 	// Enabled is false when the community service is not configured, which is
 	// how a pack page knows to leave the section out rather than show an error.
@@ -238,26 +239,6 @@ type CommentFeed struct {
 	Items      []CommentFeedItem `json:"items"`
 	NextCursor string            `json:"next_cursor,omitempty"`
 	Enabled    bool              `json:"enabled"`
-}
-
-// UnreadPack is one pack whose comment wall has moved on since the reader last
-// looked at it.
-type UnreadPack struct {
-	ThreadID     int64          `json:"thread_id"`
-	Pack         CommentPackRef `json:"pack"`
-	UnreadCount  int            `json:"unread_count"`
-	PostsCount   int            `json:"posts_count"`
-	LastPostedAt string         `json:"last_posted_at,omitempty"`
-}
-
-type UnreadComments struct {
-	Packs []UnreadPack `json:"packs"`
-	// Total is the red dot. It counts what this site can show, not what
-	// community reports: a user reachable from several NextMoe sites carries
-	// unread threads that have no page here. The list is capped rather than
-	// paged -- an unread badge nobody can page through is the whole point.
-	Total   int  `json:"total"`
-	Enabled bool `json:"enabled"`
 }
 
 // AvatarPool is the default-avatar manifest served to other NextMoe sites.

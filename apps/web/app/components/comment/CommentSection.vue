@@ -141,36 +141,32 @@ const applyLike = (id: number, result: LikeResult) => {
 
 const signIn = () => startOAuthLogin(route.fullPath)
 
-// Everything below is the thread's own state rather than its posts: there is
-// no thread at all until the first comment creates one, so every one of these
-// is inert on a pack nobody has spoken about yet.
+// The thread's own state rather than its posts. There is no thread until the
+// first comment creates one, and until then the level is the reader's follow
+// of the pack.
 const threadId = computed(() => data.value?.thread_id ?? 0)
 const notifyLevel = ref<NotifyLevel | null>(null)
 watch(data, (page) => { notifyLevel.value = page?.viewer?.notification_level ?? null }, { immediate: true })
 
-const subscribed = computed(() => notifyLevel.value !== null && notifyLevel.value >= NOTIFY.tracking)
-
-const toggleSubscribe = async () => {
-  const muting = subscribed.value
-  const state = await mutate(() =>
-    setCommentNotification(threadId.value, muting ? NOTIFY.muted : NOTIFY.watching)
-  )
-  if (!state) return
-  notifyLevel.value = state.notification_level
-  useKunMessage(t(muting ? 'comment.muted' : 'comment.subscribed'), 'success')
-}
-
-const { clear: clearUnread } = useUnreadComments()
+const { refresh: refreshBadge } = useNotificationBadge()
 
 // The receipt is a write, so it waits for the client and only fires when there
 // is something new to report. A failure costs the reader a badge that clears
 // on their next visit, which is not worth a toast over their comments.
+//
+// community marks this thread's reply and new-comment notifications read when
+// the receipt reaches them, so the header count is re-read rather than
+// guessed. The first receipt on a thread also carries a pack follow over into
+// it, which is why the level it answers with replaces the one the page loaded.
 onMounted(() => {
   const page = data.value
   if (!user.value || !page?.thread_id || !page.highest_post_number) return
   if ((page.viewer?.last_read_post_number ?? 0) >= page.highest_post_number) return
   markCommentsRead(page.thread_id, page.highest_post_number)
-    .then(() => clearUnread(page.thread_id))
+    .then((state) => {
+      notifyLevel.value = state.notification_level
+      void refreshBadge()
+    })
     .catch(() => {})
 })
 </script>
@@ -182,20 +178,12 @@ onMounted(() => {
         {{ t('comment.title') }}
         <span v-if="total" class="text-default-500 text-sm font-normal">{{ total }}</span>
       </h2>
-      <!-- Commenting already subscribes you upstream, so this button exists for
-           the two deliberate choices: muting a wall you are in, and following
-           one you have not spoken in. -->
-      <KunButton
-        v-if="user && threadId"
-        size="sm"
-        variant="light"
-        class-name="gap-1.5"
-        :aria-label="t(subscribed ? 'comment.mute' : 'comment.subscribe')"
-        @click="toggleSubscribe"
-      >
-        <KunIcon :name="subscribed ? 'lucide:bell-off' : 'lucide:bell'" class="text-base" />
-        <span class="hidden sm:inline">{{ t(subscribed ? 'comment.mute' : 'comment.subscribe') }}</span>
-      </KunButton>
+      <CommentFollowButton
+        v-if="user"
+        v-model:level="notifyLevel"
+        :pack-id="packId"
+        :thread-id="threadId"
+      />
     </div>
 
     <div v-if="user" ref="composer" class="flex flex-col gap-2">

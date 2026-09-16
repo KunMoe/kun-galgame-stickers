@@ -114,6 +114,7 @@ pack_tag  (pack_id, tag_id) PK
 | `owner_uid` 之外的用户信息 | 本站不存 user 表，姓名头像来自 OP 批量接口，是 OP 的数据不是我们的 |
 | 评论正文 | 住在 community，租户是 `sticker`；要开放得由 community 决定，不该由本站转发 |
 | 评论点赞 | 同上；本站不存，计数和「我赞过」都直接读 community |
+| 评论通知、关注 | 同上；收件箱和关注状态都是 community 按投递站 `sticker` 存的，本站只读和回执 |
 | `search_text` | 内部索引载体，拍平了各语言，对调用方无意义 |
 | 站内管理端点（`/me/*`） | 与 infra 03 §4、06 §11 同则：staff / 管理端点永不入面 |
 
@@ -136,7 +137,8 @@ pack_tag  (pack_id, tag_id) PK
 
 会话写（cookie，本站前端专用）
   /api/v1/me/packs/**                      建包 / 改包 / 发布 / 上传 / 排序
-  /api/v1/packs/{id}/comments, /comments/** 评论、点赞、举报
+  /api/v1/packs/{id}/comments, /comments/** 评论、点赞、举报、关注
+  /api/v1/me/notifications/**              通知收件箱、未读数、标已读（转发 community）
   /api/v1/catalog/works, /catalog/works/{id}/characters   编辑器的选择器（转发 catalog）
 ```
 

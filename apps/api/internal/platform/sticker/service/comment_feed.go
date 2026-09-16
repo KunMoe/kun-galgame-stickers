@@ -20,19 +20,15 @@ const (
 	// matches most of the corpus; above a hundred it is not a search.
 	minCommentQuery = 2
 	maxCommentQuery = 100
-	// unreadScanLimit is community's page maximum. The unread list is capped
-	// rather than paged: it exists to be cleared, not browsed, and a reader
-	// with more than a hundred unread packs is served by the number alone.
-	unreadScanLimit = 100
 	// feedScanPages bounds the refill loops below. A community page can arrive
 	// full and still leave nothing after the mapping back to a published pack,
 	// for a different reason in each lane: search accepts no anchor filter at
-	// all, so a page of it can be entirely other sites' catalog comments;
-	// unread filters on neither kind nor anchor; and the latest feed, which
-	// community does narrow to this site's own pack threads, still drops every
-	// row whose pack has since been unpublished or retired. Stopping at one
-	// page would answer "nothing here" while still holding a cursor; walking
-	// without a bound would let one quiet query scan the whole corpus.
+	// all, so a page of it can be entirely other sites' catalog comments; and
+	// the latest feed, which community does narrow to this site's own pack
+	// threads, still drops every row whose pack has since been unpublished or
+	// retired. Stopping at one page would answer "nothing here" while still
+	// holding a cursor; walking without a bound would let one quiet query
+	// scan the whole corpus.
 	feedScanPages = 5
 )
 
@@ -231,78 +227,4 @@ func (s *Service) SearchComments(
 		return nil, appErr
 	}
 	return &dto.CommentFeed{Items: items, NextCursor: next, Enabled: true}, nil
-}
-
-// UnreadComments lists the packs whose comment wall has moved on since this
-// reader last looked. Community counts every thread the user can reach from
-// this tenant, which is wider than this site can render, so the total reported
-// here is the one computed from the rows that survive the mapping back to a
-// pack -- a red dot that leads to an empty list is worse than no red dot. For
-// the same reason it keeps reading pages: a reader whose first hundred unread
-// threads are all catalog discussions elsewhere on the network still has unread
-// comments here.
-func (s *Service) UnreadComments(ctx context.Context, v Viewer) (*dto.UnreadComments, *errors.AppError) {
-	if !s.community.Configured() {
-		return &dto.UnreadComments{Packs: []dto.UnreadPack{}, Enabled: false}, nil
-	}
-
-	out := &dto.UnreadComments{Packs: make([]dto.UnreadPack, 0, commentFeedSize), Enabled: true}
-	cursor := ""
-	for range feedScanPages {
-		list, err := s.community.Unread(ctx, v.UID, cursor, unreadScanLimit)
-		if err != nil {
-			return nil, communityError(err)
-		}
-		packs, lookupErr := s.unreadPacks(list.Threads)
-		if lookupErr != nil {
-			slog.Error("unread pack lookup failed", "user", v.UID, "error", lookupErr)
-			return nil, errors.ErrInternal("unread lookup failed")
-		}
-		out.Packs = append(out.Packs, packs...)
-		cursor = list.NextCursor
-		if cursor == "" || len(out.Packs) >= unreadScanLimit {
-			break
-		}
-	}
-	if len(out.Packs) > unreadScanLimit {
-		out.Packs = out.Packs[:unreadScanLimit]
-	}
-	out.Total = len(out.Packs)
-	return out, nil
-}
-
-// unreadPacks maps one community page of unread threads onto this site's packs.
-// The anchor kind is tested again here and not only where the ids were
-// gathered: a catalog thread whose anchor id happened to equal a published
-// pack's uuid would otherwise be rendered as that pack.
-func (s *Service) unreadPacks(threads []communityclient.UnreadThread) ([]dto.UnreadPack, error) {
-	anchorIDs := make([]string, 0, len(threads))
-	for _, row := range threads {
-		if row.Thread.AnchorKind == communityclient.AnchorSiteResource {
-			anchorIDs = append(anchorIDs, row.Thread.AnchorID)
-		}
-	}
-	packs, err := s.packRefs(anchorIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([]dto.UnreadPack, 0, len(threads))
-	for _, row := range threads {
-		if row.Thread.AnchorKind != communityclient.AnchorSiteResource {
-			continue
-		}
-		pack, ok := packs[row.Thread.AnchorID]
-		if !ok {
-			continue
-		}
-		out = append(out, dto.UnreadPack{
-			ThreadID:     row.Thread.ID,
-			Pack:         pack,
-			UnreadCount:  row.State.UnreadCount,
-			PostsCount:   row.Thread.PostsCount,
-			LastPostedAt: row.Thread.LastPostedAt,
-		})
-	}
-	return out, nil
 }

@@ -47,10 +47,23 @@ func TestResponseShapesPerLane(t *testing.T) {
 			// data is {"states": …}, not the array itself.
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"states":[
 				{"thread_id":57182,"user_id":3,"last_read_post_number":2,"unread_count":2,"notification_level":3}]}}`))
-		case r.URL.Path == "/api/v1/community/users/3/unread":
-			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"total":1,"threads":[
-				{"thread":{"id":57182,"anchor_kind":2,"anchor_id":"pack-uuid","posts_count":4},
-				 "state":{"thread_id":57182,"unread_count":2}}]}}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/community/users/3/notifications":
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"notifications":[
+				{"id":41,"user_id":3,"kind":5,"thread_id":57182,"anchor_kind":2,"anchor_id":"pack-uuid",
+				 "post_id":11049,"post_number":4,"first_post_number":4,"actor_id":4,"actor_count":2,"item_count":1,
+				 "read_at":"2026-09-16T08:00:00Z","created_at":"2026-09-16T07:00:00Z","updated_at":"2026-09-16T07:30:00Z","seq":90},
+				{"id":40,"user_id":3,"kind":3,"thread_id":57182,"anchor_kind":2,"anchor_id":"pack-uuid",
+				 "post_id":null,"post_number":null,"first_post_number":null,"actor_count":1,"item_count":3,
+				 "created_at":"2026-09-16T06:00:00Z","updated_at":"2026-09-16T06:00:00Z","seq":89}],
+				"next_cursor":"89","unread_count":1}}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/community/users/3/notifications/read":
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"marked":1,"unread_count":0}}`))
+		case r.URL.Path == "/api/v1/community/anchors/notification":
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
+				"user_id":3,"anchor_kind":2,"anchor_id":"pack-uuid","notification_level":3}}`))
+		case r.URL.Path == "/api/v1/community/anchors/states":
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"states":[
+				{"user_id":3,"anchor_kind":2,"anchor_id":"pack-uuid","notification_level":3}]}}`))
 		case r.URL.Path == "/api/v1/community/search/posts",
 			r.URL.Path == "/api/v1/community/posts":
 			// Both feed lanes nest the post under its thread context.
@@ -126,12 +139,55 @@ func TestResponseShapesPerLane(t *testing.T) {
 		t.Errorf("states decoded wrong (data is {\"states\": …}): %+v", states)
 	}
 
-	unread, err := c.Unread(ctx, 3, "", 100)
+	inbox, err := c.Notifications(ctx, 3, "", 0, false)
 	if err != nil {
-		t.Fatalf("unread: %v", err)
+		t.Fatalf("notifications: %v", err)
 	}
-	if unread.Total != 1 || len(unread.Threads) != 1 || unread.Threads[0].Thread.AnchorID != "pack-uuid" {
-		t.Errorf("unread decoded wrong: %+v", unread)
+	if len(inbox.Notifications) != 2 {
+		t.Fatalf("notifications decoded wrong: %+v", inbox.Notifications)
+	}
+	first, second := inbox.Notifications[0], inbox.Notifications[1]
+	if first.ID != 41 || first.Kind != NotificationLiked || first.ThreadID != 57182 ||
+		first.PostID != 11049 || first.PostNumber != 4 || first.FirstPostNumber != 4 || first.ActorID != 4 {
+		t.Errorf("full notification row decoded wrong: %+v", first)
+	}
+	if first.ReadAt == "" {
+		t.Errorf("full notification row dropped read_at: %+v", first)
+	}
+	if second.ID != 40 || second.Kind != NotificationPosted ||
+		second.PostID != 0 || second.PostNumber != 0 || second.FirstPostNumber != 0 || second.ActorID != 0 {
+		t.Errorf("null/absent notification fields must be zero, got %+v", second)
+	}
+	if second.ReadAt != "" {
+		t.Errorf("absent read_at must be empty, got %q", second.ReadAt)
+	}
+	if inbox.UnreadCount != 1 || inbox.NextCursor != "89" {
+		t.Errorf("notification list cursor/count decoded wrong: cursor=%q unread=%d", inbox.NextCursor, inbox.UnreadCount)
+	}
+
+	unread, err := c.MarkNotificationsRead(ctx, 3, []int64{41}, false)
+	if err != nil {
+		t.Fatalf("mark notifications read: %v", err)
+	}
+	if unread != 0 {
+		t.Errorf("mark notifications read decoded wrong: unread=%d", unread)
+	}
+
+	anchor, err := c.SetAnchorNotification(ctx, 3, AnchorRef{AnchorKind: AnchorSiteResource, AnchorID: "pack-uuid"}, NotifyWatching)
+	if err != nil {
+		t.Fatalf("set anchor notification: %v", err)
+	}
+	if anchor.UserID != 3 || anchor.AnchorKind != AnchorSiteResource ||
+		anchor.AnchorID != "pack-uuid" || anchor.NotificationLevel != NotifyWatching {
+		t.Errorf("anchor notification decoded wrong (data is flat): %+v", anchor)
+	}
+
+	anchorStates, err := c.AnchorStates(ctx, 3, []AnchorRef{{AnchorKind: AnchorSiteResource, AnchorID: "pack-uuid"}})
+	if err != nil {
+		t.Fatalf("anchor states: %v", err)
+	}
+	if len(anchorStates) != 1 || anchorStates[0].NotificationLevel != NotifyWatching {
+		t.Errorf("anchor states decoded wrong (data is {\"states\": …}): %+v", anchorStates)
 	}
 
 	for name, feed := range map[string]func() (*PostFeed, error){
@@ -229,6 +285,100 @@ func TestCommentsNameTheViewerOnlyWhenThereIsOne(t *testing.T) {
 	}
 	if seen.Has("viewer_id") || seen.Has("after") {
 		t.Errorf("anonymous first page sent a viewer or a cursor: %v", seen)
+	}
+}
+
+// Query filters whose zero value means "omit" must stay off the wire, and a
+// mark-read body that names both `ids` and `all` is refused upstream. The
+// empty-anchor states call is the same short-circuit as ThreadStates: no
+// round trip for an empty screen.
+func TestNotificationRequestsCarryOnlyWhatWasAsked(t *testing.T) {
+	type seen struct {
+		path  string
+		query string
+		body  map[string]any
+	}
+	var calls []seen
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec := seen{path: r.URL.Path, query: r.URL.RawQuery}
+		raw, _ := io.ReadAll(r.Body)
+		if len(raw) > 0 {
+			_ = json.Unmarshal(raw, &rec.body)
+		}
+		calls = append(calls, rec)
+		_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{}}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"})
+	ctx := context.Background()
+
+	if _, err := c.Notifications(ctx, 3, "", 0, false); err != nil {
+		t.Fatalf("notifications empty: %v", err)
+	}
+	if len(calls) != 1 {
+		t.Fatalf("want 1 call, got %d", len(calls))
+	}
+	if calls[0].path != "/api/v1/community/users/3/notifications" {
+		t.Errorf("notifications path: %s", calls[0].path)
+	}
+	if calls[0].query != "" {
+		t.Errorf("unfiltered notifications sent a query: %q", calls[0].query)
+	}
+
+	if _, err := c.Notifications(ctx, 3, "89", 30, true); err != nil {
+		t.Fatalf("notifications filtered: %v", err)
+	}
+	q, _ := url.ParseQuery(calls[1].query)
+	if q.Get("cursor") != "89" || q.Get("limit") != "30" || q.Get("unread_only") != "true" {
+		t.Errorf("filtered notifications lost a param: %v", q)
+	}
+
+	if _, err := c.MarkNotificationsRead(ctx, 3, []int64{40, 41}, false); err != nil {
+		t.Fatalf("mark ids: %v", err)
+	}
+	idsBody := calls[2].body
+	rawIDs, _ := json.Marshal(idsBody["ids"])
+	if string(rawIDs) != "[40,41]" {
+		t.Errorf("mark ids body: %v", idsBody)
+	}
+	if _, ok := idsBody["all"]; ok {
+		t.Errorf("ids mark must not send all: %v", idsBody)
+	}
+
+	if _, err := c.MarkNotificationsRead(ctx, 3, nil, true); err != nil {
+		t.Fatalf("mark all: %v", err)
+	}
+	allBody := calls[3].body
+	if allBody["all"] != true {
+		t.Errorf("all mark body: %v", allBody)
+	}
+	if _, ok := allBody["ids"]; ok {
+		t.Errorf("all mark must not send ids: %v", allBody)
+	}
+
+	if _, err := c.SetAnchorNotification(ctx, 3, AnchorRef{AnchorKind: AnchorSiteResource, AnchorID: "pack-uuid"}, NotifyWatching); err != nil {
+		t.Fatalf("set anchor: %v", err)
+	}
+	anchorBody := calls[4].body
+	if len(anchorBody) != 4 {
+		t.Errorf("set anchor extra keys: %v", anchorBody)
+	}
+	if anchorBody["user_id"] != float64(3) || anchorBody["anchor_kind"] != float64(AnchorSiteResource) ||
+		anchorBody["anchor_id"] != "pack-uuid" || anchorBody["level"] != float64(NotifyWatching) {
+		t.Errorf("set anchor body: %v", anchorBody)
+	}
+
+	before := len(calls)
+	states, err := c.AnchorStates(ctx, 3, nil)
+	if err != nil {
+		t.Fatalf("empty anchor states: %v", err)
+	}
+	if states != nil {
+		t.Errorf("empty anchor states must return nil, got %+v", states)
+	}
+	if len(calls) != before {
+		t.Errorf("AnchorStates with no anchors made a request: %+v", calls[before:])
 	}
 }
 

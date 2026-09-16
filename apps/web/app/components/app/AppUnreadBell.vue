@@ -2,7 +2,7 @@
 const { t } = useI18n()
 const localePath = useLocalePath()
 const user = useAuthUser()
-const { state, refresh, ensure } = useUnreadComments()
+const { state, refresh, ensure } = useNotificationBadge()
 
 onMounted(() => void ensure())
 // Signing in or out changes whose unread this is, and signing out has to empty
@@ -13,11 +13,11 @@ watch(user, () => void refresh())
 <template>
   <NuxtLink
     v-if="user"
-    :to="{ path: localePath('/comments'), query: { tab: 'unread' } }"
-    :aria-label="t('comment.tabUnread')"
+    :to="{ path: localePath('/comments'), query: { tab: 'notifications' } }"
+    :aria-label="t('notification.title')"
     class="text-default-500 hover:text-foreground hidden h-9 w-9 items-center justify-center transition-colors sm:inline-flex"
   >
-    <KunBadge :count="state.total" :max="99" :show="state.total > 0" color="danger">
+    <KunBadge :count="state.unread_count" :max="99" :show="state.unread_count > 0" color="danger">
       <KunIcon name="lucide:bell" class="text-xl" />
     </KunBadge>
   </NuxtLink>

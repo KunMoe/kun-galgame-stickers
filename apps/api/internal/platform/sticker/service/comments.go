@@ -55,9 +55,14 @@ func (s *Service) PackComments(
 		return nil, communityError(err)
 	}
 	// No thread yet is an empty comment section, not a failure -- the reader
-	// still gets a composer, and using it is what creates the thread.
+	// still gets a composer, and using it is what creates the thread. The
+	// viewer's anchor follow is what the section shows until a thread exists.
 	if page.Thread == nil {
-		return &dto.CommentPage{Comments: []dto.Comment{}, Enabled: true}, nil
+		return &dto.CommentPage{
+			Comments: []dto.Comment{},
+			Enabled:  true,
+			Viewer:   s.anchorViewerState(ctx, pack.ID.String(), v),
+		}, nil
 	}
 
 	out := s.commentPage(ctx, *page.Thread, page.Posts, page.NextCursor, v)

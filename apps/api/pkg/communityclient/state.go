@@ -3,7 +3,6 @@ package communityclient
 import (
 	"context"
 	"net/http"
-	"net/url"
 	"strconv"
 )
 
@@ -60,34 +59,4 @@ func (c *Client) ThreadStates(ctx context.Context, userID int, threadIDs []int64
 		return nil, err
 	}
 	return env.Data.States, nil
-}
-
-type UnreadThread struct {
-	Thread Thread      `json:"thread"`
-	State  ThreadState `json:"state"`
-}
-
-// UnreadList is the red-dot lane. Total counts every unread thread the user can
-// reach from this tenant, which is wider than what a single site can render:
-// a catalog-anchored thread is one conversation network-wide.
-type UnreadList struct {
-	Threads    []UnreadThread `json:"threads"`
-	Total      int            `json:"total"`
-	NextCursor string         `json:"next_cursor"`
-}
-
-func (c *Client) Unread(ctx context.Context, userID int, cursor string, limit int) (*UnreadList, error) {
-	q := url.Values{}
-	if cursor != "" {
-		q.Set("cursor", cursor)
-	}
-	if limit > 0 {
-		q.Set("limit", strconv.Itoa(limit))
-	}
-	var env envelope[UnreadList]
-	lane := withQuery("/users/"+strconv.Itoa(userID)+"/unread", q)
-	if err := c.do(ctx, http.MethodGet, lane, nil, &env); err != nil {
-		return nil, err
-	}
-	return &env.Data, nil
 }

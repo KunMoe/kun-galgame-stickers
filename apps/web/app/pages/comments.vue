@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import type { CommentFeedItem } from '~/features/comment/feed'
-import { resolveMultilingual } from '~/features/pack/types'
 
 const { t, locale } = useI18n()
-const localePath = useLocalePath()
 const route = useRoute()
 const router = useRouter()
 const user = useAuthUser()
 
 const query = ref(String(route.query.q ?? ''))
-const active = ref(route.query.tab === 'unread' && user.value ? 'unread' : 'latest')
-
-const { state: unread, refresh: refreshUnread } = useUnreadComments()
+const active = ref(route.query.tab === 'notifications' && user.value ? 'notifications' : 'latest')
 
 const tabs = computed(() => {
   const items = [{ value: 'latest', textValue: t('comment.tabLatest'), icon: 'lucide:messages-square' }]
   if (user.value) {
-    items.push({ value: 'unread', textValue: t('comment.tabUnread'), icon: 'lucide:bell-dot' })
+    items.push({ value: 'notifications', textValue: t('notification.title'), icon: 'lucide:bell' })
   }
   return items
 })
@@ -98,16 +94,12 @@ watch(query, (value) => {
 onScopeDispose(() => clearTimeout(timer))
 
 watch(active, (value) => {
-  router.replace({ query: { ...route.query, tab: value === 'unread' ? 'unread' : undefined } })
+  router.replace({ query: { ...route.query, tab: value === 'notifications' ? 'notifications' : undefined } })
 })
 
 onMounted(() => {
   if (query.value.trim().length >= 2) void runSearch(query.value)
-  void refreshUnread()
 })
-
-const packTitle = (title: Record<string, string | undefined>) =>
-  resolveMultilingual(title, locale.value) || t('pack.untitled')
 
 useKunSeo(() => ({
   title: t('comment.pageTitle'),
@@ -186,45 +178,7 @@ useKunSeo(() => ({
         </KunButton>
       </div>
 
-      <div v-else class="flex flex-col gap-3">
-        <p v-if="!unread.enabled" class="text-default-500 text-sm">
-          {{ t('comment.unavailable') }}
-        </p>
-        <p v-else-if="!unread.packs.length" class="text-default-500 text-sm">
-          {{ t('comment.unreadEmpty') }}
-        </p>
-        <NuxtLink
-          v-for="row in unread.packs"
-          :key="row.thread_id"
-          :to="localePath(`/pack/${row.pack.id}`)"
-          class="border-default-200 hover:border-default-400 flex items-center gap-3 border p-3 transition-colors"
-        >
-          <img
-            v-if="row.pack.cover_thumb_url"
-            :src="row.pack.cover_thumb_url"
-            alt=""
-            width="48"
-            height="48"
-            loading="lazy"
-            class="border-default-200 size-12 shrink-0 border object-cover"
-          >
-          <span
-            v-else
-            class="bg-default-100 text-default-400 flex size-12 shrink-0 items-center justify-center"
-          >
-            <KunIcon name="lucide:image-off" class="text-sm" />
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="text-foreground block truncate text-sm font-medium">
-              {{ packTitle(row.pack.title) }}
-            </span>
-            <span class="text-default-500 block text-xs">
-              {{ t('comment.commentCount', row.posts_count) }}
-            </span>
-          </span>
-          <KunChip size="sm" color="primary" variant="flat">{{ row.unread_count }}</KunChip>
-        </NuxtLink>
-      </div>
+      <NotificationList v-else />
     </template>
   </section>
 </template>
