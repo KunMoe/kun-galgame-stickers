@@ -24,13 +24,15 @@ const (
 	// rather than paged: it exists to be cleared, not browsed, and a reader
 	// with more than a hundred unread packs is served by the number alone.
 	unreadScanLimit = 100
-	// feedScanPages bounds the refill loops below. Every community lane this
-	// file reads reaches wider than this site can render: each carries the
-	// caller's own site plus every catalog-anchored thread on the network, and
-	// the search lane cannot filter by anchor at all. So a page can arrive full
-	// and leave nothing after the mapping back to a pack. Stopping at one page
-	// would answer "nothing here" while still holding a cursor; walking without
-	// a bound would let one quiet query scan the whole corpus.
+	// feedScanPages bounds the refill loops below. A community page can arrive
+	// full and still leave nothing after the mapping back to a published pack,
+	// for a different reason in each lane: search accepts no anchor filter at
+	// all, so a page of it can be entirely other sites' catalog comments;
+	// unread filters on neither kind nor anchor; and the latest feed, which
+	// community does narrow to this site's own pack threads, still drops every
+	// row whose pack has since been unpublished or retired. Stopping at one
+	// page would answer "nothing here" while still holding a cursor; walking
+	// without a bound would let one quiet query scan the whole corpus.
 	feedScanPages = 5
 )
 

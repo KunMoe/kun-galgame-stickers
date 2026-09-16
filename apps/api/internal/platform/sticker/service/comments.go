@@ -106,8 +106,11 @@ func (s *Service) commentPage(
 		postIDs = append(postIDs, post.ID)
 	}
 	authors := s.users.Users(ctx, authorIDs)
-	// community's post projection carries no reaction fields, so the counts
-	// come from this site's mirror -- two queries for the whole page.
+	// The counts come from this site's mirror -- two queries for the whole
+	// page. community's post projection does now carry reaction_count and
+	// viewer_reacted, which is the authority the mirror only approximates, but
+	// reading them means sending viewer_id and decoding fields this client does
+	// not yet have. Until then the mirror is what the wall renders.
 	likeCounts, _ := s.likes.Counts(postIDs)
 	liked, _ := s.likes.LikedSet(v.UID, postIDs)
 

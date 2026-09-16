@@ -14,9 +14,11 @@
 // up with 110,918 empty threads out of 114,070.
 //
 // Auth is S2S Basic with the site's OAuth client credentials, and the tenant is
-// NOT on the wire: community derives it from the calling client's
-// oauth_clients.catalog_site binding, which is what stops one site writing into
-// another's threads. The acting user is different -- community trusts this site
+// NOT on the wire: community derives it from the calling client, preferring
+// oauth_clients.community_site and falling back to oauth_clients.catalog_site.
+// That binding is what stops one site writing into another's threads, and it is
+// also why setting community_site on a client that already has threads strands
+// them: they were filed under the old tenant and nothing moves them. The acting user is different -- community trusts this site
 // to have authenticated them, so every write carries an author_id this site
 // vouches for. That means author_id must never come from the request body a
 // browser sent; it comes from the session.
@@ -326,8 +328,9 @@ const (
 )
 
 // ReactionResult is what a toggle answers with. It reports the new state and
-// the post's context, which the reaction flow has resolved anyway -- there are
-// no reaction counts anywhere in this API, so the count is the caller's to keep.
+// the post's context, which the reaction flow has resolved anyway, but no
+// count: the read faces carry reaction_count, this one does not. So a caller
+// that has just toggled still has to get the new number from somewhere else.
 type ReactionResult struct {
 	Added      bool   `json:"added"`
 	AuthorID   int    `json:"author_id"`
