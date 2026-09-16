@@ -16,7 +16,8 @@
     "light": "白天",
     "dark": "黑夜",
     "system": "跟随系统",
-    "settings": "设置"
+    "settings": "设置",
+    "comments": "评论"
   },
   "discovery": {
     "title": "发现表情包",
@@ -279,6 +280,25 @@
     "reason1": "辱骂或人身攻击",
     "reason2": "与话题无关",
     "reason4": "成人内容未标注",
-    "reason3": "其他"
+    "reason3": "其他",
+    "pageTitle": "评论",
+    "pageSubtitle": "看看大家在各个表情包下都聊了些什么",
+    "tabLatest": "最新",
+    "tabUnread": "未读",
+    "searchPlaceholder": "搜索评论内容…（至少 2 个字）",
+    "searchLabel": "搜索评论",
+    "searching": "搜索中…",
+    "searchCount": "找到 {count} 条评论",
+    "searchEmpty": "没有匹配的评论",
+    "feedEmpty": "还没有人评论过任何表情包",
+    "loadMore": "加载更多",
+    "loading": "加载中…",
+    "unreadEmpty": "没有未读评论",
+    "commentCount": "{count} 条评论",
+    "subscribe": "订阅",
+    "mute": "取消订阅",
+    "subscribed": "已订阅，有新回复会通知你",
+    "muted": "已取消订阅",
+    "unavailable": "评论服务暂时不可用，请稍后再试"
   }
 }

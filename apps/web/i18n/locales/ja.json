@@ -16,7 +16,8 @@
     "light": "ライト",
     "dark": "ダーク",
     "system": "システム",
-    "settings": "設定"
+    "settings": "設定",
+    "comments": "コメント"
   },
   "discovery": {
     "title": "スタンプをさがす",
@@ -279,6 +280,25 @@
     "reason1": "暴言・嫌がらせ",
     "reason2": "話題と無関係",
     "reason4": "アダルト内容の未表示",
-    "reason3": "その他"
+    "reason3": "その他",
+    "pageTitle": "コメント",
+    "pageSubtitle": "各スタンプパックでの会話をまとめて読む",
+    "tabLatest": "最新",
+    "tabUnread": "未読",
+    "searchPlaceholder": "コメントを検索（2文字以上）",
+    "searchLabel": "コメントを検索",
+    "searching": "検索中…",
+    "searchCount": "{count} 件のコメントが見つかりました",
+    "searchEmpty": "一致するコメントはありません",
+    "feedEmpty": "まだどのパックにもコメントがありません",
+    "loadMore": "もっと見る",
+    "loading": "読み込み中…",
+    "unreadEmpty": "未読はありません",
+    "commentCount": "{count} 件のコメント",
+    "subscribe": "購読する",
+    "mute": "購読をやめる",
+    "subscribed": "購読しました。新しい返信をお知らせします",
+    "muted": "購読を解除しました",
+    "unavailable": "コメントサービスに接続できません。しばらくしてからお試しください"
   }
 }

@@ -16,7 +16,8 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System",
-    "settings": "Settings"
+    "settings": "Settings",
+    "comments": "Comments"
   },
   "discovery": {
     "title": "Discover sticker packs",
@@ -279,6 +280,25 @@
     "reason1": "Abuse or harassment",
     "reason2": "Off topic",
     "reason4": "Unlabelled adult content",
-    "reason3": "Something else"
+    "reason3": "Something else",
+    "pageTitle": "Comments",
+    "pageSubtitle": "What people are saying under every sticker pack",
+    "tabLatest": "Latest",
+    "tabUnread": "Unread",
+    "searchPlaceholder": "Search comments (2 characters or more)",
+    "searchLabel": "Search comments",
+    "searching": "Searching…",
+    "searchCount": "no comments found | 1 comment found | {count} comments found",
+    "searchEmpty": "No comments match that.",
+    "feedEmpty": "Nobody has commented on a pack yet.",
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "unreadEmpty": "Nothing unread.",
+    "commentCount": "no comments | 1 comment | {count} comments",
+    "subscribe": "Subscribe",
+    "mute": "Unsubscribe",
+    "subscribed": "Subscribed — you'll hear about new replies.",
+    "muted": "Unsubscribed.",
+    "unavailable": "Comments are unavailable right now. Try again in a moment."
   }
 }

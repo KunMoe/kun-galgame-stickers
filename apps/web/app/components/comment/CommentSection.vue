@@ -95,14 +95,62 @@ const confirmRemove = async () => {
 
 const signIn = () => startOAuthLogin(route.fullPath)
 
+// Everything below is the thread's own state rather than its posts: there is
+// no thread at all until the first comment creates one, so every one of these
+// is inert on a pack nobody has spoken about yet.
+const threadId = computed(() => data.value?.thread_id ?? 0)
+const notifyLevel = ref<NotifyLevel | null>(null)
+watch(data, (page) => { notifyLevel.value = page?.viewer?.notification_level ?? null }, { immediate: true })
+
+const subscribed = computed(() => notifyLevel.value !== null && notifyLevel.value >= NOTIFY.tracking)
+
+const toggleSubscribe = async () => {
+  const muting = subscribed.value
+  const state = await mutate(() =>
+    setCommentNotification(threadId.value, muting ? NOTIFY.muted : NOTIFY.watching)
+  )
+  if (!state) return
+  notifyLevel.value = state.notification_level
+  useKunMessage(t(muting ? 'comment.muted' : 'comment.subscribed'), 'success')
+}
+
+const { clear: clearUnread } = useUnreadComments()
+
+// The receipt is a write, so it waits for the client and only fires when there
+// is something new to report. A failure costs the reader a badge that clears
+// on their next visit, which is not worth a toast over their comments.
+onMounted(() => {
+  const page = data.value
+  if (!user.value || !page?.thread_id || !page.highest_post_number) return
+  if ((page.viewer?.last_read_post_number ?? 0) >= page.highest_post_number) return
+  markCommentsRead(page.thread_id, page.highest_post_number)
+    .then(() => clearUnread(page.thread_id))
+    .catch(() => {})
+})
 </script>
 
 <template>
   <section v-if="enabled" class="flex flex-col gap-4">
-    <h2 class="text-lg font-medium">
-      {{ t('comment.title') }}
-      <span v-if="data?.total" class="text-default-500 text-sm font-normal">{{ data.total }}</span>
-    </h2>
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-lg font-medium">
+        {{ t('comment.title') }}
+        <span v-if="data?.total" class="text-default-500 text-sm font-normal">{{ data.total }}</span>
+      </h2>
+      <!-- Commenting already subscribes you upstream, so this button exists for
+           the two deliberate choices: muting a wall you are in, and following
+           one you have not spoken in. -->
+      <KunButton
+        v-if="user && threadId"
+        size="sm"
+        variant="light"
+        class-name="gap-1.5"
+        :aria-label="t(subscribed ? 'comment.mute' : 'comment.subscribe')"
+        @click="toggleSubscribe"
+      >
+        <KunIcon :name="subscribed ? 'lucide:bell-off' : 'lucide:bell'" class="text-base" />
+        <span class="hidden sm:inline">{{ t(subscribed ? 'comment.mute' : 'comment.subscribe') }}</span>
+      </KunButton>
+    </div>
 
     <div v-if="user" ref="composer" class="flex flex-col gap-2">
       <div

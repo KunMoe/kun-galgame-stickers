@@ -2,35 +2,56 @@ package communityclient
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
-// The three lanes do not share a payload shape, and getting it wrong fails
-// silently: an unwrapped decode yields a zero-valued post that still passes a
+// The lanes do not share a payload shape, and getting it wrong fails silently:
+// an unwrapped decode yields a zero-valued post that still passes a
 // status==visible check, so a reply looks accepted and comes back blank. These
 // bodies are copied from the live service.
 func TestResponseShapesPerLane(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
-		case r.URL.Path == "/api/v1/community/comments/resolve":
-			// resolve is the one lane whose data IS the thread-with-posts.
+		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/community/comments":
+			// The read lane wraps the thread in a page and may omit it entirely.
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
-				"thread":{"id":57182,"anchor_kind":2,"anchor_id":"pack-uuid","posts_count":3},
+				"thread":{"id":57182,"kind":1,"anchor_kind":2,"anchor_id":"pack-uuid",
+				"posts_count":3,"highest_post_number":3},
 				"posts":[{"id":11048,"post_number":1,"author_id":3,"content_html":"<p>hi</p>","status":0}],
 				"next_cursor":"1"}}`))
-		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/community/threads/57182/posts":
-			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"post":{
-				"id":11049,"thread_id":57182,"post_number":2,"author_id":3,
-				"content_raw":"hey","content_html":"<p>hey</p>","status":0}}}`))
-		case r.Method == http.MethodGet && r.URL.Path == "/api/v1/community/threads/57182/posts":
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/community/comments":
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
-				"posts":[{"id":11050,"post_number":3,"author_id":4,"content_html":"<p>p3</p>","status":0}],
-				"next_cursor":"3"}}`))
+				"thread":{"id":57182,"posts_count":4,"highest_post_number":4},
+				"post":{"id":11049,"thread_id":57182,"post_number":4,"author_id":3,
+				"content_raw":"hey","content_html":"<p>hey</p>","status":0}}}`))
 		case r.Method == http.MethodPatch:
 			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"post":{"id":11049,"content_html":"<p>edited</p>","status":0}}}`))
+		case r.URL.Path == "/api/v1/community/threads/57182/read":
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{
+				"thread_id":57182,"user_id":3,"last_read_post_number":4,
+				"highest_post_number":4,"unread_count":0,"notification_level":3}}`))
+		case r.URL.Path == "/api/v1/community/threads/states":
+			// data is {"states": …}, not the array itself.
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"states":[
+				{"thread_id":57182,"user_id":3,"last_read_post_number":2,"unread_count":2,"notification_level":3}]}}`))
+		case r.URL.Path == "/api/v1/community/users/3/unread":
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"total":1,"threads":[
+				{"thread":{"id":57182,"anchor_kind":2,"anchor_id":"pack-uuid","posts_count":4},
+				 "state":{"thread_id":57182,"unread_count":2}}]}}`))
+		case r.URL.Path == "/api/v1/community/search/posts",
+			r.URL.Path == "/api/v1/community/posts":
+			// Both feed lanes nest the post under its thread context.
+			_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"posts":[
+				{"post":{"id":11050,"post_number":2,"author_id":4,"content_html":"<p>p2</p>","status":0},
+				 "thread":{"thread_id":57182,"anchor_kind":2,"anchor_id":"pack-uuid"}}],
+				"next_cursor":"opaque"}}`))
 		default:
 			http.NotFound(w, r)
 		}
@@ -43,28 +64,25 @@ func TestResponseShapesPerLane(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	thread, err := c.Resolve(ctx, AnchorSiteResource, "pack-uuid", 0)
+	page, err := c.Comments(ctx, AnchorSiteResource, "pack-uuid", "", 30)
 	if err != nil {
-		t.Fatalf("resolve: %v", err)
+		t.Fatalf("comments: %v", err)
 	}
-	if thread.Thread.ID != 57182 || len(thread.Posts) != 1 || thread.Posts[0].ContentHTML != "<p>hi</p>" {
-		t.Errorf("resolve decoded wrong: %+v", thread)
+	if page.Thread == nil || page.Thread.ID != 57182 || page.Thread.HighestPostNumber != 3 {
+		t.Errorf("comments decoded the thread wrong: %+v", page.Thread)
+	}
+	if len(page.Posts) != 1 || page.Posts[0].ContentHTML != "<p>hi</p>" {
+		t.Errorf("comments decoded posts wrong: %+v", page.Posts)
 	}
 
-	post, err := c.Reply(ctx, 57182, 3, "hey", 0)
+	written, err := c.Comment(ctx, CommentParams{
+		AnchorKind: AnchorSiteResource, AnchorID: "pack-uuid", AuthorID: 3, Body: "hey",
+	})
 	if err != nil {
-		t.Fatalf("reply: %v", err)
+		t.Fatalf("comment: %v", err)
 	}
-	if post.ID != 11049 || post.ContentHTML != "<p>hey</p>" {
-		t.Errorf("reply decoded wrong (data is {\"post\": …}): %+v", post)
-	}
-
-	page, err := c.Posts(ctx, 57182, "2", 30)
-	if err != nil {
-		t.Fatalf("posts: %v", err)
-	}
-	if len(page.Posts) != 1 || page.Posts[0].ID != 11050 || page.NextCursor != "3" {
-		t.Errorf("posts decoded wrong (data is {\"posts\": …}): %+v", page)
+	if written.Post.ID != 11049 || written.Thread.ID != 57182 {
+		t.Errorf("comment decoded wrong (data is {thread, post}): %+v", written)
 	}
 
 	edited, err := c.Edit(ctx, 11049, 3, "edited")
@@ -73,6 +91,152 @@ func TestResponseShapesPerLane(t *testing.T) {
 	}
 	if edited.ContentHTML != "<p>edited</p>" {
 		t.Errorf("edit decoded wrong: %+v", edited)
+	}
+
+	state, err := c.MarkRead(ctx, 57182, 3, 4)
+	if err != nil {
+		t.Fatalf("mark read: %v", err)
+	}
+	if state.LastReadPostNumber != 4 || state.NotificationLevel != NotifyWatching {
+		t.Errorf("read receipt decoded wrong: %+v", state)
+	}
+
+	states, err := c.ThreadStates(ctx, 3, []int64{57182})
+	if err != nil {
+		t.Fatalf("thread states: %v", err)
+	}
+	if len(states) != 1 || states[0].UnreadCount != 2 {
+		t.Errorf("states decoded wrong (data is {\"states\": …}): %+v", states)
+	}
+
+	unread, err := c.Unread(ctx, 3, "", 100)
+	if err != nil {
+		t.Fatalf("unread: %v", err)
+	}
+	if unread.Total != 1 || len(unread.Threads) != 1 || unread.Threads[0].Thread.AnchorID != "pack-uuid" {
+		t.Errorf("unread decoded wrong: %+v", unread)
+	}
+
+	for name, feed := range map[string]func() (*PostFeed, error){
+		"search": func() (*PostFeed, error) { return c.SearchPosts(ctx, "p2", KindComments, "", 20) },
+		"latest": func() (*PostFeed, error) {
+			return c.LatestPosts(ctx, FeedParams{Kind: KindComments, AnchorKind: AnchorSiteResource, Limit: 20})
+		},
+	} {
+		got, err := feed()
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if len(got.Posts) != 1 || got.Posts[0].Post.ID != 11050 || got.Posts[0].Thread.AnchorID != "pack-uuid" {
+			t.Errorf("%s decoded wrong (data is {posts:[{post, thread}]}): %+v", name, got.Posts)
+		}
+		if got.NextCursor != "opaque" {
+			t.Errorf("%s dropped the cursor: %q", name, got.NextCursor)
+		}
+	}
+}
+
+// A pack nobody has commented on has no thread, and the read lane says so
+// rather than inventing one. Decoding that as a zero-valued thread would make
+// the site report thread 0 and page against it forever.
+func TestCommentsOnAnUntouchedAnchorHasNoThread(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"posts":[]}}`))
+	}))
+	defer srv.Close()
+
+	page, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
+		Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30)
+	if err != nil {
+		t.Fatalf("comments: %v", err)
+	}
+	if page.Thread != nil {
+		t.Errorf("an anchor with no comments must decode to a nil thread, got %+v", page.Thread)
+	}
+	if len(page.Posts) != 0 {
+		t.Errorf("want no posts, got %d", len(page.Posts))
+	}
+}
+
+// kind 0 is topic and anchor_kind 0 is board, so a filter left off the wire is
+// read upstream as a different filter rather than as no filter. Both feed
+// lanes must write them out every time.
+func TestFeedFiltersAreAlwaysOnTheWire(t *testing.T) {
+	var seen url.Values
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = r.URL.Query()
+		_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"posts":[]}}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"})
+	if _, err := c.LatestPosts(context.Background(), FeedParams{
+		Kind: KindTopic, AnchorKind: AnchorBoard, Limit: 20,
+	}); err != nil {
+		t.Fatalf("latest: %v", err)
+	}
+	if seen.Get("kind") != "0" || seen.Get("anchor_kind") != "0" {
+		t.Errorf("zero-valued filters dropped: %v", seen)
+	}
+
+	// The search lane has no anchor_kind upstream, so kind is the only filter
+	// it gets. Dropping it would search every kind of thread on the network.
+	if _, err := c.SearchPosts(context.Background(), "q", KindTopic, "", 20); err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if seen.Get("kind") != "0" {
+		t.Errorf("search dropped kind=0: %v", seen)
+	}
+}
+
+// community answers errors with a non-2xx status today, but the envelope
+// carries its own code and the client's own doc comment says that code is the
+// verdict. If the two ever disagree, a 200 whose code is non-zero must not be
+// decoded into a zero-valued page and handed back as an empty answer.
+func TestNonZeroCodeIsAFailureEvenOnTwoHundred(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"code":5001,"message":"thread is locked","data":null}`))
+	}))
+	defer srv.Close()
+
+	_, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
+		Comments(context.Background(), AnchorSiteResource, "pack-uuid", "", 30)
+	if err == nil {
+		t.Fatal("a non-zero code on a 200 must not read as success")
+	}
+	if !errors.Is(err, ErrUpstream) {
+		t.Errorf("got %v, want an ErrUpstream", err)
+	}
+}
+
+// author_id is this site's assertion of who is speaking, and content_rating is
+// stamped on a thread that may not exist yet. A write that omits either is
+// rejected upstream, which is a 422 the reader sees as "comment failed".
+func TestCommentCarriesTheAnchorAndTheAuthor(t *testing.T) {
+	var body map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		_, _ = w.Write([]byte(`{"code":0,"message":"成功","data":{"thread":{"id":1},"post":{"id":2,"status":0}}}`))
+	}))
+	defer srv.Close()
+
+	_, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
+		Comment(context.Background(), CommentParams{
+			AnchorKind: AnchorSiteResource, AnchorID: "pack-uuid",
+			ContentRating: 0, AuthorID: 42, Body: "hi",
+		})
+	if err != nil {
+		t.Fatalf("comment: %v", err)
+	}
+	for _, key := range []string{"anchor_kind", "anchor_id", "content_rating", "author_id", "body"} {
+		if _, ok := body[key]; !ok {
+			t.Errorf("%s missing from the comment body: %v", key, body)
+		}
+	}
+	if _, ok := body["reply_to_post_id"]; ok {
+		t.Error("a top-level comment must not claim to answer post 0")
 	}
 }
 
@@ -94,7 +258,7 @@ func TestForbiddenAndRateLimitAreDistinct(t *testing.T) {
 			_, _ = w.Write([]byte(`{"code":1,"message":"nope"}`))
 		}))
 		_, err := New(Config{BaseURL: srv.URL, ClientID: "id", ClientSecret: "s"}).
-			Resolve(context.Background(), AnchorSiteResource, "x", 0)
+			Comments(context.Background(), AnchorSiteResource, "x", "", 30)
 		if err != tc.want {
 			t.Errorf("status %d gave %v, want %v", tc.status, err, tc.want)
 		}
@@ -107,7 +271,7 @@ func TestUnconfiguredClientRefusesRatherThanCallingNowhere(t *testing.T) {
 	if c.Configured() {
 		t.Fatal("an empty config must not report configured")
 	}
-	if _, err := c.Resolve(context.Background(), AnchorSiteResource, "x", 0); err != ErrNotConfigured {
+	if _, err := c.Comments(context.Background(), AnchorSiteResource, "x", "", 30); err != ErrNotConfigured {
 		t.Errorf("got %v, want ErrNotConfigured", err)
 	}
 }

@@ -10,6 +10,7 @@ const navOpen = ref(false)
 const navItems = computed(() => {
   const items = [
     { to: localePath('/'), label: t('header.discover') },
+    { to: localePath('/comments'), label: t('header.comments') },
     { to: localePath('/about'), label: t('header.about') }
   ]
   if (user.value) {
@@ -88,6 +89,7 @@ const onLanguage = async (item: { key: string }) => {
       <AppQuickSearch class-name="ml-auto" />
 
       <div class="flex items-center gap-1">
+        <AppUnreadBell />
         <KunDropdown :items="themeItems" @select="onTheme">
           <template #trigger>
             <span

@@ -17,6 +17,7 @@ watch(() => route.fullPath, close)
 const navItems = computed(() => {
   const items = [
     { to: localePath('/'), label: t('header.discover'), icon: 'lucide:compass' },
+    { to: localePath('/comments'), label: t('header.comments'), icon: 'lucide:messages-square' },
     { to: localePath('/about'), label: t('header.about'), icon: 'lucide:info' }
   ]
   if (user.value) {

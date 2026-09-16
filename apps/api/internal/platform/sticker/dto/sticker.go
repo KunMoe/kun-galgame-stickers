@@ -166,13 +166,29 @@ type Comment struct {
 }
 
 type CommentPage struct {
+	// ThreadID is 0 until the first comment creates the thread. A pack nobody
+	// has spoken about has a comment section and no thread behind it.
 	ThreadID   int64     `json:"thread_id"`
 	Comments   []Comment `json:"comments"`
 	Total      int       `json:"total"`
 	NextCursor string    `json:"next_cursor,omitempty"`
+	// HighestPostNumber is what a read receipt reports having reached. It
+	// counts tombstones, so it is not len(Comments).
+	HighestPostNumber int `json:"highest_post_number"`
+	// Viewer is the reader's own state on this thread, and is absent for an
+	// anonymous reader or one who has never touched it.
+	Viewer *CommentViewerState `json:"viewer,omitempty"`
 	// Enabled is false when the community service is not configured, which is
 	// how a pack page knows to leave the section out rather than show an error.
 	Enabled bool `json:"enabled"`
+}
+
+// CommentViewerState mirrors community's sparse (thread, user) row: how far
+// this reader has read and whether they are subscribed.
+type CommentViewerState struct {
+	LastReadPostNumber int `json:"last_read_post_number"`
+	UnreadCount        int `json:"unread_count"`
+	NotificationLevel  int `json:"notification_level"`
 }
 
 type CommentRequest struct {
@@ -188,6 +204,60 @@ type CommentFlagRequest struct {
 type CommentLikeResult struct {
 	Liked     bool `json:"liked"`
 	LikeCount int  `json:"like_count"`
+}
+
+type CommentReadRequest struct {
+	PostNumber int `json:"post_number"`
+}
+
+type CommentNotificationRequest struct {
+	Level int `json:"level"`
+}
+
+// CommentPackRef is the pack a comment was left on, as much of it as a list
+// row needs. The full pack is one click away and costs a query per row here.
+type CommentPackRef struct {
+	ID            string           `json:"id"`
+	Title         MultilingualText `json:"title"`
+	CoverThumbURL string           `json:"cover_thumb_url,omitempty"`
+}
+
+// CommentFeedItem is a comment seen from outside its pack -- enough to read the
+// line and click through, without the actions that only mean something in
+// place. Every feed on this site (latest, search) is made of these.
+type CommentFeedItem struct {
+	ID          int64          `json:"id"`
+	PostNumber  int            `json:"post_number"`
+	ContentHTML string         `json:"content_html"`
+	CreatedAt   string         `json:"created_at"`
+	Author      Author         `json:"author"`
+	Pack        CommentPackRef `json:"pack"`
+}
+
+type CommentFeed struct {
+	Items      []CommentFeedItem `json:"items"`
+	NextCursor string            `json:"next_cursor,omitempty"`
+	Enabled    bool              `json:"enabled"`
+}
+
+// UnreadPack is one pack whose comment wall has moved on since the reader last
+// looked at it.
+type UnreadPack struct {
+	ThreadID     int64          `json:"thread_id"`
+	Pack         CommentPackRef `json:"pack"`
+	UnreadCount  int            `json:"unread_count"`
+	PostsCount   int            `json:"posts_count"`
+	LastPostedAt string         `json:"last_posted_at,omitempty"`
+}
+
+type UnreadComments struct {
+	Packs []UnreadPack `json:"packs"`
+	// Total is the red dot. It counts what this site can show, not what
+	// community reports: a user reachable from several NextMoe sites carries
+	// unread threads that have no page here. The list is capped rather than
+	// paged -- an unread badge nobody can page through is the whole point.
+	Total   int  `json:"total"`
+	Enabled bool `json:"enabled"`
 }
 
 // AvatarPool is the default-avatar manifest served to other NextMoe sites.

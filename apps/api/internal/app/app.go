@@ -178,6 +178,20 @@ func New(cfg *config.Config) *App {
 	api.Post("/comments/:commentId/like", requireAuth, writeLimit, h.ToggleCommentLike)
 	api.Post("/comments/:commentId/report", requireAuth, writeLimit, h.FlagComment)
 
+	// Site-wide comment reads. They are not cacheable: the feed changes with
+	// every comment anywhere, and the search lane is a round trip to community.
+	api.Get("/comments/latest", readLimit, h.LatestComments)
+	api.Get("/comments/search", readLimit, h.SearchComments)
+
+	// Unread and subscription. A read receipt is a write on purpose -- a GET
+	// that marks a thread read cannot be prefetched or retried safely -- so the
+	// two receipts sit behind the write limiter. The badge itself is a read,
+	// but a costly one: the header asks for it on every page, and each ask is
+	// an upstream page walk.
+	api.Get("/me/comments/unread", requireAuth, readLimit, h.UnreadComments)
+	api.Post("/comments/threads/:threadId/read", requireAuth, writeLimit, h.MarkCommentsRead)
+	api.Post("/comments/threads/:threadId/notification", requireAuth, writeLimit, h.SetCommentNotification)
+
 	// The catalog pickers sit behind auth: the application key must never
 	// reach a browser, and only an author composing a pack needs them. They
 	// carry the upload limiter because each call is an upstream request.

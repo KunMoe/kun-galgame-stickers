@@ -3,8 +3,15 @@
 // community is the platform's discussion primitive: one unit, a thread, whose
 // anchor decides its shape. A sticker pack's comment section is the
 // "entity-resource comments" shape -- anchor kind site_resource, anchor id the
-// pack's uuid -- and `comments/resolve` gets-or-creates that thread, so this
+// pack's uuid -- and both comment lanes are addressed by that anchor, so this
 // site never stores a thread id of its own.
+//
+// A comments thread is born with its first comment. `GET /comments` reads and
+// reports an anchor nobody has spoken about as exactly that (no thread, no
+// posts); `POST /comments` writes and creates the thread in the same
+// transaction as the comment. The deprecated `comments/resolve` did both at
+// once, so rendering a pack page minted a thread -- which is how kungal ended
+// up with 110,918 empty threads out of 114,070.
 //
 // Auth is S2S Basic with the site's OAuth client credentials, and the tenant is
 // NOT on the wire: community derives it from the calling client's
@@ -51,12 +58,33 @@ const (
 	AnchorCatalogPerson = 4
 )
 
+// Thread kinds. A comment wall is a thread of kind comments; the other two
+// shapes belong to sites that host a forum.
+const (
+	KindTopic    = 0
+	KindComments = 1
+	KindFeedback = 2
+)
+
+// AnyKind is the wildcard the filtering read lanes take for kind and
+// anchor_kind. Zero is board/topic, a real value, so "no filter" needs its own.
+const AnyKind = -1
+
 // Post statuses. Anything but visible is either awaiting review or gone, and
 // this site shows neither.
 const (
 	StatusVisible = 0
 	StatusHeld    = 1
 	StatusDeleted = 2
+)
+
+// Notification levels. Posting subscribes the author at watching; community
+// never downgrades a level a user set for themselves.
+const (
+	NotifyMuted    = 0
+	NotifyNormal   = 1
+	NotifyTracking = 2
+	NotifyWatching = 3
 )
 
 type Config struct {
@@ -139,6 +167,13 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		_ = json.Unmarshal(raw, &env)
 		return fmt.Errorf("%w: %d %s", ErrUpstream, resp.StatusCode, env.Message)
 	}
+	// The envelope carries its own verdict, and the doc above says so. Reading
+	// the status alone would take a 200 that reports code 1 for a success and
+	// hand the caller a zero-valued page.
+	var env envelope[json.RawMessage]
+	if json.Unmarshal(raw, &env) == nil && env.Code != 0 {
+		return fmt.Errorf("%w: %s", ErrUpstream, env.Message)
+	}
 	if out == nil {
 		return nil
 	}
@@ -148,12 +183,26 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	return nil
 }
 
+// withQuery joins a lane with its query. Filters whose zero value is a real
+// value -- kind 0 is topic, anchor_kind 0 is board -- are always written, so a
+// caller that means "topics" is never read as "no filter".
+func withQuery(lane string, q url.Values) string {
+	if encoded := q.Encode(); encoded != "" {
+		return lane + "?" + encoded
+	}
+	return lane
+}
+
 type Thread struct {
 	ID                int64  `json:"id"`
+	Kind              int    `json:"kind"`
+	Title             string `json:"title"`
 	AnchorKind        int    `json:"anchor_kind"`
 	AnchorID          string `json:"anchor_id"`
 	PostsCount        int    `json:"posts_count"`
 	ParticipantsCount int    `json:"participants_count"`
+	HighestPostNumber int    `json:"highest_post_number"`
+	LastPostedAt      string `json:"last_posted_at"`
 	Status            int    `json:"status"`
 }
 
@@ -175,63 +224,85 @@ type Post struct {
 	EditedByModerator bool   `json:"edited_by_moderator"`
 }
 
-type ThreadWithPosts struct {
-	Thread     Thread `json:"thread"`
-	Posts      []Post `json:"posts"`
-	NextCursor string `json:"next_cursor"`
+// CommentsPage is the read lane's answer. Thread is nil until somebody
+// comments -- the anchor exists, the conversation does not -- and Posts is
+// empty alongside it. A caller that treats a nil thread as an error shows a
+// broken comment section on every pack nobody has spoken about yet.
+type CommentsPage struct {
+	Thread     *Thread `json:"thread"`
+	Posts      []Post  `json:"posts"`
+	NextCursor string  `json:"next_cursor"`
 }
 
-// Resolve gets-or-creates the comments thread for an anchor and returns its
-// first page. It is idempotent per anchor, so a reader arriving on a pack that
-// nobody has commented on costs one call and creates one empty thread.
-func (c *Client) Resolve(ctx context.Context, anchorKind int, anchorID string, contentRating int) (*ThreadWithPosts, error) {
-	var env envelope[ThreadWithPosts]
-	body := map[string]any{
-		"anchor_kind":    anchorKind,
-		"anchor_id":      anchorID,
-		"content_rating": contentRating,
-	}
-	if err := c.do(ctx, http.MethodPost, "/comments/resolve", body, &env); err != nil {
-		return nil, err
-	}
-	return &env.Data, nil
-}
-
-// PostList is what the posts lane returns: a page of posts, without the
-// thread. resolve is the only lane whose data is a ThreadWithPosts.
-type PostList struct {
-	Posts      []Post `json:"posts"`
-	NextCursor string `json:"next_cursor"`
-}
-
-func (c *Client) Posts(ctx context.Context, threadID int64, after string, limit int) (*PostList, error) {
-	v := url.Values{}
+// Comments reads an anchor's comment wall. It writes nothing: no thread is
+// created by rendering a page. `after` is a post_number, and the empty string
+// starts from the top.
+func (c *Client) Comments(
+	ctx context.Context,
+	anchorKind int,
+	anchorID, after string,
+	limit int,
+) (*CommentsPage, error) {
+	q := url.Values{}
+	q.Set("anchor_kind", strconv.Itoa(anchorKind))
+	q.Set("anchor_id", anchorID)
 	if after != "" {
-		v.Set("after", after)
+		q.Set("after", after)
 	}
 	if limit > 0 {
-		v.Set("limit", strconv.Itoa(limit))
+		q.Set("limit", strconv.Itoa(limit))
 	}
-	path := "/threads/" + strconv.FormatInt(threadID, 10) + "/posts"
-	if q := v.Encode(); q != "" {
-		path += "?" + q
-	}
-	var env envelope[PostList]
-	if err := c.do(ctx, http.MethodGet, path, nil, &env); err != nil {
+	var env envelope[CommentsPage]
+	if err := c.do(ctx, http.MethodGet, withQuery("/comments", q), nil, &env); err != nil {
 		return nil, err
 	}
 	return &env.Data, nil
 }
 
-func (c *Client) Reply(ctx context.Context, threadID int64, authorID int, body string, replyTo int64) (*Post, error) {
-	payload := map[string]any{"author_id": authorID, "body": body}
-	if replyTo > 0 {
-		payload["reply_to_post_id"] = replyTo
+type CommentParams struct {
+	AnchorKind int
+	AnchorID   string
+	// ContentRating is stamped on the thread, so it only takes effect when this
+	// comment is the one that creates it.
+	ContentRating int
+	AuthorID      int
+	Body          string
+	ReplyToPostID int64
+}
+
+// CommentResult carries the thread as it stands after the write -- newly
+// created on the first comment, and already there on every one after it.
+type CommentResult struct {
+	Thread Thread `json:"thread"`
+	Post   Post   `json:"post"`
+}
+
+// Comment writes to an anchor's comment wall, creating the thread with the
+// first comment. Two first comments racing do not make two conversations: the
+// loser appends to the winner's thread.
+func (c *Client) Comment(ctx context.Context, p CommentParams) (*CommentResult, error) {
+	payload := map[string]any{
+		"anchor_kind":    p.AnchorKind,
+		"anchor_id":      p.AnchorID,
+		"content_rating": p.ContentRating,
+		"author_id":      p.AuthorID,
+		"body":           p.Body,
 	}
-	// The write lanes wrap the post: data is {"post": …}, not the post itself.
+	if p.ReplyToPostID > 0 {
+		payload["reply_to_post_id"] = p.ReplyToPostID
+	}
+	var env envelope[CommentResult]
+	if err := c.do(ctx, http.MethodPost, "/comments", payload, &env); err != nil {
+		return nil, err
+	}
+	return &env.Data, nil
+}
+
+func (c *Client) Edit(ctx context.Context, postID int64, authorID int, body string) (*Post, error) {
+	// The post write lanes wrap their result: data is {"post": …}.
 	var env envelope[postWrapper]
-	path := "/threads/" + strconv.FormatInt(threadID, 10) + "/posts"
-	if err := c.do(ctx, http.MethodPost, path, payload, &env); err != nil {
+	payload := map[string]any{"author_id": authorID, "body": body}
+	if err := c.do(ctx, http.MethodPatch, "/posts/"+strconv.FormatInt(postID, 10), payload, &env); err != nil {
 		return nil, err
 	}
 	return &env.Data.Post, nil
@@ -239,15 +310,6 @@ func (c *Client) Reply(ctx context.Context, threadID int64, authorID int, body s
 
 type postWrapper struct {
 	Post Post `json:"post"`
-}
-
-func (c *Client) Edit(ctx context.Context, postID int64, authorID int, body string) (*Post, error) {
-	var env envelope[postWrapper]
-	payload := map[string]any{"author_id": authorID, "body": body}
-	if err := c.do(ctx, http.MethodPatch, "/posts/"+strconv.FormatInt(postID, 10), payload, &env); err != nil {
-		return nil, err
-	}
-	return &env.Data.Post, nil
 }
 
 // Reaction kinds and flag reasons, from the service's closed vocabularies.
@@ -277,8 +339,7 @@ type ReactionResult struct {
 func (c *Client) ToggleReaction(ctx context.Context, postID int64, userID int, kind int) (*ReactionResult, error) {
 	var env envelope[ReactionResult]
 	payload := map[string]any{"user_id": userID, "kind": kind}
-	path := "/posts/" + strconv.FormatInt(postID, 10) + "/reaction"
-	if err := c.do(ctx, http.MethodPost, path, payload, &env); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/posts/"+strconv.FormatInt(postID, 10)+"/reaction", payload, &env); err != nil {
 		return nil, err
 	}
 	return &env.Data, nil
@@ -297,6 +358,5 @@ func (c *Client) Flag(ctx context.Context, postID int64, flaggerID, reason int, 
 // Delete tombstones a post. author_id is a query param upstream: the request
 // stays body-free, matching the artifact service's DELETE.
 func (c *Client) Delete(ctx context.Context, postID int64, authorID int) error {
-	path := fmt.Sprintf("/posts/%d?author_id=%d", postID, authorID)
-	return c.do(ctx, http.MethodDelete, path, nil, nil)
+	return c.do(ctx, http.MethodDelete, fmt.Sprintf("/posts/%d?author_id=%d", postID, authorID), nil, nil)
 }

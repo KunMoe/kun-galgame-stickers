@@ -35,11 +35,30 @@ export interface LikeResult {
 export const FLAG_REASONS = [0, 1, 2, 4, 3] as const
 export type FlagReason = (typeof FLAG_REASONS)[number]
 
+/**
+ * community's notification levels. Commenting subscribes you at `watching`,
+ * and community never downgrades a level you set yourself -- muting a thread
+ * and then replying to it leaves you muted.
+ */
+export const NOTIFY = { muted: 0, normal: 1, tracking: 2, watching: 3 } as const
+export type NotifyLevel = (typeof NOTIFY)[keyof typeof NOTIFY]
+
+/** The reader's own row on a thread. Absent until they touch it. */
+export interface CommentViewerState {
+  last_read_post_number: number
+  unread_count: number
+  notification_level: NotifyLevel
+}
+
 export interface CommentPage {
+  /** 0 until the first comment creates the thread. */
   thread_id: number
   comments: Comment[]
   total: number
   next_cursor?: string
+  /** What a read receipt reports having reached; counts tombstones. */
+  highest_post_number: number
+  viewer?: CommentViewerState
   /** False when the community service is not configured for this deployment. */
   enabled: boolean
 }
@@ -66,6 +85,26 @@ export const toggleCommentLike = (commentId: number): Promise<LikeResult> =>
 
 export const reportComment = (commentId: number, reason: FlagReason, note: string): Promise<unknown> =>
   kunFetch(`/comments/${commentId}/report`, { method: 'POST', body: { reason, note } })
+
+/**
+ * Tells community how far this reader got. Reading is never inferred from a
+ * GET upstream -- a read face with a write side effect cannot be cached or
+ * prefetched safely -- so the page says so explicitly.
+ */
+export const markCommentsRead = (threadId: number, postNumber: number): Promise<CommentViewerState> =>
+  kunFetch<CommentViewerState>(`/comments/threads/${threadId}/read`, {
+    method: 'POST',
+    body: { post_number: postNumber }
+  })
+
+export const setCommentNotification = (
+  threadId: number,
+  level: NotifyLevel
+): Promise<CommentViewerState> =>
+  kunFetch<CommentViewerState>(`/comments/threads/${threadId}/notification`, {
+    method: 'POST',
+    body: { level }
+  })
 
 /**
  * Groups a flat page into one level of nesting. community threads arbitrarily
