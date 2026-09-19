@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 
 	"kun-galgame-sticker-api/internal/platform/sticker/dto"
 	"kun-galgame-sticker-api/internal/platform/sticker/model"
@@ -20,18 +21,17 @@ import (
 
 // FaceListPacks pages published packs. It is the site's own list query with
 // the viewer removed, so the two can never drift on what "published" means.
-func (s *Service) FaceListPacks(ctx context.Context, q dto.ListQuery) (*dto.FaceList[dto.FacePack], *errors.AppError) {
-	page, appErr := s.List(ctx, q, Viewer{})
+func (s *Service) FaceListPacks(ctx context.Context, q dto.ListQuery, page dto.FacePage) (*dto.FaceList[dto.FacePack], *errors.AppError) {
+	q.Offset, q.Limit = page.Offset, page.Limit
+	res, appErr := s.List(ctx, q, Viewer{})
 	if appErr != nil {
 		return nil, appErr
 	}
-	items := make([]dto.FacePack, 0, len(page.Packs))
-	for _, pack := range page.Packs {
+	items := make([]dto.FacePack, 0, len(res.Packs))
+	for _, pack := range res.Packs {
 		items = append(items, facePack(pack))
 	}
-	return &dto.FaceList[dto.FacePack]{
-		Object: "list", Items: items, Total: page.Total, Page: q.Page, Limit: q.Limit,
-	}, nil
+	return dto.NewFaceList(items, page, res.Total), nil
 }
 
 // FaceGetPack is the site's detail query minus two things it does for a
@@ -92,8 +92,10 @@ func (s *Service) FaceGetSticker(id uuid.UUID) (*dto.FaceSticker, *errors.AppErr
 // FaceCharacters is one of the two reasons this face exists: it enumerates the
 // catalog character identities this site holds material for, so a caller can
 // join their own catalog data against it without guessing.
-func (s *Service) FaceCharacters(p repository.IndexParams) (*dto.FaceList[dto.FaceCharacter], *errors.AppError) {
-	rows, total, err := s.stickers.CharacterIndex(p)
+func (s *Service) FaceCharacters(search string, work int64, page dto.FacePage) (*dto.FaceList[dto.FaceCharacter], *errors.AppError) {
+	rows, total, err := s.stickers.CharacterIndex(repository.IndexParams{
+		Search: search, Work: work, Offset: page.Offset, Limit: page.Limit,
+	})
 	if err != nil {
 		return nil, errors.ErrInternal("failed to list characters")
 	}
@@ -101,10 +103,7 @@ func (s *Service) FaceCharacters(p repository.IndexParams) (*dto.FaceList[dto.Fa
 	for _, row := range rows {
 		items = append(items, characterRowDTO(row))
 	}
-	return &dto.FaceList[dto.FaceCharacter]{
-		Object: "list", Items: items, Total: total,
-		Page: pageOf(p), Limit: p.Limit,
-	}, nil
+	return dto.NewFaceList(items, page, total), nil
 }
 
 func (s *Service) FaceCharacter(characterID int64) (*dto.FaceCharacter, *errors.AppError) {
@@ -119,8 +118,8 @@ func (s *Service) FaceCharacter(characterID int64) (*dto.FaceCharacter, *errors.
 	return &out, nil
 }
 
-func (s *Service) FaceCharacterStickers(characterID int64, offset, limit int) (*dto.FaceList[dto.FaceSticker], *errors.AppError) {
-	rows, total, err := s.stickers.StickersByCharacter(characterID, offset, limit)
+func (s *Service) FaceCharacterStickers(characterID int64, page dto.FacePage) (*dto.FaceList[dto.FaceSticker], *errors.AppError) {
+	rows, total, err := s.stickers.StickersByCharacter(characterID, page.Offset, page.Limit)
 	if err != nil {
 		return nil, errors.ErrInternal("failed to load stickers")
 	}
@@ -128,16 +127,15 @@ func (s *Service) FaceCharacterStickers(characterID int64, offset, limit int) (*
 	for _, row := range rows {
 		items = append(items, faceSticker(s.stickerDTO(row), row.ImageHash))
 	}
-	return &dto.FaceList[dto.FaceSticker]{
-		Object: "list", Items: items, Total: total,
-		Page: offset/max(limit, 1) + 1, Limit: limit,
-	}, nil
+	return dto.NewFaceList(items, page, total), nil
 }
 
 // FaceWorks is the other catalog-id entry point: which games this site has
 // material for, and how much of it.
-func (s *Service) FaceWorks(p repository.IndexParams) (*dto.FaceList[dto.FaceWork], *errors.AppError) {
-	rows, total, err := s.stickers.WorkIndex(p)
+func (s *Service) FaceWorks(search string, page dto.FacePage) (*dto.FaceList[dto.FaceWork], *errors.AppError) {
+	rows, total, err := s.stickers.WorkIndex(repository.IndexParams{
+		Search: search, Offset: page.Offset, Limit: page.Limit,
+	})
 	if err != nil {
 		return nil, errors.ErrInternal("failed to list works")
 	}
@@ -145,38 +143,30 @@ func (s *Service) FaceWorks(p repository.IndexParams) (*dto.FaceList[dto.FaceWor
 	for _, row := range rows {
 		items = append(items, dto.FaceWork{
 			Object:        "work",
-			ID:            row.CatalogWorkID,
+			ID:            faceID(row.CatalogWorkID),
 			Name:          decodeML(row.CatalogWorkName),
 			CoverURL:      row.CatalogWorkCover,
 			ContentRating: row.CatalogWorkRating,
 			StickerCount:  row.StickerCount,
 		})
 	}
-	return &dto.FaceList[dto.FaceWork]{
-		Object: "list", Items: items, Total: total,
-		Page: pageOf(p), Limit: p.Limit,
-	}, nil
+	return dto.NewFaceList(items, page, total), nil
 }
 
-func (s *Service) FaceTags(limit int) (*dto.FaceList[dto.FaceTag], *errors.AppError) {
-	tags, appErr := s.PopularTags(limit)
-	if appErr != nil {
-		return nil, appErr
+func (s *Service) FaceTags(page dto.FacePage) (*dto.FaceList[dto.FaceTag], *errors.AppError) {
+	rows, err := s.tags.Popular(page.Offset, page.Limit)
+	if err != nil {
+		return nil, errors.ErrInternal("failed to load tags")
 	}
-	items := make([]dto.FaceTag, 0, len(tags))
-	for _, tag := range tags {
+	total, err := s.tags.CountPopular()
+	if err != nil {
+		return nil, errors.ErrInternal("failed to count tags")
+	}
+	items := make([]dto.FaceTag, 0, len(rows))
+	for _, tag := range tagDTOs(rows) {
 		items = append(items, faceTag(tag))
 	}
-	return &dto.FaceList[dto.FaceTag]{
-		Object: "list", Items: items, Total: int64(len(items)), Page: 1, Limit: limit,
-	}, nil
-}
-
-func pageOf(p repository.IndexParams) int {
-	if p.Limit <= 0 {
-		return 1
-	}
-	return p.Offset/p.Limit + 1
+	return dto.NewFaceList(items, page, total), nil
 }
 
 // The converters below are the whole difference between the site's DTOs and
@@ -197,7 +187,7 @@ func facePack(in dto.Pack) dto.FacePack {
 		Work:          faceWorkPtr(in.CatalogWork),
 		Tags:          make([]dto.FaceTag, 0, len(in.Tags)),
 		Author: dto.FaceAuthor{
-			Object: "author", ID: in.Author.ID, Name: in.Author.Name, AvatarURL: in.Author.Avatar,
+			Object: "author", ID: strconv.Itoa(in.Author.ID), Name: in.Author.Name, AvatarURL: in.Author.Avatar,
 		},
 		CreatedAt:   in.CreatedAt,
 		UpdatedAt:   in.UpdatedAt,
@@ -238,7 +228,7 @@ func faceSticker(in dto.Sticker, hash string) dto.FaceSticker {
 
 func faceWork(in *dto.CatalogWork) dto.FaceWork {
 	return dto.FaceWork{
-		Object: "work", ID: in.ID, Name: in.Name,
+		Object: "work", ID: faceID(in.ID), Name: in.Name,
 		CoverURL: in.CoverURL, ContentRating: in.ContentRating,
 	}
 }
@@ -253,7 +243,7 @@ func faceWorkPtr(in *dto.CatalogWork) *dto.FaceWork {
 
 func faceCharacter(in *dto.CatalogCharacter) dto.FaceCharacter {
 	return dto.FaceCharacter{
-		Object: "character", ID: in.ID, Name: in.Name, ImageURL: in.ImageURL,
+		Object: "character", ID: faceID(in.ID), Name: in.Name, ImageURL: in.ImageURL,
 	}
 }
 
@@ -268,18 +258,22 @@ func faceCharacterPtr(in *dto.CatalogCharacter) *dto.FaceCharacter {
 func characterRowDTO(row repository.CharacterRow) dto.FaceCharacter {
 	out := dto.FaceCharacter{
 		Object:       "character",
-		ID:           row.CatalogCharacterID,
+		ID:           faceID(row.CatalogCharacterID),
 		Name:         decodeML(row.CatalogCharacterName),
 		ImageURL:     row.CatalogCharacterImage,
 		StickerCount: row.StickerCount,
 	}
 	if row.CatalogWorkID != nil {
 		out.Work = &dto.FaceWork{
-			Object: "work", ID: *row.CatalogWorkID, Name: decodeML(row.CatalogWorkName),
+			Object: "work", ID: faceID(*row.CatalogWorkID), Name: decodeML(row.CatalogWorkName),
 		}
 	}
 	return out
 }
+
+// faceID spells a catalog id the way catalog's own /v2 does: a decimal
+// string, so a client in a language without 64-bit integers never rounds one.
+func faceID(id int64) string { return strconv.FormatInt(id, 10) }
 
 // faceRating speaks catalog's vocabulary. This site stores 0 or 1; catalog's
 // middle value (sensitive) has no equivalent here, so it is never emitted.

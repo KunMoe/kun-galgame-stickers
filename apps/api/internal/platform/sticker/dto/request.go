@@ -14,9 +14,11 @@ const (
 )
 
 // ListQuery is already normalized when it reaches the service: the handler
-// clamps page/limit and rejects unknown sort/rating values.
+// clamps page/limit and rejects unknown sort/rating values. It carries an
+// offset rather than a page because the public face pages by cursor, and a
+// cursor may resume anywhere, not only on a multiple of limit.
 type ListQuery struct {
-	Page         int
+	Offset       int
 	Limit        int
 	Sort         string
 	Search       string

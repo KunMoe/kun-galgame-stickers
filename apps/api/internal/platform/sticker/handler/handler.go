@@ -56,9 +56,11 @@ func parseBody[T any](c fiber.Ctx) (T, *errors.AppError) {
 // listQuery clamps instead of rejecting: a browser that asks for limit=5000
 // gets the biggest page it is allowed, not a 400 it cannot act on.
 func listQuery(c fiber.Ctx) dto.ListQuery {
+	page := clamp(c.Query("page"), 1, 1, 10000)
+	limit := clamp(c.Query("limit"), defaultLimit, 1, maxLimit)
 	return dto.ListQuery{
-		Page:          clamp(c.Query("page"), 1, 1, 10000),
-		Limit:         clamp(c.Query("limit"), defaultLimit, 1, maxLimit),
+		Offset:        (page - 1) * limit,
+		Limit:         limit,
 		Sort:          sortOf(c.Query("sort")),
 		Search:        truncate(strings.TrimSpace(c.Query("q")), maxSearchLen),
 		Tag:           repository.Slugify(c.Query("tag")),

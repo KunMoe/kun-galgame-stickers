@@ -43,21 +43,21 @@
 面已经写好并跑通了，不是「准备好了可以开始写」。
 
 ```
-GET /v2/sticker/packs                              ?limit&page&sort&q&tag&work&official&linked&nsfw
+GET /v2/sticker/packs                              ?limit&cursor&include_total&sort&q&tag&work&official&linked&nsfw
 GET /v2/sticker/packs/{pack_id}
 GET /v2/sticker/stickers/{sticker_id}
-GET /v2/sticker/characters                         ?limit&page&q&work
+GET /v2/sticker/characters                         ?limit&cursor&include_total&q&work
 GET /v2/sticker/characters/{character_id}        ★
-GET /v2/sticker/characters/{character_id}/stickers ★ ?limit&page
-GET /v2/sticker/works                              ?limit&page&q
-GET /v2/sticker/works/{work_id}/packs            ★ ?limit&page&sort&nsfw
-GET /v2/sticker/tags                               ?limit
+GET /v2/sticker/characters/{character_id}/stickers ★ ?limit&cursor&include_total
+GET /v2/sticker/works                              ?limit&cursor&include_total&q
+GET /v2/sticker/works/{work_id}/packs            ★ ?limit&cursor&include_total&sort&nsfw
+GET /v2/sticker/tags                               ?limit&cursor&include_total
 ```
 
 ★ 是这个面存在的理由：以 catalog id 为入口。9 个 operation，全 GET，只暴露 `status = 1` 的包。
 
 - **契约**：[sticker-openapi.yaml](./sticker-openapi.yaml)，OpenAPI 3.1，`redocly lint` 通过（08 §17.3 允许手写）。这就是 infra 清单第 3 项要的东西。
-- **响应**：裸 JSON，信封形如 catalog `/v2` 的 `{object: "list", items, total, page, limit}`；错误是 RFC 9457 `application/problem+json`，错误码逐字取自 infra 的封闭注册表（`INVALID_PARAMETER` / `LIMIT_TOO_LARGE` / `NOT_FOUND` / `INTERNAL_ERROR` / `SERVICE_UNAVAILABLE`），第三方一套解码器通吃两个面。
+- **响应**：裸 JSON，信封与 catalog `/v2` 逐字段一致：`{object: "list", items, next_cursor?, total?}`；错误是 RFC 9457 `application/problem+json`，type 落在 infra 的 `problems/platform/` 域，错误码逐字取自 infra 的封闭注册表，第三方一套解码器通吃两个面。细节见 §9（2026-09-18 收敛）。
 - **本站自己的 `/api/v1` 不受影响**，仍是 `{code,message,data}` 信封 + cookie 会话，两套错误语言井水不犯河水（`errorHandler` 按路径分流）。
 - **缓存**：逐字沿用 catalog `/v2` 公开档的 `public, max-age=300, s-maxage=1800, stale-while-revalidate=3600` + ETag/304。
 - **鉴权**：本服务一行都没写。B 档的全部意义就在这里。三个 `X-NextMoe-*` 头本站不读——这个面对谁都是同一个答案。
@@ -117,8 +117,8 @@ infra-v2-pub@docker   priority 44   Host(`api.nextmoe.dev`) && PathPrefix(`/v2`)
 **`/v2/sticker/*` 今天已经能通，由 infra 自己的 `/v2` 服务兜底应答**（实测 `GET https://api.nextmoe.dev/v2/sticker/packs` → `404 application/problem+json`，`type` 是 `problems/platform/not-found`，带 `request_id`，且不需要 key）。两个后果：
 
 1. **优先级**。Traefik 默认优先级就是 rule 字符串长度：我们的 `PathPrefix(/v2/sticker)` 是 52，catch-all 是 44，所以本来就赢——但只赢在「多 8 个字符」上，infra 哪天给 `/v2` 的 rule 加个条件就可能反超并静默吃掉这个面。所以本仓的两条 router 都显式写了 `priority: '100'`。
-2. **冒烟测试的判读**。「router 漏挂」在这里**不表现为裸 Traefik 404**，而是 infra 的 problem 文档。看 `type` 就能三选一：
-   - `problems/platform/not-found`（带 `request_id`）→ 标签没生效，请求还在走 catch-all
+2. **冒烟测试的判读**。「router 漏挂」在这里**不表现为裸 Traefik 404**，而是 infra 的 problem 文档。~~看 `type` 就能三选一~~——§9 之后本面自己的 problem 也是 `problems/platform/*` 且带 `request_id`，`type` 已分不出是谁答的。改看**状态码**，并且只拿 `/v2/sticker/packs` 这条对任何有效 key 都回 200 的路由探：
+   - `404`（`problems/platform/not-found`）→ 标签没生效，请求还在走 catch-all
    - ForwardAuth 的 401 → 标签生效了，key/scope 的问题
    - 正常 JSON（`{"object":"list", …}`）→ 通了
 
@@ -190,9 +190,32 @@ oauth 重部署（#167 的 `pathLabel` 与 #168 的免 scope 同一次生效）�
 ```
 GET https://api.nextmoe.dev/v2/sticker/packs
 Authorization: Bearer nmk_live_...
-→ 期望 200 {"object":"list","items":[…7 个包…],"total":7,"page":1,"limit":20}
+→ 期望 200 {"object":"list","items":[…7 个包…]}（§9 之后的信封；7 个包不满一页，所以没有 next_cursor）
 ```
 
-三条判读照 §6 不变：`problems/platform/not-found` = 标签没生效；401 = key 的问题；200 = 通了。
+三条判读照 §6（已按 §9 修订）：`/v2/sticker/packs` 回 404 = 标签没生效；401 = key 的问题；200 = 通了。
 
 顺带那句「确认三个 `X-NextMoe-*` 头有没有被 Traefik 转给 sticker」，**从外部观察不到**——本站不读也不回显这三个头（`face.go` 的注释就写着「every answer here is the same for every caller」）。能查的是接线本身：`dokploy-traefik` 的 `/api/http/middlewares` 里 `sticker-face-forwardauth@docker` 的 `authResponseHeaders` 应为 `X-NextMoe-Client-Id,X-NextMoe-Key-Id,X-NextMoe-Tier`（compose 里就是这么写的，Deploy 已生效）。真要看到头本身落地，得临时加一条回显——本站不打算为此改代码。
+
+## 9. 与 catalog `/v2` 契约收敛（2026-09-18）
+
+infra 复核门户上的两份下游 spec 后提出的清单，本站全部落地。**这是破坏性变更**，`info.version` 因此 `1.0.0 → 2.0.0`——与 §8 不同，这一次门户上已经有了基线（infra `c7e91a36` 把 1.0.0 登记进了 `apps/developer/public/specs/`）。
+
+| 项 | 之前 | 之后 |
+|---|---|---|
+| catalog / 账号 id | `Work.id` / `Character.id` / `Author.id` 是 number | 十进制 string，spec 声明 `type: string, pattern: '^[0-9]+$'`；`work_id` / `character_id` 路径参数与 `work` 查询参数同样声明（线上格式不变） |
+| 分页 | `page`（1–1000）+ `limit`（1–50） | 不透明 `cursor` + `limit`（1–100，默认 20）；底下仍是 offset，编码与 infra `collect.EncodeOffset` 逐字节一致（`cur_` + 无填充 base64url），moyu 同款 |
+| 列表信封 | `{object, items, total, page, limit}` | `{object, items, next_cursor?, total?}`：`next_cursor` 末页**省略**（不是 null），`total` 仅 `include_total=true` 时出现 |
+| 坏 cursor | — | `400 INVALID_CURSOR` |
+| problem `type` | `problems/sticker/<slug>`（门户上不存在的页） | `problems/platform/<slug>` |
+| problem 成员 | `detail` 可缺；无 `request_id`、无 `errors` | `detail`、`request_id`（= `X-Request-ID` 响应头）、`errors`（非字段错误时为 `[]`）恒在；每个 400 的 `errors[0].parameter` 指出要改的参数 |
+| spec 声明 | 没写缓存 | 每个 200 声明 `ETag` / `Cache-Control`，每个 operation 声明 `304`（代码本来就在发） |
+
+顺手改掉的三处，都是上面这些改动逼出来的：
+
+- **`/tags` 也能翻页了**。以前它只是「前 N 个」，信封里 `total = len(items)`；新信封下缺 `next_cursor` 就等于宣称「已经是末页」，标签一多就是假话。
+- **`work=abc` 从静默忽略改为 400**。spec 既然声明了 `pattern`，服务端再把不合规的值当成「没传」、回一份未过滤的列表，就是在自相矛盾。
+- **problem 一律 `Cache-Control: no-store`**，并把 5xx 连同 `request_id` 记进日志。面上的公共缓存策略是给「对谁都一样」的答案用的；problem 带着本次请求的 id，被边缘缓存的话就会把同一个 id 发给许多调用方。另外 `POST /v2/sticker/*` 以前落进 `INTERNAL_ERROR 500`，现在是注册表里的 `METHOD_NOT_ALLOWED 405`。
+
+**infra 侧还要做一步**：门户上的副本（`nextmoe-infra/apps/developer/public/specs/sticker-openapi.yaml`）仍是 1.0.0，需要从本仓重新同步；oasdiff 会把这次判为 breaking，这是预期内的。
+

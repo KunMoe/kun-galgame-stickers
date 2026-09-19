@@ -35,7 +35,7 @@ func (s *Service) List(ctx context.Context, q dto.ListQuery, v Viewer) (*dto.Pac
 		CatalogWork:    q.CatalogWorkID,
 		AnyCatalogWork: q.AnyCatalogWorkID,
 		Order:          orderFor(q.Sort),
-		Offset:         (q.Page - 1) * q.Limit,
+		Offset:         q.Offset,
 		Limit:          q.Limit,
 	})
 	if err != nil {
@@ -396,7 +396,7 @@ func (s *Service) DeletePack(id uuid.UUID, v Viewer) *errors.AppError {
 }
 
 func (s *Service) PopularTags(limit int) ([]dto.Tag, *errors.AppError) {
-	rows, err := s.tags.Popular(limit)
+	rows, err := s.tags.Popular(0, limit)
 	if err != nil {
 		return nil, errors.ErrInternal("failed to load tags")
 	}

@@ -294,14 +294,5 @@ func errorHandler(c fiber.Ctx, err error) error {
 }
 
 func faceProblem(c fiber.Ctx, status int, detail string) error {
-	switch status {
-	case fiber.StatusNotFound:
-		return problem.Write(c, problem.CodeNotFound, detail)
-	case fiber.StatusBadRequest:
-		return problem.Write(c, problem.CodeInvalidParameter, detail)
-	case fiber.StatusServiceUnavailable:
-		return problem.Write(c, problem.CodeServiceUnavailable, detail)
-	default:
-		return problem.Write(c, problem.CodeInternalError, detail)
-	}
+	return problem.Write(c, problem.OfStatus(status, detail))
 }

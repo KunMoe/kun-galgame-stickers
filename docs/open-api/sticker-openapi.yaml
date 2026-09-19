@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: NextMoe Sticker Face
-  version: 1.0.0
+  version: 2.0.0
   x-stability: stable
   summary: Galgame sticker packs, indexed by catalog work and character identity.
   description: |
@@ -34,6 +34,27 @@ info:
     `ja-jp`, `en-us` and `und`; every one of them is optional, and `und` is
     where a catalog display name with no language tag lands. Pick a language
     with your own fallback chain -- this face never picks one for you.
+
+    **Ids are decimal strings**, as catalog's are. Catalog work, character
+    and account ids match `^[0-9]+$`; this site's own pack and sticker ids
+    are UUIDs.
+
+    **Paging is by opaque cursor**, the same envelope catalog `/v2` answers
+    with: `{object, items, next_cursor}`. Pass `next_cursor` back as `cursor`
+    for the next page; it is omitted (not null) on the last page. `total`
+    appears only with `include_total=true`. Page size is 1-100, default 20;
+    above 100 is `LIMIT_TOO_LARGE`, never clamped.
+
+    **Errors are RFC 9457 problem documents** of the platform's own types
+    (`https://developer.nextmoe.dev/problems/platform/<slug>`). Every one
+    carries `detail`, a `request_id` equal to the `X-Request-ID` response
+    header, and `errors[]` -- on a 400, `errors[0].parameter` names the
+    parameter to fix.
+
+    **Responses are cacheable.** Every 200 carries an `ETag` and
+    `Cache-Control: public, max-age=300, s-maxage=1800,
+    stale-while-revalidate=3600`; send the tag back as `If-None-Match` for a
+    `304`. Problem documents are `no-store`.
   contact:
     name: sticker.kungal.com
     url: https://sticker.kungal.com
@@ -65,7 +86,8 @@ paths:
       tags: [packs]
       parameters:
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/IncludeTotal'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Query'
         - $ref: '#/components/parameters/Nsfw'
@@ -78,7 +100,7 @@ paths:
           description: >-
             Catalog work id. Keeps packs that declare this game or hold a sticker
             of it -- the same relation `/v2/sticker/works/{work_id}/packs` uses.
-          schema: { type: integer, format: int64, minimum: 1 }
+          schema: { type: string, pattern: '^[0-9]+$' }
         - name: official
           in: query
           description: true keeps only packs published by the site itself.
@@ -90,8 +112,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/PackList'
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/Problem'
 
@@ -109,13 +133,18 @@ paths:
       responses:
         '200':
           description: The pack.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PackDetail' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/NotFound'
 
   /v2/sticker/stickers/{sticker_id}:
     get:
@@ -130,13 +159,18 @@ paths:
       responses:
         '200':
           description: The sticker.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Sticker' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
         '404':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/NotFound'
 
   /v2/sticker/characters:
     get:
@@ -149,15 +183,19 @@ paths:
       tags: [catalog]
       parameters:
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/IncludeTotal'
         - $ref: '#/components/parameters/Query'
         - name: work
           in: query
           description: Narrow to the characters of one catalog work.
-          schema: { type: integer, format: int64, minimum: 1 }
+          schema: { type: string, pattern: '^[0-9]+$' }
       responses:
         '200':
           description: A page of characters.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema:
@@ -168,8 +206,10 @@ paths:
                       items:
                         type: array
                         items: { $ref: '#/components/schemas/Character' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
 
   /v2/sticker/characters/{character_id}:
     get:
@@ -181,15 +221,23 @@ paths:
       responses:
         '200':
           description: The character.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Character' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
         '404':
           description: >-
             No published sticker on this site is tagged with that character.
             It says nothing about whether catalog knows the id.
+          headers:
+            X-Request-ID: { $ref: '#/components/headers/RequestID' }
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
@@ -206,10 +254,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CharacterID'
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/IncludeTotal'
       responses:
         '200':
           description: A page of stickers.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema:
@@ -220,8 +272,10 @@ paths:
                       items:
                         type: array
                         items: { $ref: '#/components/schemas/Sticker' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
 
   /v2/sticker/works:
     get:
@@ -230,11 +284,15 @@ paths:
       tags: [catalog]
       parameters:
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/IncludeTotal'
         - $ref: '#/components/parameters/Query'
       responses:
         '200':
           description: A page of works.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema:
@@ -245,8 +303,10 @@ paths:
                       items:
                         type: array
                         items: { $ref: '#/components/schemas/Work' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
 
   /v2/sticker/works/{work_id}/packs:
     get:
@@ -262,16 +322,19 @@ paths:
           in: path
           required: true
           description: Infra catalog work id.
-          schema: { type: integer, format: int64, minimum: 1 }
+          schema: { type: string, pattern: '^[0-9]+$' }
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/IncludeTotal'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Nsfw'
       responses:
         '200':
           $ref: '#/components/responses/PackList'
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
 
   /v2/sticker/tags:
     get:
@@ -280,9 +343,14 @@ paths:
       tags: [vocabulary]
       parameters:
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/IncludeTotal'
       responses:
         '200':
           description: A page of tags.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
           content:
             application/json:
               schema:
@@ -293,8 +361,10 @@ paths:
                       items:
                         type: array
                         items: { $ref: '#/components/schemas/Tag' }
+        '304':
+          $ref: '#/components/responses/NotModified'
         '400':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/BadRequest'
 
 components:
   securitySchemes:
@@ -308,17 +378,38 @@ components:
       scheme: bearer
       description: "The same key as `Authorization: Bearer nmk_live_...`."
 
+  headers:
+    ETag:
+      description: Entity tag; send it back as `If-None-Match` for a `304`.
+      schema: { type: string }
+    CacheControl:
+      description: '`public, max-age=300, s-maxage=1800, stale-while-revalidate=3600`'
+      schema: { type: string }
+    RequestID:
+      description: The problem document's `request_id`. Quote it in a support request.
+      schema: { type: string, pattern: '^req_[0-9A-HJKMNP-TV-Z]{26}$' }
+    NoStore:
+      description: '`no-store`. A problem is about one request and is never shared-cached.'
+      schema: { type: string, const: no-store }
+
   parameters:
     Limit:
       name: limit
       in: query
-      description: Page size, 1-50, default 20. Above 50 is 400 LIMIT_TOO_LARGE.
-      schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
-    Page:
-      name: page
+      description: Page size, 1-100, default 20. Above 100 is 400 `LIMIT_TOO_LARGE`; the value is not clamped.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
       in: query
-      description: 1-based page number, 1-1000.
-      schema: { type: integer, minimum: 1, maximum: 1000, default: 1 }
+      description: >-
+        The `next_cursor` from a previous page of the same collection. Opaque;
+        anything this face did not mint is 400 `INVALID_CURSOR`.
+      schema: { type: string, pattern: '^cur_[A-Za-z0-9_-]+$', maxLength: 512 }
+    IncludeTotal:
+      name: include_total
+      in: query
+      description: '`true` adds `total`, counted under the same filter as `items`.'
+      schema: { type: string, enum: ['true', 'false'] }
     Sort:
       name: sort
       in: query
@@ -349,11 +440,14 @@ components:
       in: path
       required: true
       description: Infra catalog character id.
-      schema: { type: integer, format: int64, minimum: 1 }
+      schema: { type: string, pattern: '^[0-9]+$' }
 
   responses:
     PackList:
       description: A page of packs.
+      headers:
+        ETag: { $ref: '#/components/headers/ETag' }
+        Cache-Control: { $ref: '#/components/headers/CacheControl' }
       content:
         application/json:
           schema:
@@ -364,8 +458,35 @@ components:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/Pack' }
+    NotModified:
+      description: The `If-None-Match` entity tag still matches.
+      headers:
+        ETag: { $ref: '#/components/headers/ETag' }
+        Cache-Control: { $ref: '#/components/headers/CacheControl' }
+    BadRequest:
+      description: >-
+        A parameter was refused. `code` is `INVALID_PARAMETER`,
+        `LIMIT_TOO_LARGE` or `INVALID_CURSOR`, and `errors[0].parameter` names
+        the parameter to fix.
+      headers:
+        X-Request-ID: { $ref: '#/components/headers/RequestID' }
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Nothing published exists at this URL.
+      headers:
+        X-Request-ID: { $ref: '#/components/headers/RequestID' }
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
     Problem:
       description: An RFC 9457 problem document.
+      headers:
+        X-Request-ID: { $ref: '#/components/headers/RequestID' }
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -384,16 +505,22 @@ components:
 
     List:
       type: object
-      required: [object, items, total, page, limit]
+      required: [object, items]
       properties:
         object: { type: string, const: list }
         items: { type: array, items: {} }
+        next_cursor:
+          type: string
+          pattern: '^cur_[A-Za-z0-9_-]+$'
+          maxLength: 512
+          description: Pass as `cursor` for the next page. Omitted, not null, on the last page.
         total:
           type: integer
           format: int64
-          description: Rows matching the filter, across all pages.
-        page: { type: integer }
-        limit: { type: integer }
+          minimum: 0
+          description: >-
+            Rows matching the filter, across all pages. Present only with
+            `include_total=true`.
 
     Image:
       type: object
@@ -418,8 +545,8 @@ components:
       properties:
         object: { type: string, const: work }
         id:
-          type: integer
-          format: int64
+          type: string
+          pattern: '^[0-9]+$'
           description: Infra catalog work id. Resolve it against `/v2/catalog/works/{id}`.
         name: { $ref: '#/components/schemas/MultilingualText' }
         cover_url: { type: string, format: uri }
@@ -440,8 +567,8 @@ components:
       properties:
         object: { type: string, const: character }
         id:
-          type: integer
-          format: int64
+          type: string
+          pattern: '^[0-9]+$'
           description: Infra catalog character id. Resolve it against `/v2/catalog/characters/{id}`.
         name: { $ref: '#/components/schemas/MultilingualText' }
         image_url:
@@ -461,7 +588,8 @@ components:
       properties:
         object: { type: string, const: author }
         id:
-          type: integer
+          type: string
+          pattern: '^[0-9]+$'
           description: NextMoe account id, the same one every site in the ecosystem uses.
         name: { type: string }
         avatar_url: { type: string, format: uri }
@@ -548,20 +676,49 @@ components:
     Problem:
       type: object
       description: RFC 9457. Field names match the platform's /v2 problem documents.
-      required: [type, title, status, instance, code]
+      required: [type, title, status, detail, instance, code, request_id, errors]
       properties:
-        type: { type: string, format: uri }
+        type:
+          type: string
+          format: uri
+          pattern: '^https://developer\.nextmoe\.dev/problems/platform/[a-z0-9-]+$'
+          description: The platform's own problem type; the last segment is `code` in kebab case.
         title: { type: string }
         status: { type: integer, minimum: 400, maximum: 599 }
-        detail: { type: string }
+        detail:
+          type: string
+          description: English, request-specific. Never use it as a discriminant.
         instance:
           type: string
           description: The request path and query string that failed.
         code:
           type: string
           enum:
-            [INVALID_PARAMETER, LIMIT_TOO_LARGE, NOT_FOUND, INTERNAL_ERROR,
-             SERVICE_UNAVAILABLE]
+            [INVALID_PARAMETER, LIMIT_TOO_LARGE, INVALID_CURSOR, NOT_FOUND,
+             METHOD_NOT_ALLOWED, INTERNAL_ERROR, SERVICE_UNAVAILABLE]
           description: >-
             Taken verbatim from the platform's closed registry, so one client
             decoder covers this face and catalog's.
+        request_id:
+          type: string
+          pattern: '^req_[0-9A-HJKMNP-TV-Z]{26}$'
+          description: Also sent as `X-Request-ID`. Quote it in a support request.
+        errors:
+          type: array
+          description: >-
+            Field-level failures. Empty when the failure is not about one
+            parameter; on a 400, `errors[0]` names the parameter.
+          items: { $ref: '#/components/schemas/FieldError' }
+
+    FieldError:
+      type: object
+      required: [parameter, reason, detail]
+      properties:
+        parameter:
+          type: string
+          description: Query or path parameter name, as this document spells it.
+        reason:
+          type: string
+          enum: [INVALID_FORMAT, OUT_OF_RANGE, UNKNOWN_VALUE]
+          description: Field-level reason from the platform's closed reason registry.
+        detail: { type: string }

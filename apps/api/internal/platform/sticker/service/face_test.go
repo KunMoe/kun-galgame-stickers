@@ -46,22 +46,34 @@ func TestFacePackEmitsNoStatus(t *testing.T) {
 	}
 }
 
-func TestFaceListPageArithmetic(t *testing.T) {
-	cases := []struct {
-		offset, limit, want int
-	}{
-		{0, 20, 1},
-		{20, 20, 2},
-		{100, 50, 3},
-		{0, 0, 1},
+// Catalog and account ids leave the face as decimal strings, as catalog's own
+// /v2 spells them: a number above 2^53 would round in a JavaScript client.
+func TestFaceIDsAreStrings(t *testing.T) {
+	raw, err := json.Marshal(dto.FacePack{
+		Author: dto.FaceAuthor{ID: "2"},
+		Work:   faceWorkPtr(&dto.CatalogWork{ID: 9007199254740993}),
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
 	}
-	for _, tc := range cases {
-		if got := pageOf(indexParams(tc.offset, tc.limit)); got != tc.want {
-			t.Errorf("offset %d limit %d = page %d, want %d", tc.offset, tc.limit, got, tc.want)
-		}
+	var out struct {
+		Author struct{ ID json.RawMessage } `json:"author"`
+		Work   struct{ ID json.RawMessage } `json:"work"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if got := string(out.Work.ID); got != `"9007199254740993"` {
+		t.Errorf("work id = %s, want a decimal string", got)
+	}
+	if got := string(out.Author.ID); got != `"2"` {
+		t.Errorf("author id = %s, want a decimal string", got)
+	}
+
+	character := characterRowDTO(repository.CharacterRow{CatalogCharacterID: 7935, CatalogWorkID: ptr(int64(12))})
+	if character.ID != "7935" || character.Work.ID != "12" {
+		t.Errorf("character row = %q / %q, want 7935 / 12", character.ID, character.Work.ID)
 	}
 }
 
-func indexParams(offset, limit int) repository.IndexParams {
-	return repository.IndexParams{Offset: offset, Limit: limit}
-}
+func ptr[T any](v T) *T { return &v }

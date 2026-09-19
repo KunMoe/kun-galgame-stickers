@@ -42,7 +42,8 @@ func isFacePath(c fiber.Ctx) bool {
 
 // faceCache matches catalog /v2's public lane verbatim. Every response here is
 // viewer-independent, so a shared cache is correct; the cost is that a request
-// Cloudflare answers is a request the platform never meters.
+// Cloudflare answers is a request the platform never meters. A problem
+// document overrides it with no-store (see problem.Write).
 const faceCache = "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600"
 
 // faceCORS is deliberately not the site's CORS. The site allows one origin and
@@ -56,7 +57,7 @@ func faceCORS() fiber.Handler {
 		AllowMethods: []string{fiber.MethodGet, fiber.MethodOptions},
 		AllowHeaders: []string{"X-API-Key", "Authorization", "Accept", "If-None-Match"},
 		ExposeHeaders: []string{
-			"ETag", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset",
+			"ETag", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset",
 			"X-Quota-Limit", "X-Quota-Remaining", "Retry-After",
 		},
 		MaxAge: 86400,
@@ -76,13 +77,15 @@ func faceHeaders(c fiber.Ctx) error {
 func mountFace(app *fiber.App, h *stickerhandler.Handler) {
 	face := app.Group(facePrefix, faceCORS(), faceHeaders, etag.New())
 
+	// Parameters carry the spec's names, which is what a problem document's
+	// errors[0].parameter reports back.
 	face.Get("/packs", h.FaceListPacks)
-	face.Get("/packs/:packId", h.FaceGetPack)
-	face.Get("/stickers/:stickerId", h.FaceGetSticker)
+	face.Get("/packs/:pack_id", h.FaceGetPack)
+	face.Get("/stickers/:sticker_id", h.FaceGetSticker)
 	face.Get("/characters", h.FaceListCharacters)
-	face.Get("/characters/:characterId", h.FaceGetCharacter)
-	face.Get("/characters/:characterId/stickers", h.FaceCharacterStickers)
+	face.Get("/characters/:character_id", h.FaceGetCharacter)
+	face.Get("/characters/:character_id/stickers", h.FaceCharacterStickers)
 	face.Get("/works", h.FaceListWorks)
-	face.Get("/works/:workId/packs", h.FaceWorkPacks)
+	face.Get("/works/:work_id/packs", h.FaceWorkPacks)
 	face.Get("/tags", h.FaceListTags)
 }

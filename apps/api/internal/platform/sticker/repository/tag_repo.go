@@ -17,11 +17,24 @@ type TagRepo struct{ db *gorm.DB }
 
 func NewTagRepo(db *gorm.DB) *TagRepo { return &TagRepo{db: db} }
 
-func (r *TagRepo) Popular(limit int) ([]model.Tag, error) {
+// Popular pages the tags in use, most used first. The slug tiebreaker keeps
+// the order total, so paging by offset neither repeats nor skips a tag.
+func (r *TagRepo) Popular(offset, limit int) ([]model.Tag, error) {
 	var rows []model.Tag
-	err := r.db.Where("pack_count > 0").
-		Order("pack_count DESC, slug ASC").Limit(limit).Find(&rows).Error
+	err := r.inUse().
+		Order("pack_count DESC, slug ASC").Offset(offset).Limit(limit).Find(&rows).Error
 	return rows, err
+}
+
+// CountPopular counts what Popular pages through.
+func (r *TagRepo) CountPopular() (int64, error) {
+	var total int64
+	err := r.inUse().Count(&total).Error
+	return total, err
+}
+
+func (r *TagRepo) inUse() *gorm.DB {
+	return r.db.Model(&model.Tag{}).Where("pack_count > 0")
 }
 
 func (r *TagRepo) BySlug(slug string) (*model.Tag, error) {
