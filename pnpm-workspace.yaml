@@ -8,7 +8,7 @@ allowBuilds:
   vue-demi: false
 
 minimumReleaseAgeExclude:
-  - '@kungal/ui-core@2.32.0'
-  - '@kungal/ui-nuxt@2.32.0'
-  - '@kungal/ui-tokens@2.32.0'
-  - '@kungal/ui-vue@2.32.0'
+  - '@kungal/ui-core@2.44.0'
+  - '@kungal/ui-nuxt@2.44.0'
+  - '@kungal/ui-tokens@2.44.0'
+  - '@kungal/ui-vue@2.44.0'

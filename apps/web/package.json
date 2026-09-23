@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.81",
-    "@kungal/ui-core": "2.32.0",
-    "@kungal/ui-nuxt": "2.32.0",
-    "@kungal/ui-tokens": "2.32.0",
-    "@kungal/ui-vue": "2.32.0",
+    "@kungal/ui-core": "2.44.0",
+    "@kungal/ui-nuxt": "2.44.0",
+    "@kungal/ui-tokens": "2.44.0",
+    "@kungal/ui-vue": "2.44.0",
     "vue": "^3.5.22"
   },
   "devDependencies": {
