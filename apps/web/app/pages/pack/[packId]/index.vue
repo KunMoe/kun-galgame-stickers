@@ -15,6 +15,7 @@ if (!pack.value) {
 
 const title = computed(() => resolveMultilingual(pack.value?.title, locale.value) || t('pack.untitled'))
 const description = computed(() => resolveMultilingual(pack.value?.description, locale.value))
+const author = computed(() => (pack.value ? toKunUser(pack.value.author) : null))
 const tagLabel = (name: Record<string, string | undefined>, slug: string) =>
   resolveMultilingual(name, locale.value) || slug
 
@@ -92,14 +93,7 @@ useKunSeo(() => ({
             underline="none"
             class-name="hover:text-primary flex items-center gap-2 transition-colors"
           >
-            <img
-              v-if="pack.author.avatar"
-              :src="pack.author.avatar"
-              alt=""
-              width="24"
-              height="24"
-              class="size-6 object-cover"
-            >
+            <KunAvatar :user="author" :is-navigation="false" size="sm" />
             <span>{{ pack.author.name }}</span>
           </KunLink>
           <span>{{ t('pack.stickerCount', pack.sticker_count) }}</span>

@@ -31,7 +31,7 @@ func (h *AuthHandler) Callback(c fiber.Ctx) error {
 		return response.Error(c, appErr)
 	}
 	middleware.PersistSession(c, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn, user, h.secure)
-	return response.OK(c, user)
+	return response.OK(c, h.svc.Me(c.Context(), user))
 }
 
 func (h *AuthHandler) Logout(c fiber.Ctx) error {
@@ -46,5 +46,5 @@ func (h *AuthHandler) Me(c fiber.Ctx) error {
 	if user == nil {
 		return response.Error(c, errors.ErrUnauthorized("not signed in"))
 	}
-	return response.OK(c, user)
+	return response.OK(c, h.svc.Me(c.Context(), user))
 }

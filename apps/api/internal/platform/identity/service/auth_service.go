@@ -1,18 +1,22 @@
 package service
 
 import (
+	"context"
+
 	"kun-galgame-sticker-api/internal/platform/identity/dto"
 	"kun-galgame-sticker-api/internal/platform/identity/oauth"
 	"kun-galgame-sticker-api/pkg/errors"
 	"kun-galgame-sticker-api/pkg/perm"
+	"kun-galgame-sticker-api/pkg/userclient"
 )
 
 type AuthService struct {
 	client *oauth.Client
+	users  *userclient.Client
 }
 
-func New(client *oauth.Client) *AuthService {
-	return &AuthService{client: client}
+func New(client *oauth.Client, users *userclient.Client) *AuthService {
+	return &AuthService{client: client, users: users}
 }
 
 func (s *AuthService) Callback(code, codeVerifier string) (*oauth.Tokens, *dto.User, *errors.AppError) {
@@ -48,6 +52,10 @@ func (s *AuthService) FetchUser(accessToken string) (*dto.User, *errors.AppError
 		return nil, errors.ErrUnauthorized("session expired")
 	}
 	return toDTO(user), nil
+}
+
+func (s *AuthService) Me(ctx context.Context, user *dto.User) dto.Me {
+	return dto.Me{User: *user, Cosmetics: s.users.User(ctx, user.ID).Cosmetics}
 }
 
 func (s *AuthService) Revoke(refreshToken string) {

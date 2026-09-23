@@ -146,7 +146,7 @@ func (s *Service) packDTO(
 		StickerCount:  row.StickerCount,
 		ViewCount:     row.ViewCount,
 		DownloadCount: row.DownloadCount,
-		Author:        dto.Author{ID: author.ID, Name: author.Name, Avatar: author.Avatar},
+		Author:        authorDTO(author),
 		Tags:          tagDTOs(tags),
 		CreatedAt:     row.CreatedAt.UTC().Format(time.RFC3339),
 		UpdatedAt:     row.UpdatedAt.UTC().Format(time.RFC3339),
@@ -161,6 +161,10 @@ func (s *Service) packDTO(
 		out.PublishedAt = &published
 	}
 	return out
+}
+
+func authorDTO(u userclient.User) dto.Author {
+	return dto.Author{ID: u.ID, Name: u.Name, Avatar: u.Avatar, Cosmetics: u.Cosmetics}
 }
 
 func tagDTOs(rows []model.Tag) []dto.Tag {
