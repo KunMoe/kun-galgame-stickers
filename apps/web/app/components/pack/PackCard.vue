@@ -11,6 +11,7 @@ const title = computed(
   () => resolveMultilingual(props.pack.title, locale.value) || t('pack.untitled')
 )
 const to = computed(() => localePath(`/pack/${props.pack.id}`))
+const author = computed(() => toKunUser(props.pack.author))
 </script>
 
 <template>
@@ -69,15 +70,7 @@ const to = computed(() => localePath(`/pack/${props.pack.id}`))
           underline="none"
           class-name="hover:text-primary flex min-w-0 items-center gap-1.5 transition-colors"
         >
-          <img
-            v-if="pack.author.avatar"
-            :src="pack.author.avatar"
-            alt=""
-            width="20"
-            height="20"
-            loading="lazy"
-            class="size-5 shrink-0 object-cover"
-          >
+          <KunAvatar :user="author" :is-navigation="false" size="sm" />
           <span class="truncate">{{ pack.author.name }}</span>
         </KunLink>
         <span class="flex shrink-0 items-center gap-1">

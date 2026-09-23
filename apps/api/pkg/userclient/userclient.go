@@ -33,15 +33,28 @@ type Config struct {
 }
 
 type User struct {
-	ID              int      `json:"id"`
-	UUID            string   `json:"uuid"`
-	Name            string   `json:"name"`
-	Avatar          string   `json:"avatar"`
-	AvatarImageHash string   `json:"avatar_image_hash"`
-	Bio             string   `json:"bio"`
-	Status          int      `json:"status"`
-	Roles           []string `json:"roles"`
-	SiteRoles       []string `json:"site_roles"`
+	ID              int        `json:"id"`
+	UUID            string     `json:"uuid"`
+	Name            string     `json:"name"`
+	Avatar          string     `json:"avatar"`
+	AvatarImageHash string     `json:"avatar_image_hash"`
+	Bio             string     `json:"bio"`
+	Status          int        `json:"status"`
+	Roles           []string   `json:"roles"`
+	SiteRoles       []string   `json:"site_roles"`
+	Cosmetics       *Cosmetics `json:"cosmetics,omitempty"`
+}
+
+type Cosmetics struct {
+	AvatarFrame       *Decoration `json:"avatar_frame,omitempty"`
+	ProfileBackground *Decoration `json:"profile_background,omitempty"`
+}
+
+type Decoration struct {
+	ItemID      int64  `json:"item_id"`
+	Name        string `json:"name"`
+	StaticURL   string `json:"static_url"`
+	AnimatedURL string `json:"animated_url,omitempty"`
 }
 
 type Client struct {
@@ -134,10 +147,11 @@ func (c *Client) Users(ctx context.Context, ids []int) map[int]User {
 			continue
 		}
 		found := make(map[int]bool, len(users))
-		for _, u := range users {
-			u.Avatar = c.avatarURL(u)
+		for i := range users {
+			u := &users[i]
+			u.Avatar = c.avatarURL(*u)
 			u.Roles = perm.Union(u.Roles, u.SiteRoles)
-			out[u.ID] = u
+			out[u.ID] = *u
 			found[u.ID] = true
 		}
 		c.remember(users, chunk, found)

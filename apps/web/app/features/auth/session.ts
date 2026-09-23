@@ -1,9 +1,12 @@
+import type { Cosmetics } from '~/features/user/cosmetics'
+
 export interface AuthUser {
   sub: string
   id: number
   name: string
   picture: string
   roles: string[]
+  cosmetics?: Cosmetics
 }
 
 export const useAuthUser = () => useState<AuthUser | null>('auth-user', () => null)

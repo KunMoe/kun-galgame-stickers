@@ -16,7 +16,8 @@ const kunUser = computed(() => {
   return {
     id: user.value.id || 0,
     name: displayName.value || 'KUN',
-    avatar: user.value.picture || ''
+    avatar: user.value.picture || '',
+    avatarDecoration: avatarDecoration(user.value.cosmetics)
   }
 })
 
@@ -48,8 +49,8 @@ const logoutEverywhere = async () => {
   </div>
   <KunPopover v-else>
     <template #trigger>
-      <KunButton variant="light" color="default" class="gap-2">
-        <KunAvatar v-if="kunUser" :user="kunUser" :is-navigation="false" size="sm" />
+      <KunButton variant="light" color="default" class-name="gap-2 py-1">
+        <KunAvatar v-if="kunUser" :user="kunUser" :is-navigation="false" size="md" />
         <span class="hidden max-w-32 truncate sm:inline">{{ displayName }}</span>
       </KunButton>
     </template>

@@ -1,9 +1,12 @@
+import type { Cosmetics } from '~/features/user/cosmetics'
+
 export type MultilingualText = Record<string, string | undefined>
 
 export interface Author {
   id: number
   name: string
   avatar: string
+  cosmetics?: Cosmetics
 }
 
 export interface Tag {

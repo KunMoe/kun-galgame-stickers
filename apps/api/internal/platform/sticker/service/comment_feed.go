@@ -135,7 +135,7 @@ func commentFeedRows(
 			PostNumber:  row.Post.PostNumber,
 			ContentHTML: row.Post.ContentHTML,
 			CreatedAt:   row.Post.CreatedAt,
-			Author:      dto.Author{ID: author.ID, Name: author.Name, Avatar: author.Avatar},
+			Author:      authorDTO(author),
 			Pack:        pack,
 		})
 	}

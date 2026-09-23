@@ -34,32 +34,15 @@ const toggleLike = async () => {
   if (result) emit('liked', props.comment.id, result)
 }
 
+const author = computed(() => toKunUser(props.comment.author))
+
 const formatTime = (value: string) => new Date(value).toLocaleString()
 </script>
 
 <template>
   <div :class="cn('flex gap-3', nested && 'pl-4')">
     <NuxtLink :to="localePath(`/u/${comment.author.id}`)" class="shrink-0">
-      <img
-        v-if="comment.author.avatar"
-        :src="comment.author.avatar"
-        :alt="comment.author.name"
-        :width="nested ? 24 : 32"
-        :height="nested ? 24 : 32"
-        loading="lazy"
-        :class="cn('object-cover', nested ? 'size-6' : 'size-8')"
-      >
-      <span
-        v-else
-        :class="
-          cn(
-            'bg-default-100 text-default-400 flex items-center justify-center',
-            nested ? 'size-6' : 'size-8'
-          )
-        "
-      >
-        <KunIcon name="lucide:user" class="text-xs" />
-      </span>
+      <KunAvatar :user="author" :is-navigation="false" :size="nested ? 'sm' : 'md'" />
     </NuxtLink>
 
     <div class="min-w-0 flex-1">

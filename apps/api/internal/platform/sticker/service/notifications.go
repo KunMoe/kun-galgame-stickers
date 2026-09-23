@@ -96,7 +96,8 @@ func notificationRows(
 			if !ok {
 				author = userclient.Placeholder(row.ActorID)
 			}
-			item.Actor = &dto.Author{ID: author.ID, Name: author.Name, Avatar: author.Avatar}
+			actor := authorDTO(author)
+			item.Actor = &actor
 		}
 		out = append(out, item)
 	}

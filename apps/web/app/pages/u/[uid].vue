@@ -20,6 +20,8 @@ const { data, status } = await useAsyncData(
 )
 
 const author = computed(() => data.value?.packs[0]?.author ?? null)
+const kunUser = computed(() => (author.value ? toKunUser(author.value) : null))
+const background = computed(() => author.value?.cosmetics?.profile_background ?? null)
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / 24)))
 
@@ -43,18 +45,24 @@ useKunSeo(() => ({
 
 <template>
   <section class="flex flex-col gap-6">
-    <header class="flex items-center gap-3">
-      <img
-        v-if="author?.avatar"
-        :src="author.avatar"
-        alt=""
-        width="48"
-        height="48"
-        class="size-12 object-cover"
+    <header class="flex flex-col gap-4">
+      <picture
+        v-if="background"
+        class="border-default-200 block aspect-[3/1] overflow-hidden border"
       >
-      <div class="flex flex-col">
-        <h1 class="text-xl font-bold">{{ author?.name || t('user.fallback') }}</h1>
-        <p class="text-default-500 text-sm">{{ t('user.packCount', { count: total }) }}</p>
+        <source media="(prefers-reduced-motion: reduce)" :srcset="background.static_url">
+        <img
+          :src="background.animated_url ?? background.static_url"
+          alt=""
+          class="block size-full object-cover"
+        >
+      </picture>
+      <div class="flex items-center gap-3">
+        <KunAvatar v-if="kunUser" :user="kunUser" :is-navigation="false" size="xl" />
+        <div class="flex flex-col">
+          <h1 class="text-xl font-bold">{{ author?.name || t('user.fallback') }}</h1>
+          <p class="text-default-500 text-sm">{{ t('user.packCount', { count: total }) }}</p>
+        </div>
       </div>
     </header>
 

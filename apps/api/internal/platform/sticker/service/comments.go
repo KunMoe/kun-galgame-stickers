@@ -144,7 +144,7 @@ func (s *Service) commentPage(
 			ContentRaw:  post.ContentRaw,
 			CreatedAt:   post.CreatedAt,
 			EditedAt:    post.EditedAt,
-			Author:      dto.Author{ID: author.ID, Name: author.Name, Avatar: author.Avatar},
+			Author:      authorDTO(author),
 			CanEdit:     v.UID > 0 && post.AuthorID == v.UID,
 			CanDelete:   v.UID > 0 && (post.AuthorID == v.UID || perm.Can(v.Roles, perm.PackDeleteAny)),
 			// Likes are community's, read off the post: it counts them from the

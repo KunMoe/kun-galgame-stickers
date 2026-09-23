@@ -1,11 +1,14 @@
 package dto
 
+import "kun-galgame-sticker-api/pkg/userclient"
+
 type MultilingualText map[string]string
 
 type Author struct {
-	ID     int    `json:"id"`
-	Name   string `json:"name"`
-	Avatar string `json:"avatar"`
+	ID        int                   `json:"id"`
+	Name      string                `json:"name"`
+	Avatar    string                `json:"avatar"`
+	Cosmetics *userclient.Cosmetics `json:"cosmetics,omitempty"`
 }
 
 type Tag struct {

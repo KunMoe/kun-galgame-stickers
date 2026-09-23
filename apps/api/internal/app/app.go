@@ -44,8 +44,15 @@ func (a *App) Close() { a.stop() }
 func New(cfg *config.Config) *App {
 	db := database.NewPostgres(cfg.Database, cfg.Server.Mode)
 
+	users := userclient.New(userclient.Config{
+		BaseURL:      cfg.OAuth.ServerURL,
+		ClientID:     cfg.OAuth.ClientID,
+		ClientSecret: cfg.OAuth.ClientSecret,
+		ImageCDNBase: cfg.Image.CDNBase,
+	})
+
 	oauthClient := oauth.NewClient(cfg.OAuth)
-	authSvc := identityservice.New(oauthClient)
+	authSvc := identityservice.New(oauthClient, users)
 	authHandler := identityhandler.New(authSvc, cfg.Server.Secure)
 
 	var imgCli *imageclient.Client
@@ -57,13 +64,6 @@ func New(cfg *config.Config) *App {
 			ClientSecret: cfg.OAuth.ClientSecret,
 		})
 	}
-
-	users := userclient.New(userclient.Config{
-		BaseURL:      cfg.OAuth.ServerURL,
-		ClientID:     cfg.OAuth.ClientID,
-		ClientSecret: cfg.OAuth.ClientSecret,
-		ImageCDNBase: cfg.Image.CDNBase,
-	})
 
 	// catalog is optional: with no key the pickers answer 503 and every page
 	// falls back to the free-text game and character names already stored.
